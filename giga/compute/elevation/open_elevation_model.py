@@ -4,11 +4,18 @@ from typing import List, Text
 import requests
 import pandas as pd
 
+from requests.adapters import HTTPAdapter, Retry
 
 from giga.schemas.geo import LatLonPoint
+from giga.compute.elevation.elevation_utilities import format_opendata_request_singular_request
 
 # Constants 
 DEFAULT_DATASET = 'aster30m'
+DEFAULT_RETRIES = 5
+DEFAULT_BACKOFF = 0.3
+
+# retry on all status codes that are 300+
+DEFAULT_FORCELIST = [x for x in requests.status_codes._codes if x >= 300]
 
 class OpenElevationModel:
     """
@@ -16,24 +23,10 @@ class OpenElevationModel:
         open source data sets. 
     """
     
-    def _format_data(self, array: List[LatLonPoint]) -> Text:
-        """
-        class method that formats the request to match the API 
-        spec here: https://www.opentopodata.org/api/ 
-        
-          Input: array: An array of values in the format of 
-            e.g. [(lat1, lon1), (lat2,lon2)]   
-          Output: transformed list into formatted text   
-        """
-        # transform array values to (lat, long)|(lat, long) format
-        data = str(set(array))\
-        .replace('),', '|')\
-        .replace('{(', "")\
-        .replace(')}', "")\
-        .replace('(', "")\
-        .strip()
-        
-        return data
+    def format_data(self, x):
+        transformer = lambda x : format_opendata_request_singular_request(x)
+        data_transformed = transformer(x)
+        return data_transformed 
     
     def query_elevation_dataset(self, data: List[LatLonPoint], dataset: Text):
         """
@@ -50,28 +43,25 @@ class OpenElevationModel:
         Output: Response Object containing json reults
             
         """
-        # Format data for request
-        values = self._format_data(data)    
-        # create payload for POST request using formatted values
-        params = {'locations': f"{values}"}
-        url = f'https://api.opentopodata.org/v1/{dataset}?'
-        try:
-            response = requests.post(url, params)
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as errh:
-            print ("Http Error:",errh)
-        except requests.exceptions.ConnectionError as errc:
-            print ("Error Connecting:",errc)
-        except requests.exceptions.Timeout as errt:
-            print ("Timeout Error:",errt)
-        except requests.exceptions.RequestException as err:
-            print ("OOps: Something Else",err)
+        if data == []:
+            return []
+        else:
+            # Format data for request
+            values = self.format_data(data)    
+            # create payload for POST request using formatted values
+            params = {'locations': f"{values}"}
+            url = f'https://api.opentopodata.org/v1/{dataset}?'
+            session = requests.Session()
+            retries = Retry(total=DEFAULT_RETRIES, backoff_factor=DEFAULT_BACKOFF
+                            ,status_forcelist=frozenset(DEFAULT_FORCELIST)
+                            ,raise_on_redirect = True, raise_on_status = True)
+            session.mount('https://' ,HTTPAdapter(max_retries=retries))
+            session.mount('http://' ,HTTPAdapter(max_retries=retries))
+            response = session.post(url, params)
+            result = response.json()
+            elevation_values_array = [x['elevation'] for x in result['results']]
+            return elevation_values_array
         
-        result = response.json()
-        elevation_values_array = [x['elevation'] for x in result['results']]
-        return elevation_values_array
-        
-
     @validate_arguments
     def run(self, data: List[LatLonPoint], dataset=DEFAULT_DATASET) -> List[float]:
         """
