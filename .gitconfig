@@ -1,0 +1,2 @@
+[filter "strip-notebook-output"]
+    clean = "jupyter nbconvert --clear-output --inplace"
