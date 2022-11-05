@@ -11,7 +11,7 @@ class EducationLevel(str, Enum):
 
     primary = "Primary"
     secondary = "Secondary"
-    other ="Other"
+    other = "Other"
     none = ""
 
 
@@ -37,14 +37,15 @@ class GigaSchool(BaseModel):
     admin_3_name: str
     admin_4_name: str
     education_level: EducationLevel
-    giga_id: str = Field(..., alias='giga_id_school')
-    school_zone: SchoolZone = Field(..., alias='environment')
+    giga_id: str = Field(..., alias="giga_id_school")
+    school_zone: SchoolZone = Field(..., alias="environment")
     connected: bool = False
 
     def to_coordinates(self):
-        """ Transforms the school into a simplified coordinate """
-        return UniqueCoordinate(coordinate_id=self.giga_id,
-                                coordinate=[self.lat, self.lon])
+        """Transforms the school into a simplified coordinate"""
+        return UniqueCoordinate(
+            coordinate_id=self.giga_id, coordinate=[self.lat, self.lon]
+        )
 
 
 class GigaSchoolTable(BaseModel):
@@ -55,8 +56,8 @@ class GigaSchoolTable(BaseModel):
     @staticmethod
     def from_csv(file_name: str):
         frame = pd.read_csv(file_name, keep_default_na=False)
-        return GigaSchoolTable(schools=frame.to_dict('records'))
+        return GigaSchoolTable(schools=frame.to_dict("records"))
 
     def to_coordinates(self):
-        """ Transforms the school table into a table of simplified coordinate """
+        """Transforms the school table into a table of simplified coordinate"""
         return [s.to_coordinates() for s in self.schools]
