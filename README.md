@@ -28,7 +28,10 @@ poetry run pytest
 The python library in this repository is organized as follows:
 * `giga/compute`: contains generic computations used across multiple Giga models
 * `giga/connect`: contains connectivity technology specific computations
+* `giga/data`: utilities for data managment including aggregating data from external data sources and APIs
 * `giga/schemas`: contains the data definitions used by the Giga models
+* `giga/utils`: various helper tools
+* `giga/viz`: plotting helpers
 
 ## School Data
 
@@ -52,4 +55,18 @@ table = GigaSchoolTable(schools=schools)
 
 # to reduce the data to a table of just lat/lon coordinates
 coordinate_table = table.to_coordinates()
-```  
+```
+
+## Lint
+
+To run a `flake8` lint check that checks against the PEP 8 standard you can:
+
+```bash
+./dev lint
+```
+
+To autoformat code that is non PEP 8 compliant run:
+
+```bash
+./dev format
+```

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# lint check
+run_linter() {
+  poetry run flake8 .
+}
+
+# lint check
+run_formatter() {
+  poetry run black .
+}
+
+# Shows usage
+usage() {
+  printf "  lint\t\tRuns a flake8 lint check against PEP 8\n"
+  printf "  format\tModifies non PEP 8 compliant code to be style compliant\n"
+}
+
+
+case $1 in
+  lint)
+    run_linter
+    ;;
+  format)
+    run_formatter
+    ;;
+  *)
+    usage
+    ;;
+esac
