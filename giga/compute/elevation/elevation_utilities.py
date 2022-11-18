@@ -25,7 +25,7 @@ def format_opendata_request_singular_request(array: List[LatLonPoint]) -> Text:
     return data
 
 
-def format_opendata_request_multipoint_request(array) -> Text:
+def format_opendata_request_multipoint_request(array: List[LatLonPoint]) -> Text:
     """
     class method that formats the request to match the API
     spec here: https://www.opentopodata.org/api/
@@ -37,10 +37,14 @@ def format_opendata_request_multipoint_request(array) -> Text:
     # transform array values to (lat, long)|(lat, long) format
     data = (
         str(array)
-        .replace("],", "|")
+        .replace("]", "|")
         .replace("[[", "")
         .replace("]]", "")
         .replace("[", "")
+        .replace("),", "|")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("(", "")
         .strip()
     )
 
