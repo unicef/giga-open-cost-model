@@ -7,7 +7,7 @@ from requests.adapters import HTTPAdapter, Retry
 from giga.compute.elevation.elevation_utilities import (
     format_opendata_request_multipoint_request,
 )
-from giga.schemas.geo import LatLonPointv1
+from giga.schemas.geo import LatLonPoint
 
 # Constants
 NUMBER_OF_SAMPLES = 10
@@ -26,12 +26,13 @@ class ElevationProfileGenerator:
 
     """
 
-    def format_data(self, data: List[LatLonPointv1]) -> Text:
-        data_transformed = format_opendata_request_multipoint_request(data)
+    def format_data(self, data: List[List[LatLonPoint]]) -> Text:
+        transformer = lambda x: format_opendata_request_multipoint_request(x)
+        data_transformed = transformer(data)
         return data_transformed
 
     def query_elevation_dataset(
-        self, data: List[LatLonPointv1], dataset: Text, samples: int
+        self, data: List[List[LatLonPoint]], dataset: Text, samples: int
     ) -> List:
         """
         class method that manages the request format
@@ -75,7 +76,7 @@ class ElevationProfileGenerator:
     @validate_arguments
     def run(
         self,
-        data: List[LatLonPointv1],
+        data: List[List[LatLonPoint]],
         dataset: Text = DEFAULT_DATASET,
         samples: int = NUMBER_OF_SAMPLES,
     ) -> List:
