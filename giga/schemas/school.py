@@ -41,6 +41,9 @@ class GigaSchool(BaseModel):
     school_zone: SchoolZone = Field(..., alias="environment")
     connected: bool = False
 
+    class Config:
+        use_enum_values = True
+
     def to_coordinates(self):
         """Transforms the school into a simplified coordinate"""
         return UniqueCoordinate(

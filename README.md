@@ -25,13 +25,20 @@ poetry run pytest
 
 ## Repository Structure
 
-The python library in this repository is organized as follows:
-* `giga/compute`: contains generic computations used across multiple Giga models
-* `giga/connect`: contains connectivity technology specific computations
-* `giga/data`: utilities for data managment including aggregating data from external data sources and APIs
-* `giga/schemas`: contains the data definitions used by the Giga models
-* `giga/utils`: various helper tools
-* `giga/viz`: plotting helpers
+The python library in this repository is organized into the following key categories to help manage the models and their parameters:
+
+1. Models: the key building blocks of all computations performed by this library.
+2. Schemas: the definitions of all the model inputs and outputs, data requirements, and configurations.
+3. Data: the tooling to pull in and transform any external data into formats usable by the library
+4. Utilities: helpers for connecting to APIs, visualizing outputs, and constructing inspect able and interactive interfaces.
+
+### Models
+
+All modeling capabilities are defined within `giga/models`. The models are further broken down into the following categories:
+
+* Nodes: atomic, modular building blocks that contain a computation, transformation, or external data
+* Components: stacks nodes together with a clear and specific purpose (e.g. use case driven - compute cost of fiber connection) prepares the models to join into the entities that solve a specific problem
+* Scenarios: drives the computation by piecing together multiple components and solving a specific problem by deriving a key result. Allows same components to serve multiple purposes: e.g. answer the questions of what is the cost of connecting all schools in Rwanda to the internet? VS If there is a budget of $10M which schools should be connected to maximize the number of students with internet access?
 
 ## School Data
 
