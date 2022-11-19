@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 import pandas as pd
 
 from giga.data.transforms.giga_format import cell_towers_to_standard_format
+from giga.schemas.geo import UniqueCoordinate
 
 
 class CellTechnology(str, Enum):
@@ -24,6 +25,9 @@ class CellularTower(BaseModel):
     lon: float
     height: float
     technologies: List[CellTechnology]
+
+    class Config:
+        use_enum_values = True
 
     def to_coordinates(self):
         """ Transforms the cell tower into a simplified coordinate """

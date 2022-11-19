@@ -10,10 +10,18 @@ run_formatter() {
   poetry run black .
 }
 
+# format notebooks
+clean_notebook(){
+  local NOTEBOOK_FILE=$1
+  poetry run jupyter nbconvert --clear-output --inplace $NOTEBOOK_FILE
+}
+
+
 # Shows usage
 usage() {
-  printf "  lint\t\tRuns a flake8 lint check against PEP 8\n"
-  printf "  format\tModifies non PEP 8 compliant code to be style compliant\n"
+  printf "  lint\t\t\t\t\tRuns a flake8 lint check against PEP 8\n"
+  printf "  format\t\t\t\tModifies non PEP 8 compliant code to be style compliant\n"
+  printf "  clean-notebook <notebook-path> \tRemoves rendered html from jupyter notebooks\n"
 }
 
 
@@ -23,6 +31,9 @@ case $1 in
     ;;
   format)
     run_formatter
+    ;;
+  clean-notebook)
+    clean_notebook $2
     ;;
   *)
     usage
