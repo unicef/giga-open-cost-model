@@ -8,19 +8,20 @@ from giga.schemas.tech import ConnectivityTechnology
 
 class NonConnectionReason(str, Enum):
     """Reasons for why a connection is not feasible"""
-    fiber_distance_threshold_exceeded = 'FIBER_DISTANCE_THRESHOLD'
+
+    fiber_distance_threshold_exceeded = "FIBER_DISTANCE_THRESHOLD"
 
 
 class SchoolConnectionCosts(BaseModel):
 
     school_id: str
-    capex: float # USD
-    opex: float # Annual USD
+    capex: float  # USD
+    opex: float  # Annual USD
     technology: ConnectivityTechnology
     feasible: bool = True
     reason: NonConnectionReason = None
 
-    class Config:  
+    class Config:
         use_enum_values = True
 
 

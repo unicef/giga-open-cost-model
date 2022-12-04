@@ -10,6 +10,7 @@ def progress_bar(data):
     else:
         return tqdm(data)
 
+
 def managed_progress_bar(n_items):
     if is_notebook():
         return tqdm_notebook(total=n_items)

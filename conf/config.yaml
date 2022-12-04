@@ -1,0 +1,17 @@
+defaults:
+  - data: sample
+  - models: sample
+  - _self_ # defaults get over ridden by country specific configurations
+
+data:
+  # add defaults for data sources
+  workspace: 'workspace'
+  school_file: 'schools.csv'
+  fiber_file: 'fiber.csv'
+  cellular_file: 'cellular.csv'
+  school_data_source: filesystem
+  fiber_data_source: filesystem
+  cellular_data_source: filesystem
+
+commons:
+  project_connect_api_key: secret # configure at runtime

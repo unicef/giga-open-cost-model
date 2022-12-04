@@ -2,7 +2,8 @@ import pandas as pd
 
 
 def cleanup_numeric_string(s):
-    return ''.join(filter(lambda x: str.isdigit(x) or x =='.' or x == '-', s))
+    return "".join(filter(lambda x: str.isdigit(x) or x == "." or x == "-", s))
+
 
 def cell_towers_to_standard_format(frame: pd.DataFrame):
     # sanitizes and transforms giga cell tower data into standardized format used by the models
