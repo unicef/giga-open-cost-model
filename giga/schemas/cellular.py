@@ -30,9 +30,10 @@ class CellularTower(BaseModel):
         use_enum_values = True
 
     def to_coordinates(self):
-        """ Transforms the cell tower into a simplified coordinate """
-        return UniqueCoordinate(coordinate_id=self.tower_id,
-                                coordinate=[self.lat, self.lon])
+        """Transforms the cell tower into a simplified coordinate"""
+        return UniqueCoordinate(
+            coordinate_id=self.tower_id, coordinate=[self.lat, self.lon]
+        )
 
 
 class CellTowerTable(BaseModel):
@@ -46,8 +47,8 @@ class CellTowerTable(BaseModel):
         if giga_format:
             # reformat from giga format into internal model format
             frame = cell_towers_to_standard_format(frame)
-        return CellTowerTable(towers=frame.to_dict('records'))
+        return CellTowerTable(towers=frame.to_dict("records"))
 
     def to_coordinates(self):
-        """ Transforms the cell tower table into a table of simplified coordinate """
+        """Transforms the cell tower table into a table of simplified coordinate"""
         return [s.to_coordinates() for s in self.towers]

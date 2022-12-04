@@ -77,7 +77,8 @@ class GreedyDistanceConnector:
         unconnected_coordinates = {x.coordinate_id: x for x in data}
         # add pairwise distances between all coordinates and in data to priority queue
         queue = self.queue_pairwise_distances(queue, data, self.connected)
-        if self.progress_bar: pbar = managed_progress_bar(len(data))
+        if self.progress_bar:
+            pbar = managed_progress_bar(len(data))
         while not queue.empty():
             # iterate until priority queue is empty
             d, candidate = queue.get()  # fetch coordinate pair with closest distance
@@ -100,7 +101,8 @@ class GreedyDistanceConnector:
                     unconnected_coordinates, connected_coordinates, identifier
                 )
                 greedy_connected.append(candidate)
-                if self.progress_bar: pbar.update(1)
+                if self.progress_bar:
+                    pbar.update(1)
                 if self.dynamic_connect:
                     # if other unconnected coordinates can connect to new connection
                     queue = self.queue_pairwise_distances(
@@ -109,5 +111,7 @@ class GreedyDistanceConnector:
             else:
                 # neither items are connected, skip
                 continue
-        if self.progress_bar: pbar.update(pbar.total - pbar.n); pbar.close()
+        if self.progress_bar:
+            pbar.update(pbar.total - pbar.n)
+            pbar.close()
         return greedy_connected

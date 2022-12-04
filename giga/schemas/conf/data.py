@@ -1,21 +1,22 @@
+import os
+from copy import deepcopy
 from pydantic import BaseModel
-from typing import List, Literal, TypeVar
-from typing import TypeVar
+from typing import List, Literal, Union, Any
 
 from giga.schemas.tech import ConnectivityTechnology
-from giga.schemas.geo import UniqueCoordinateTable
 
 
-class UploadedCoordinateMapConf(BaseModel):
+from giga.data.pipes.data_tables import LocalTablePipeline, UploadedTablePipeline
+
+
+class CoordinateMapConf(BaseModel):
     """Configuration for loading a local coordinate data map"""
-    map_type: Literal['fiber-nodes', 'cell-towers']
-    coordinate_map: UniqueCoordinateTable # uploaded coordinate table
 
+    map_type: Literal["fiber-nodes", "cell-towers"]
+    data: Union[LocalTablePipeline, UploadedTablePipeline]
 
-class LocalWorkspaceTransportConf(BaseModel):
-
-    workspace: str = '.'
-    file_name: str = 'schools.csv'
+    def load(self):
+        return self.data.load()  # loads data from the configured pipeline
 
 
 class ManualSchoolDataEntry(BaseModel):
@@ -28,17 +29,20 @@ class ManualSchoolDataEntry(BaseModel):
 
 class SchoolCountryConf(BaseModel):
     """
-        School data configuration when
-        cost estimates need to be performed for a country
+    School data configuration when
+    cost estimates need to be performed for a country
     """
 
-    country_id: Literal['Brazil', 'Rwanda', 'Sample']
-    transport: LocalWorkspaceTransportConf
+    country_id: Literal["Brazil", "Rwanda", "Sample"]
+    data: Union[LocalTablePipeline, UploadedTablePipeline]
     manual_entries: List[ManualSchoolDataEntry] = []
+
+    def load(self):
+        return self.data.load()  # loads data from the configured pipeline
 
 
 class DataSpaceConf(BaseModel):
 
     school_data_conf: SchoolCountryConf
-    fiber_map_conf: UploadedCoordinateMapConf = None
-    celltower_map_conf: UploadedCoordinateMapConf = None
+    fiber_map_conf: CoordinateMapConf = None
+    celltower_map_conf: CoordinateMapConf = None
