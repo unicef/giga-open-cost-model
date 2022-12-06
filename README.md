@@ -27,10 +27,11 @@ poetry run pytest
 
 The python library in this repository is organized into the following key categories to help manage the models and their parameters:
 
-1. Models: the key building blocks of all computations performed by this library.
-2. Schemas: the definitions of all the model inputs and outputs, data requirements, and configurations.
+1. Models: the key building blocks of all computations performed by this library
+2. Schemas: the definitions of all the model inputs and outputs, data requirements, and configurations
 3. Data: the tooling to pull in and transform any external data into formats usable by the library
-4. Utilities: helpers for connecting to APIs, visualizing outputs, and constructing inspect able and interactive interfaces.
+4. Utilities: helpers for connecting to APIs, visualizing outputs, and constructing inspect able and interactive interfaces
+5. App: the application runner for configuring and starting the modeling application
 
 ### Models
 
@@ -40,7 +41,12 @@ All modeling capabilities are defined within `giga/models`. The models are furth
 * Components: stacks nodes together with a clear and specific purpose (e.g. use case driven - compute cost of fiber connection) prepares the models to join into the entities that solve a specific problem
 * Scenarios: drives the computation by piecing together multiple components and solving a specific problem by deriving a key result. Allows same components to serve multiple purposes: e.g. answer the questions of what is the cost of connecting all schools in Rwanda to the internet? VS If there is a budget of $10M which schools should be connected to maximize the number of students with internet access?
 
-## School Data
+### Architectural Overview
+
+The architecture of the modeling library can be found [here](docs/arch.md).
+It describes the key parts of the library - namely those used for configuration, data aggregation, and modeling execution.
+
+### Data
 
 To generate a school dataset for a given country, we can use the API client in the library that can fetch school data from the project connect API - spec can be found [here](https://uni-connect-services-dev.azurewebsites.net/api/v1/#/School/get_api_v1_schools_country__country_id_).
 The client can fetch school data by specified country, currently `Brazil` and `Rwanda` are supported.
