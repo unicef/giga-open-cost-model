@@ -40,6 +40,7 @@ class GigaSchool(BaseModel):
     giga_id: str = Field(..., alias="giga_id_school")
     school_zone: SchoolZone = Field(..., alias="environment")
     connected: bool = False
+    bandwidth_demand = 20.0  # Mbps
 
     class Config:
         use_enum_values = True
@@ -64,3 +65,7 @@ class GigaSchoolTable(BaseModel):
     def to_coordinates(self):
         """Transforms the school table into a table of simplified coordinate"""
         return [s.to_coordinates() for s in self.schools]
+
+    def update_bw_demand_all(self, demand):
+        for s in self.schools:
+            s.bandwidth_demand = demand

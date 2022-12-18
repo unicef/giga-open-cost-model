@@ -14,20 +14,45 @@ def download_link_frame(df, title="Download Results", filename="results.csv"):
     return HTML(html)
 
 
-def results_to_table(results, n_years=5):
-    df = pd.DataFrame(list(map(lambda x: dict(x), results.cost_results)))
-    df["total_cost"] = df["capex"] + df["opex"] * n_years
-    df = df.replace(math.nan, np.nan).round({"opex": 1, "capex": 1, "total_cost": 1})
-    # df['capex'], df['opex'], df['total_cost'] = df['capex'].astype('int'), df['opex'].astype('int'), df['total_cost'].astype('int')
+def results_to_table(results, n_years=5, responsible_opex=None):
+    df = pd.DataFrame(list(map(lambda x: dict(x), results)))
+    if responsible_opex == "consumer":
+        opex = df["opex_consumer"]
+    elif responsible_opex == "provider":
+        opex = df["opex_provider"]
+    else:
+        opex = df["opex"]
+    df["total_cost"] = df["capex"] + opex * n_years
+    df = df.replace(math.nan, np.nan).round(
+        {"opex": 1, "opex_provider": 1, "opex_consumer": 1, "capex": 1, "total_cost": 1}
+    )
     return df
 
 
-def results_to_aggregates(results, n_years=5):
-    df = results_to_table(results, n_years=n_years).drop(
-        columns=["school_id", "technology", "feasible", "reason"]
-    )
+def output_to_table(output_space, n_years=5, responsible_opex=None):
+    if output_space.minimum_cost_result:
+        results = output_space.minimum_cost_result
+    else:
+        results = output_space.technology_outputs[0].cost_results
+    return results_to_table(results, n_years=n_years, responsible_opex=responsible_opex)
+
+
+def results_to_aggregates(results, n_years=5, responsible_opex=None):
+    df = results_to_table(
+        results, n_years=n_years, responsible_opex=responsible_opex
+    ).drop(columns=["school_id", "technology", "feasible", "reason"])
     dfm = pd.DataFrame([dict(df.mean())]).round(
-        {"opex": 1, "capex": 1, "total_cost": 1}
+        {"opex": 1, "opex_provider": 1, "opex_consumer": 1, "capex": 1, "total_cost": 1}
     )
-    dfs = pd.DataFrame([dict(df.sum())]).round({"opex": 1, "capex": 1, "total_cost": 1})
+    dfs = pd.DataFrame([dict(df.sum())]).round(
+        {"opex": 1, "opex_provider": 1, "opex_consumer": 1, "capex": 1, "total_cost": 1}
+    )
     return dfm, dfs
+
+
+def output_summary(output_space):
+    if output_space.minimum_cost_result:
+        results = output_space.minimum_cost_result
+    else:
+        results = output_space.technology_outputs[0].cost_results
+    return results_to_aggregates(results)

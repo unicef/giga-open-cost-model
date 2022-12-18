@@ -3,7 +3,10 @@ from typing import List
 from pydantic import BaseModel, Field
 import pandas as pd
 
-from giga.data.transforms.giga_format import cell_towers_to_standard_format
+from giga.data.transforms.giga_format import (
+    cell_towers_to_standard_format,
+    str_to_list_cb,
+)
 from giga.schemas.geo import UniqueCoordinate
 
 
@@ -42,11 +45,15 @@ class CellTowerTable(BaseModel):
     towers: List[CellularTower] = Field(..., min_items=1)
 
     @staticmethod
-    def from_csv(file_name: str, giga_format: bool = True):
+    def from_csv(
+        file_name: str, giga_format: bool = True, tech_column: str = "technologies"
+    ):
         frame = pd.read_csv(file_name, keep_default_na=False)
         if giga_format:
             # reformat from giga format into internal model format
             frame = cell_towers_to_standard_format(frame)
+        fn = str_to_list_cb(tech_column)
+        frame[tech_column] = frame.apply(fn, axis=1)
         return CellTowerTable(towers=frame.to_dict("records"))
 
     def to_coordinates(self):
