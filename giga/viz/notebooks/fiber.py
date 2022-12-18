@@ -15,6 +15,12 @@ def default_rwanda_map(tiles="cartodbpositron", zoom_start=8, location=[-1.9, 30
     return folium.Map(location=location, tiles=tiles, zoom_start=zoom_start)
 
 
+def default_brazil_map(
+    tiles="cartodbpositron", zoom_start=4, location=[-17.39, -46.32]
+):
+    return folium.Map(location=location, tiles=tiles, zoom_start=zoom_start)
+
+
 def plot_coordinate_map(
     coordinates,
     coordinate_name="Coordinate",
@@ -57,6 +63,24 @@ def plot_pairwise_connections(
 def plot_fiber_map(fiber_coordinates, school_coordinates, m=default_rwanda_map()):
     m = plot_coordinate_map(
         fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m
+    )
+    m = plot_coordinate_map(
+        school_coordinates, coordinate_name="School", color="#43adde", m=m
+    )
+    return m
+
+
+def plot_data_map(
+    fiber_coordinates,
+    cell_tower_coordinates,
+    school_coordinates,
+    m=default_rwanda_map(),
+):
+    m = plot_coordinate_map(
+        fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m
+    )
+    m = plot_coordinate_map(
+        cell_tower_coordinates, coordinate_name="Cell Tower", color="#bfb673", m=m
     )
     m = plot_coordinate_map(
         school_coordinates, coordinate_name="School", color="#43adde", m=m

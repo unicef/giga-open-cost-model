@@ -1,9 +1,10 @@
 from typing import List
 import math
+from pydantic import validate_arguments
 
 from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
 from giga.schemas.conf.models import FiberTechnologyCostConf
-from giga.schemas.results import CostResultSpace, SchoolConnectionCosts
+from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.schemas.geo import PairwiseDistance
 from giga.data.space.model_data_space import ModelDataSpace
 
@@ -20,7 +21,10 @@ class FiberCostModel:
             distance_km * self.config.capex.cost_per_km + self.config.capex.fixed_costs
         )
 
-    def _distance_to_costs(self, distances: List[PairwiseDistance]):
+    def _cost_of_maintenance(self, distance_km):
+        return distance_km * self.config.opex.cost_per_km
+
+    def _distance_to_capex(self, distances: List[PairwiseDistance]):
         by_school = {
             x.coordinate1.coordinate_id: {
                 "school_id": x.coordinate1.coordinate_id,
@@ -30,22 +34,52 @@ class FiberCostModel:
         }
         return by_school
 
-    def _cost_of_operation(self, _schoold):
-        return self.config.opex.fixed_costs
+    def _distance_to_opex(self, distances: List[PairwiseDistance]):
+        by_school = {
+            x.coordinate1.coordinate_id: {
+                "school_id": x.coordinate1.coordinate_id,
+                "opex": self._cost_of_maintenance(x.distance / METERS_IN_KM),
+            }
+            for x in distances
+        }
+        return by_school
+
+    def _cost_of_operation(self, school):
+        return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
     ):
-        capex_costs = self._distance_to_costs(distances)
+        capex_costs = self._distance_to_capex(distances)
+        opex_costs_provider = self._distance_to_opex(distances)
         costs = []
-        for school in data_space.school_coordinates:
-            sid = school.coordinate_id
-            if sid in capex_costs:
-                capex = capex_costs[sid]["capex"]
-                opex = self._cost_of_operation(school)
+        for school in data_space.school_entities:
+            sid = school.giga_id
+            if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 costs.append(
                     SchoolConnectionCosts(
-                        school_id=sid, capex=capex, opex=opex, technology="Fiber"
+                        school_id=sid,
+                        capex=math.nan,
+                        opex=math.nan,
+                        opex_provider=math.nan,
+                        opex_consumer=math.nan,
+                        technology="Fiber",
+                        feasible=False,
+                        reason="FIBER_BW_THRESHOLD",
+                    )
+                )
+            elif sid in capex_costs:
+                capex = capex_costs[sid]["capex"]
+                opex_consumer = self._cost_of_operation(school)
+                opex_provider = opex_costs_provider[sid]["opex"]
+                costs.append(
+                    SchoolConnectionCosts(
+                        school_id=sid,
+                        capex=capex,
+                        opex=opex_consumer + opex_provider,
+                        opex_provider=opex_provider,
+                        opex_consumer=opex_consumer,
+                        technology="Fiber",
                     )
                 )
             else:
@@ -54,6 +88,8 @@ class FiberCostModel:
                         school_id=sid,
                         capex=math.nan,
                         opex=math.nan,
+                        opex_provider=math.nan,
+                        opex_consumer=math.nan,
                         technology="Fiber",
                         feasible=False,
                         reason="FIBER_DISTANCE_THRESHOLD",
@@ -61,7 +97,10 @@ class FiberCostModel:
                 )
         return costs
 
-    def run(self, data_space: ModelDataSpace, progress_bar=False) -> CostResultSpace:
+    @validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def run(
+        self, data_space: ModelDataSpace, progress_bar: bool = False
+    ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
         """

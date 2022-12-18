@@ -1,6 +1,3 @@
-import math
-import io
-import os
 from ipywidgets import (
     FloatSlider,
     IntSlider,
@@ -9,38 +6,106 @@ from ipywidgets import (
     FileUpload,
     VBox,
     Layout,
+    HTML,
 )
-from ipysheet import sheet, column, row, cell, to_dataframe
-from omegaconf import DictConfig
+from ipysheet import sheet, column, to_dataframe
 
-import pandas as pd
-
-from giga.schemas.conf.models import FiberTechnologyCostConf
+from giga.schemas.conf.models import (
+    FiberTechnologyCostConf,
+    SatelliteTechnologyCostConf,
+    MinimumCostScenarioConf,
+    SingleTechnologyScenarioConf,
+)
 from giga.schemas.conf.data import DataSpaceConf
-from giga.schemas.geo import UniqueCoordinateTable
 from giga.app.config import ConfigClient, get_config
 
 
+SCENARIO_PARAMETERS = [
+    {
+        "parameter_name": "scenario_tpye",
+        "parameter_input_name": "Cost Scenario",
+        "parameter_interactive": Dropdown(
+            options=["Minimum Cost", "Fiber", "Satellite"],
+            value="Fiber",
+            description="Cost Scenario:",
+            style={"description_width": "initial"},
+            layout=Layout(width="400px"),
+        ),
+    },
+    {
+        "parameter_name": "opex_responsible",
+        "parameter_input_name": "Responsible for OpEx",
+        "parameter_interactive": Dropdown(
+            options=["Consumer", "Provider", "Both"],
+            value="Consumer",
+            description="Responsible for OpEx:",
+            style={"description_width": "initial"},
+            layout=Layout(width="400px"),
+        ),
+    },
+]
+
+SCENARIO_SHEET_PARAMETERS = [
+    {
+        "parameter_name": "years_opex",
+        "parameter_input_name": "OpEx Years",
+        "parameter_interactive": IntSlider(5, min=0, max=10, step=1),
+    },
+    {
+        "parameter_name": "bandwidth_demand",
+        "parameter_input_name": "Bandwidth Demand (Mbps)",
+        "parameter_interactive": FloatSlider(20, min=1, max=500, step=1),
+    },
+]
+
 FIBER_MODEL_PARAMETERS = [
+    {
+        "parameter_name": "per_mbps_cost",
+        "parameter_input_name": "Annual cost per Mbps (USD)",
+        "parameter_interactive": IntSlider(10, min=0, max=100, step=1),
+    },
     {
         "parameter_name": "cost_per_km",
         "parameter_input_name": "Cost Per km (USD)",
-        "parameter_interactive": IntSlider(7_500, min=0, max=50_000, step=100),
+        "parameter_interactive": IntSlider(8_900, min=0, max=50_000, step=100),
     },
     {
         "parameter_name": "fixed_costs",
-        "parameter_input_name": "Maintenance Cost (USD)",
-        "parameter_interactive": IntSlider(0, min=0, max=5_000, step=10),
+        "parameter_input_name": "Maintenance Cost per km (USD)",
+        "parameter_interactive": IntSlider(100, min=0, max=1_000, step=10),
     },
     {
         "parameter_name": "maximum_connection_length",
         "parameter_input_name": "Maximum Connection Length (km)",
-        "parameter_interactive": IntSlider(50, min=0, max=100),
+        "parameter_interactive": IntSlider(20, min=0, max=100),
+    },
+    {  # TODO: add this to config and model calculations
+        "parameter_name": "distance_multiplier",
+        "parameter_input_name": "Fiber Distance Multiplier",
+        "parameter_interactive": FloatSlider(1.0, min=1.0, max=5.0),
     },
     {
         "parameter_name": "economies_of_scale",
         "parameter_input_name": "Economies of Scale",
         "parameter_interactive": Checkbox(value=True, description="ON"),
+    },
+]
+
+SATELLITE_MODEL_PARAMETERS = [
+    {
+        "parameter_name": "install_costs",
+        "parameter_input_name": "Installation Cost (USD)",
+        "parameter_interactive": IntSlider(600, min=0, max=2_500, step=10),
+    },
+    {
+        "parameter_name": "per_mbps_cost",
+        "parameter_input_name": "Annual cost per Mbps (USD)",
+        "parameter_interactive": IntSlider(15, min=0, max=100, step=1),
+    },
+    {
+        "parameter_name": "fixed_costs",
+        "parameter_input_name": "Annual Maintenance Cost (USD)",
+        "parameter_interactive": IntSlider(0, min=0, max=1_000, step=10),
     },
 ]
 
@@ -50,7 +115,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
         "parameter_input_name": "Country",
         "parameter_interactive": Dropdown(
             options=["Sample", "Brazil", "Rwanda"],
-            value="Brazil",
+            value="Sample",
             description="Country:",
             layout=Layout(width="400px"),
         ),
@@ -85,7 +150,7 @@ UPLOAD_SUFFIX = "_upload"
 
 class CostEstimationParameterInput:
     """
-    Creates an interactive dashboard in jupyter notebooks that allows users
+    xCreates an interactive dashboard in jupyter notebooks that allows users
     to configure data, model, and scenario parameters for connectivity cost estimation
     """
 
@@ -110,12 +175,32 @@ class CostEstimationParameterInput:
         )
         return s
 
+    def satellite_parameters_input(self, sheet_name="satellite"):
+        s = sheet(
+            sheet_name,
+            columns=2,
+            rows=len(SATELLITE_MODEL_PARAMETERS),
+            column_headers=False,
+            row_headers=False,
+            column_width=2,
+        )
+        name_column = column(
+            0,
+            list(map(lambda x: x["parameter_input_name"], SATELLITE_MODEL_PARAMETERS)),
+        )
+        input_column = column(
+            1,
+            list(map(lambda x: x["parameter_interactive"], SATELLITE_MODEL_PARAMETERS)),
+        )
+        return s
+
     def fiber_parameters(self, sheet_name="fiber"):
         s = sheet(sheet_name)
         df = to_dataframe(s)
+        annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
         cost_per_km = float(df[df["A"] == "Cost Per km (USD)"]["B"])
         economies_of_scale = bool(float(df[df["A"] == "Economies of Scale"]["B"]))
-        fixed_costs = float(df[df["A"] == "Maintenance Cost (USD)"]["B"])
+        opex_per_km = float(df[df["A"] == "Maintenance Cost per km (USD)"]["B"])
         maximum_connection_length = (
             float(df[df["A"] == "Maximum Connection Length (km)"]["B"]) * 1000.0
         )  # meters
@@ -124,9 +209,65 @@ class CostEstimationParameterInput:
                 "cost_per_km": cost_per_km,
                 "economies_of_scale": economies_of_scale,
             },
-            opex={"fixed_costs": fixed_costs},
-            constraints={"maximum_connection_length": maximum_connection_length},
+            opex={
+                "cost_per_km": opex_per_km,
+                "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
+            },
+            constraints={
+                "maximum_connection_length": maximum_connection_length,
+                "maximum_bandwithd": 2_000.0,
+            },  # should be pulled from defaults
         )
+
+    def satellite_parameters(self, sheet_name="satellite"):
+        s = sheet(sheet_name)
+        df = to_dataframe(s)
+        annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
+        install_cost = float(df[df["A"] == "Installation Cost (USD)"]["B"])
+        maintenance_cost = float(df[df["A"] == "Annual Maintenance Cost (USD)"]["B"])
+        return SatelliteTechnologyCostConf(
+            capex={"fixed_costs": install_cost},
+            opex={
+                "fixed_costs": maintenance_cost,
+                "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
+            },
+            constraints={"maximum_bandwithd": 150.0},  # should be pulled from defaults
+        )
+
+    def _process_nonsheet_scenario_parameters(self, s):
+        return {
+            "scenario_type": s["scenario_tpye"].value,
+            "opex_responsible": s["opex_responsible"].value,
+        }
+
+    def _process_sheet_scenario_parameters(self, s):
+        df = to_dataframe(s)
+        years_opex = float(df[df["A"] == "OpEx Years"]["B"])
+        bandwidth_demand = float(df[df["A"] == "Bandwidth Demand (Mbps)"]["B"])
+        return {"years_opex": years_opex, "bandwidth_demand": bandwidth_demand}
+
+    def scenario_parameters(self, sheet_name="scenario"):
+        s = self._hashed_sheets[sheet_name]
+        nonsheet = self._process_nonsheet_scenario_parameters(s)
+        s = sheet(sheet_name)
+        from_sheet = self._process_sheet_scenario_parameters(s)
+        p = {**nonsheet, **from_sheet}
+        if p["scenario_type"] == "Fiber":
+            tech_params = self.fiber_parameters()
+            return SingleTechnologyScenarioConf(
+                technology=p["scenario_type"], tech_config=tech_params, **p
+            )
+        elif p["scenario_type"] == "Satellite":
+            tech_params = self.satellite_parameters()
+            return SingleTechnologyScenarioConf(
+                technology=p["scenario_type"], tech_config=tech_params, **p
+            )
+        else:
+            fiber_params = self.fiber_parameters()
+            satellite_params = self.satellite_parameters()
+            return MinimumCostScenarioConf(
+                **p, technologies=[fiber_params, satellite_params]
+            )
 
     def data_parameters_upload_input(self, sheet_name="data"):
         self._hashed_sheets[sheet_name + UPLOAD_SUFFIX] = {
@@ -154,6 +295,37 @@ class CostEstimationParameterInput:
             )
         )
 
+    def _base_scenario_parameter_input(self, sheet_name="scenario"):
+        self._hashed_sheets[sheet_name] = {
+            p["parameter_name"]: p["parameter_interactive"] for p in SCENARIO_PARAMETERS
+        }
+        return VBox(
+            list(map(lambda x: x["parameter_interactive"], SCENARIO_PARAMETERS))
+        )
+
+    def _sheet_scenario_parameter_input(self, sheet_name="scenario"):
+        s = sheet(
+            sheet_name,
+            columns=2,
+            rows=len(SCENARIO_SHEET_PARAMETERS),
+            column_headers=False,
+            row_headers=False,
+            column_width=2,
+        )
+        name_column = column(
+            0, list(map(lambda x: x["parameter_input_name"], SCENARIO_SHEET_PARAMETERS))
+        )
+        input_column = column(
+            1,
+            list(map(lambda x: x["parameter_interactive"], SCENARIO_SHEET_PARAMETERS)),
+        )
+        return s
+
+    def scenario_parameter_input(self, sheet_name="scenario"):
+        non_sheet = self._base_scenario_parameter_input(sheet_name=sheet_name)
+        sheet = self._sheet_scenario_parameter_input(sheet_name=sheet_name)
+        return VBox([non_sheet, sheet])
+
     def _updated_param_request(self, country):
         return [f"data={country.lower()}", f"data.workspace={self.workspace}"]
 
@@ -178,16 +350,24 @@ class CostEstimationParameterInput:
         country_id = s["country_name"].value
         config_request = self._updated_param_request(country_id)
         config = ConfigClient(get_config(config_request))
-        school_dataset = config.school_file
-        fiber_dataset = config.fiber_file
         return DataSpaceConf(
             school_data_conf={
                 "country_id": country_id,
-                "data": {"file_path": school_dataset, "table_type": "school"},
+                "data": {"file_path": config.school_file, "table_type": "school"},
             },
             fiber_map_conf={
                 "map_type": "fiber-nodes",
-                "data": {"file_path": fiber_dataset, "table_type": "coordinate-map"},
+                "data": {
+                    "file_path": config.fiber_file,
+                    "table_type": "coordinate-map",
+                },
+            },
+            cell_tower_map_conf={
+                "map_type": "cell-towers",
+                "data": {
+                    "file_path": config.cellular_file,
+                    "table_type": "cell-towers",
+                },
             },
         )
 
@@ -200,6 +380,11 @@ class CostEstimationParameterInput:
             return self._process_baseline_data_parameters(s)
 
     def parameter_input(self):
+        t1 = HTML(value="<hr><b>Scenario Configuration</b>")
         d = self.data_parameters_input()
+        s = self.scenario_parameter_input()
+        t2 = HTML(value="<hr><b>Fiber Model Configuration</b>")
         f = self.fiber_parameters_input()
-        return VBox([f, d])
+        t3 = HTML(value="<hr><b>Satellite - LEO Model Configuration</b>")
+        sa = self.satellite_parameters_input()
+        return VBox([t1, d, s, t2, f, t3, sa])

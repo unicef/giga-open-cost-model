@@ -1,8 +1,6 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Literal, Union
 import math
-
-from giga.schemas.tech import ConnectivityTechnology
 
 
 class BandwidthCost(BaseModel):
@@ -11,10 +9,26 @@ class BandwidthCost(BaseModel):
     annual_cost: float  # USD
 
 
+class GeneralizedInternetCapex(BaseModel):
+
+    fixed_costs: float = 0.0  # USD
+
+
 class GeneralizedInternetOpex(BaseModel):
 
     fixed_costs: float = 0.0  # USD
-    bandwidth_costs: List[BandwidthCost] = []
+    annual_bandwidth_cost_per_mbps: float = 0.0
+
+
+class GeneralizedInternetCosntraints(BaseModel):
+
+    maximum_bandwithd: float = 2_000  # Mbps
+
+
+class FiberOpex(BaseModel):
+
+    cost_per_km: float
+    annual_bandwidth_cost_per_mbps: float = 0.0
 
 
 class FiberCapex(BaseModel):
@@ -27,16 +41,58 @@ class FiberCapex(BaseModel):
 class FiberCosntraints(BaseModel):
 
     maximum_connection_length: float = math.inf  # meters
+    maximum_bandwithd: float = 2_000  # Mbps
 
 
 class FiberTechnologyCostConf(BaseModel):
     capex: FiberCapex
-    opex: GeneralizedInternetOpex
+    opex: FiberOpex
     constraints: FiberCosntraints
+    technology: str = "Fiber"
 
 
-class TotalCostScenarioConf(BaseModel):
+class SatelliteTechnologyCostConf(BaseModel):
+    capex: GeneralizedInternetCapex
+    opex: GeneralizedInternetOpex
+    constraints: GeneralizedInternetCosntraints
+    technology: str = "Satellite"
 
-    scenario_id: str
-    technologies: List[ConnectivityTechnology]
+
+TechnologyConfiguration = Union[FiberTechnologyCostConf, SatelliteTechnologyCostConf]
+
+
+class SingleTechnologyScenarioConf(BaseModel):
+    """
+    Configuration for a model scenario that estimates connectivity budget
+    for a single selected technology
+    """
+
+    scenario_id: str = "single_tech_cost"
+    technology: Literal["Fiber", "Cellular", "Microwave", "Satellite"]
+    years_opex: int = 5
+    opex_responsible: Literal[
+        "Provider", "Consumer", "Both"
+    ]  # type of opex costs to consider
+    bandwidth_demand: float  # Mbps
+    tech_config: TechnologyConfiguration
+
+    class Config:
+        case_sensitive = False
+
+
+class MinimumCostScenarioConf(BaseModel):
+    """
+    Configuration for a model scenario that estimates minimum budget
+    necessary to connect schools with the cheapest technology when available
+    """
+
+    scenario_id: str = "minimum_cost"
+    technologies: List[TechnologyConfiguration]
     years_opex: int = 5  # the number of opex years to consider in the estimate
+    opex_responsible: Literal[
+        "Provider", "Consumer", "Both"
+    ]  # type of opex costs to consider
+    bandwidth_demand: float  # Mbps
+
+    class Config:
+        case_sensitive = False

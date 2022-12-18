@@ -1,7 +1,5 @@
-import os
-from copy import deepcopy
 from pydantic import BaseModel
-from typing import List, Literal, Union, Any
+from typing import List, Literal, Union
 
 from giga.schemas.tech import ConnectivityTechnology
 
@@ -13,7 +11,7 @@ class CoordinateMapConf(BaseModel):
     """Configuration for loading a local coordinate data map"""
 
     map_type: Literal["fiber-nodes", "cell-towers"]
-    data: Union[LocalTablePipeline, UploadedTablePipeline]
+    data: Union[UploadedTablePipeline, LocalTablePipeline]
 
     def load(self):
         return self.data.load()  # loads data from the configured pipeline
@@ -34,7 +32,7 @@ class SchoolCountryConf(BaseModel):
     """
 
     country_id: Literal["Brazil", "Rwanda", "Sample"]
-    data: Union[LocalTablePipeline, UploadedTablePipeline]
+    data: Union[UploadedTablePipeline, LocalTablePipeline]
     manual_entries: List[ManualSchoolDataEntry] = []
 
     def load(self):
@@ -45,4 +43,4 @@ class DataSpaceConf(BaseModel):
 
     school_data_conf: SchoolCountryConf
     fiber_map_conf: CoordinateMapConf = None
-    celltower_map_conf: CoordinateMapConf = None
+    cell_tower_map_conf: CoordinateMapConf = None

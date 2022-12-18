@@ -1,16 +1,20 @@
 import math
 from typing import List
 from queue import PriorityQueue
+import numpy as np
 
 from giga.schemas.geo import UniqueCoordinate, PairwiseDistance
 from giga.models.nodes.graph.pairwise_distance_model import PairwiseDistanceModel
 from giga.utils.progress_bar import managed_progress_bar
 
 
+EPS = 1e-5  # for tie-breakers in queue with equal distances
+
+
 # helpers below can be pulled into a distance queue class in a future refactor
 def add_distances(q, distances):
     for d in distances:
-        priority, item = d.distance, d
+        priority, item = d.distance + np.random.uniform(0.0, EPS), d
         q.put((priority, item))
     return q
 

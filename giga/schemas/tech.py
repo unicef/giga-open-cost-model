@@ -1,5 +1,4 @@
 from enum import Enum
-from pydantic import BaseModel
 
 
 class ConnectivityTechnology(str, Enum):
@@ -8,3 +7,4 @@ class ConnectivityTechnology(str, Enum):
     fiber = "Fiber"
     cellular = "Cellular"
     sattelitle = "Satellite"
+    none = "None"

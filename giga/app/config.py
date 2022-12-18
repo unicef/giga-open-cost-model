@@ -37,3 +37,12 @@ class ConfigClient:
             self.cfg.data.fiber_file,
         )
         return file
+
+    @property
+    def cellular_file(self):
+        file = os.path.join(
+            self.cfg.data.workspace,
+            self.cfg.data.country_workspace,
+            self.cfg.data.cellular_file,
+        )
+        return file
