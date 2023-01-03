@@ -7,6 +7,7 @@ from giga.schemas.conf.models import FiberTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.schemas.geo import PairwiseDistance
 from giga.data.space.model_data_space import ModelDataSpace
+from giga.models.components.electricity_cost_model import ElectricityCostModel
 
 
 METERS_IN_KM = 1000.0
@@ -50,14 +51,14 @@ class FiberCostModel:
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
     ):
+        electricity_model = ElectricityCostModel(self.config)
         capex_costs = self._distance_to_capex(distances)
         opex_costs_provider = self._distance_to_opex(distances)
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
-                costs.append(
-                    SchoolConnectionCosts(
+                c = SchoolConnectionCosts(
                         school_id=sid,
                         capex=math.nan,
                         opex=math.nan,
@@ -67,13 +68,11 @@ class FiberCostModel:
                         feasible=False,
                         reason="FIBER_BW_THRESHOLD",
                     )
-                )
             elif sid in capex_costs:
                 capex = capex_costs[sid]["capex"]
                 opex_consumer = self._cost_of_operation(school)
                 opex_provider = opex_costs_provider[sid]["opex"]
-                costs.append(
-                    SchoolConnectionCosts(
+                c = SchoolConnectionCosts(
                         school_id=sid,
                         capex=capex,
                         opex=opex_consumer + opex_provider,
@@ -81,10 +80,8 @@ class FiberCostModel:
                         opex_consumer=opex_consumer,
                         technology="Fiber",
                     )
-                )
             else:
-                costs.append(
-                    SchoolConnectionCosts(
+                c = SchoolConnectionCosts(
                         school_id=sid,
                         capex=math.nan,
                         opex=math.nan,
@@ -94,7 +91,8 @@ class FiberCostModel:
                         feasible=False,
                         reason="FIBER_DISTANCE_THRESHOLD",
                     )
-                )
+            c.electricity = electricity_model.compute_cost(school)
+            costs.append(c)
         return costs
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))

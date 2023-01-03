@@ -40,7 +40,8 @@ class GigaSchool(BaseModel):
     giga_id: str = Field(..., alias="giga_id_school")
     school_zone: SchoolZone = Field(..., alias="environment")
     connected: bool = False
-    bandwidth_demand = 20.0  # Mbps
+    has_electricity: bool = True
+    bandwidth_demand: float = 20.0  # Mbps
 
     class Config:
         use_enum_values = True
@@ -48,7 +49,7 @@ class GigaSchool(BaseModel):
     def to_coordinates(self):
         """Transforms the school into a simplified coordinate"""
         return UniqueCoordinate(
-            coordinate_id=self.giga_id, coordinate=[self.lat, self.lon]
+            coordinate_id=self.giga_id, coordinate=[self.lat, self.lon], properties={'has_electricity': self.has_electricity}
         )
 
 

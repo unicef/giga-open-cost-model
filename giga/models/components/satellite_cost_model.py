@@ -4,6 +4,7 @@ from pydantic import validate_arguments
 from giga.schemas.conf.models import SatelliteTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.data.space.model_data_space import ModelDataSpace
+from giga.models.components.electricity_cost_model import ElectricityCostModel
 
 
 class SatelliteCostModel:
@@ -20,14 +21,14 @@ class SatelliteCostModel:
         return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
 
     def compute_costs(self, data_space: ModelDataSpace):
+        electricity_model = ElectricityCostModel(self.config)
         capex_costs = self._cost_of_setup()
         opex_provider = self._cost_of_maintenance()
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
-                costs.append(
-                    SchoolConnectionCosts(
+                c = SchoolConnectionCosts(
                         school_id=sid,
                         capex=math.nan,
                         opex=math.nan,
@@ -37,11 +38,9 @@ class SatelliteCostModel:
                         feasible=False,
                         reason="SATELLITE_BW_THRESHOLD",
                     )
-                )
             else:
                 opex_consumer = self._cost_of_operation(school)
-                costs.append(
-                    SchoolConnectionCosts(
+                c = SchoolConnectionCosts(
                         school_id=sid,
                         capex=capex_costs,
                         opex=opex_consumer + opex_provider,
@@ -49,8 +48,8 @@ class SatelliteCostModel:
                         opex_consumer=opex_consumer,
                         technology="Satellite",
                     )
-                )
-
+            c.electricity = electricity_model.compute_cost(school)
+            costs.append(c)
         return costs
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))

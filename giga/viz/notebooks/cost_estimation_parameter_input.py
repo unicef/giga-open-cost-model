@@ -15,6 +15,7 @@ from giga.schemas.conf.models import (
     SatelliteTechnologyCostConf,
     MinimumCostScenarioConf,
     SingleTechnologyScenarioConf,
+    ElectricityCostConf,
 )
 from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config import ConfigClient, get_config
@@ -85,6 +86,11 @@ FIBER_MODEL_PARAMETERS = [
         "parameter_interactive": FloatSlider(1.0, min=1.0, max=5.0),
     },
     {
+        "parameter_name": "power_requirement",
+        "parameter_input_name": "Annual Power Required (kWh)",
+        "parameter_interactive": IntSlider(500, min=0, max=1_000, step=10),
+    },
+    {
         "parameter_name": "economies_of_scale",
         "parameter_input_name": "Economies of Scale",
         "parameter_interactive": Checkbox(value=True, description="ON"),
@@ -107,6 +113,24 @@ SATELLITE_MODEL_PARAMETERS = [
         "parameter_input_name": "Annual Maintenance Cost (USD)",
         "parameter_interactive": IntSlider(0, min=0, max=1_000, step=10),
     },
+    {
+        "parameter_name": "power_requirement",
+        "parameter_input_name": "Annual Power Required (kWh)",
+        "parameter_interactive": IntSlider(200, min=0, max=1_000, step=10),
+    },
+]
+
+ELECTRICITY_MODEL_PARAMETERS = [
+    {
+        "parameter_name": "per_kwh_cost",
+        "parameter_input_name": "Cost per kWh (USD)",
+        "parameter_interactive": FloatSlider(0.10, min=0, max=1, step=0.1),
+    },
+    {
+        "parameter_name": "solar_panel_costs",
+        "parameter_input_name": "Solar Panel Install Cost (USD)",
+        "parameter_interactive": IntSlider(10_000, min=0, max=30_000, step=100),
+    }
 ]
 
 BASELINE_DATA_SPACE_PARAMETERS = [
@@ -116,6 +140,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
         "parameter_interactive": Dropdown(
             options=["Sample", "Brazil", "Rwanda"],
             value="Sample",
+            disabled=True,
             description="Country:",
             layout=Layout(width="400px"),
         ),
@@ -194,6 +219,25 @@ class CostEstimationParameterInput:
         )
         return s
 
+    def electricity_parameters_input(self, sheet_name="electricity"):
+        s = sheet(
+            sheet_name,
+            columns=2,
+            rows=len(ELECTRICITY_MODEL_PARAMETERS),
+            column_headers=False,
+            row_headers=False,
+            column_width=2,
+        )
+        name_column = column(
+            0,
+            list(map(lambda x: x["parameter_input_name"], ELECTRICITY_MODEL_PARAMETERS)),
+        )
+        input_column = column(
+            1,
+            list(map(lambda x: x["parameter_interactive"], ELECTRICITY_MODEL_PARAMETERS)),
+        )
+        return s
+
     def fiber_parameters(self, sheet_name="fiber"):
         s = sheet(sheet_name)
         df = to_dataframe(s)
@@ -201,6 +245,7 @@ class CostEstimationParameterInput:
         cost_per_km = float(df[df["A"] == "Cost Per km (USD)"]["B"])
         economies_of_scale = bool(float(df[df["A"] == "Economies of Scale"]["B"]))
         opex_per_km = float(df[df["A"] == "Maintenance Cost per km (USD)"]["B"])
+        required_power = float(df[df["A"] == "Annual Power Required (kWh)"]["B"])
         maximum_connection_length = (
             float(df[df["A"] == "Maximum Connection Length (km)"]["B"]) * 1000.0
         )  # meters
@@ -215,6 +260,7 @@ class CostEstimationParameterInput:
             },
             constraints={
                 "maximum_connection_length": maximum_connection_length,
+                "required_power": required_power,
                 "maximum_bandwithd": 2_000.0,
             },  # should be pulled from defaults
         )
@@ -225,13 +271,26 @@ class CostEstimationParameterInput:
         annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
         install_cost = float(df[df["A"] == "Installation Cost (USD)"]["B"])
         maintenance_cost = float(df[df["A"] == "Annual Maintenance Cost (USD)"]["B"])
+        required_power = float(df[df["A"] == "Annual Power Required (kWh)"]["B"])
         return SatelliteTechnologyCostConf(
             capex={"fixed_costs": install_cost},
             opex={
                 "fixed_costs": maintenance_cost,
                 "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
             },
-            constraints={"maximum_bandwithd": 150.0},  # should be pulled from defaults
+            constraints={"maximum_bandwithd": 150.0,  # should be pulled from defaults
+                         "required_power": required_power},
+        )
+
+    def electricity_parameters(self, sheet_name="electricity"):
+        s = sheet(sheet_name)
+        df = to_dataframe(s)
+        cost_per_kwh = float(df[df["A"] == "Cost per kWh (USD)"]["B"])
+        install_solar_panels = float(df[df["A"] == "Solar Panel Install Cost (USD)"]["B"])
+        return ElectricityCostConf(
+            capex={"solar_panel_costs": install_solar_panels,
+                   "battery_costs": 0.0}, # TODO: ignore for now
+            opex={"cost_per_kwh": cost_per_kwh}
         )
 
     def _process_nonsheet_scenario_parameters(self, s):
@@ -254,17 +313,21 @@ class CostEstimationParameterInput:
         p = {**nonsheet, **from_sheet}
         if p["scenario_type"] == "Fiber":
             tech_params = self.fiber_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
             return SingleTechnologyScenarioConf(
                 technology=p["scenario_type"], tech_config=tech_params, **p
             )
         elif p["scenario_type"] == "Satellite":
             tech_params = self.satellite_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
             return SingleTechnologyScenarioConf(
                 technology=p["scenario_type"], tech_config=tech_params, **p
             )
         else:
             fiber_params = self.fiber_parameters()
             satellite_params = self.satellite_parameters()
+            fiber_params.electricity_config = self.electricity_parameters()
+            satellite_params.electricity_config = self.electricity_parameters()
             return MinimumCostScenarioConf(
                 **p, technologies=[fiber_params, satellite_params]
             )
@@ -387,4 +450,6 @@ class CostEstimationParameterInput:
         f = self.fiber_parameters_input()
         t3 = HTML(value="<hr><b>Satellite - LEO Model Configuration</b>")
         sa = self.satellite_parameters_input()
-        return VBox([t1, d, s, t2, f, t3, sa])
+        t4 = HTML(value="<hr><b>Electricity Model Configuration</b>")
+        e = self.electricity_parameters_input()
+        return VBox([t1, d, s, t2, f, t3, sa, t4, e])

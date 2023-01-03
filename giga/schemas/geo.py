@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from pydantic import BaseModel, Field
 import pandas as pd
 
@@ -11,6 +11,7 @@ class UniqueCoordinate(BaseModel):
 
     coordinate_id: str
     coordinate: LatLonPoint  # [lat, lon]
+    properties: Dict = None
 
 
 class UniqueCoordinateTable(BaseModel):
