@@ -83,3 +83,46 @@ To autoformat code that is non PEP 8 compliant run:
 ```bash
 ./dev format
 ```
+
+## Deployment
+
+To build the model container and re-deploy the notebook cluster simply run:
+
+```bash
+./stack up
+```
+
+To stop the cluster and clear resources run:
+
+```bash
+./stack down
+```
+
+Please note, you will need to have authenticated with GCP CLI and have k8s context referencing the right GKE cluster. 
+For more details on this see below. 
+
+### Cluster Details
+
+Notebooks are deployed as a standalone application using [JupyterHub](https://jupyter.org/hub).
+These notebooks allow users to interact with the giga models through an interactive dashboard and to visualize/plot the model outputs through a streamlined interfaces.
+
+[Helm](https://helm.sh/) is used to manage the deployment - find the existing jupyterhub helm chart [here](https://artifacthub.io/packages/helm/jupyterhub/jupyterhub).
+The deployment configuration for this chart can be found in `deployment/values/prod.yaml`.
+The following configurations are managed with a custom configuration:
+1. The base notebook container used in the deployment that includes the models
+2. The authentication mechanism for users to access jupyterhub - auth0 is currently used
+
+
+### Deployment Workflow
+Please note that the workflow is currently manually managed with the CLI explained below.
+The full deployment workflow looks as follows, which can all be managed with the `stack` CLI: 
+1. Authenticate with GCP by running `./stack auth`. This will also configure the credentials for the GKE cluster to which jupyterhub is deployed
+2. Create a Docker image for the models, you can use the CLI in the root dir: `./stack create-image`
+3. Push the image to Actual's docker registry: `./stack push-image`
+4. Update or launch a new instance of the cluster with `./stack launch` 
+
+### Updating the Cluster + Local Testing
+
+You can stop the jupyterhub cluster by running `./stack stop`.
+If you need to update the single user image, you can rebuild it using the CLI above.
+You can interact with the single user container locally by running `./stack start-container <local-workspace>`.

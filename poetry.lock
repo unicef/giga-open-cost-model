@@ -523,6 +523,17 @@ traitlets = ">=5.1.0"
 test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=6.0)", "pytest-cov", "pytest-timeout"]
 
 [[package]]
+name = "ipysheet"
+version = "0.7.0"
+description = "Spreadsheet in the Jupyter notebook."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+ipywidgets = ">=7.5.0,<9.0"
+
+[[package]]
 name = "ipython"
 version = "8.5.0"
 description = "IPython: Productive Interactive Computing"
@@ -1755,7 +1766,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "ea0626ded8ec34e89f15808915a20a7a76fc522831b17c04b42d5d000dddc0d4"
+content-hash = "4a26b8881d454c42e035c0b338575cc592c6b0237ac54378129773df13f947e6"
 
 [metadata.files]
 antlr4-python3-runtime = [
@@ -2112,6 +2123,10 @@ iniconfig = [
 ipykernel = [
     {file = "ipykernel-6.16.0-py3-none-any.whl", hash = "sha256:d3d95241cd4dd302fea9d5747b00509b58997356d1f6333c9a074c3eccb78cb3"},
     {file = "ipykernel-6.16.0.tar.gz", hash = "sha256:7fe42c0d58435e971dc15fd42189f20d66bf35f3056bda4f6554271bc1fa3d0d"},
+]
+ipysheet = [
+    {file = "ipysheet-0.7.0-py2.py3-none-any.whl", hash = "sha256:0a5179815444977fbc2317bab6133a3af179c4155996dd3f723b4d10f2d5a970"},
+    {file = "ipysheet-0.7.0.tar.gz", hash = "sha256:34587a02d3bc304724126f9a6dbdf8237a04a6a7aec98a8ffbda16f93fe4ec27"},
 ]
 ipython = [
     {file = "ipython-8.5.0-py3-none-any.whl", hash = "sha256:6f090e29ab8ef8643e521763a4f1f39dc3914db643122b1e9d3328ff2e43ada2"},

@@ -1,0 +1,162 @@
+#!/bin/bash
+
+# Docker Image Parameters
+CONTAINER_REGISTRY="us-central1-docker.pkg.dev"
+IMAGE_NAME="actual-artifacts/giga-models/notebooks"
+VERSION_TAG="0.1.0"
+NOTEBOOK_CONTAINER_NAME="giga-models"
+NOTEBOOK_DOCKERFILE="Dockerfile"
+
+# GCP Parameters
+GCP_ZONE="us-central1-c"
+GCP_PROJECT="actualhq-sandbox"
+GKE_CLUSTER_NAME="giga-notebooks"
+
+# Helm Parameters
+HELM_RELEASE_NAME="jupyterhub"
+JUPYTERHUB_HELM_VERSION="2.0.0"
+HELM_VALUES_CONFIG="deployment/helm/prod.yaml"
+
+# Auth0 Parameters
+PASSWORD_RESET_ENDPOINT="https:/giga-notebooks.us.auth0.com/dbconnections/change_password"
+AUTH0_CLIENT_ID="q4rNCflnwA7Pnl0g1rh1MKRMoCdB9tgp"
+
+
+install_if_doesnt_exist(){
+  local tool=$1
+  local cmd=$2
+  type $tool > /dev/null 2>&1
+  if [[ "$?" == "1" ]]; then
+    printf "Installing ${tool} ...\n"
+    echo "$cmd" | /bin/bash
+  else
+    printf "${tool} is already installed.\n"
+  fi
+}
+
+install_tools() {
+  KUBECTL_VERSION=${KUBECTL_VERSION:-v1.22.8}
+  MINIKUBE_VERSION=${MINIKUBE_VERSION:-v1.22.0}
+  install_if_doesnt_exist "kubectl" "curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/${OS_TYPE}/amd64/kubectl && chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl"
+  install_if_doesnt_exist "minikube" "curl -Lo minikube https://storage.googleapis.com/minikube/releases/${MINIKUBE_VERSION}/minikube-${OS_TYPE}-amd64 && chmod +x minikube && sudo cp minikube /usr/local/bin/ && rm minikube"
+  install_if_doesnt_exist "helm" "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh && rm ./get_helm.sh"
+}
+
+# removes model container
+remove_model_container() {
+  docker rm -f $NOTEBOOK_CONTAINER_NAME &> /dev/null
+}
+
+# builds the docker container
+create_image() {
+  docker build -t $CONTAINER_REGISTRY/$IMAGE_NAME:$VERSION_TAG \
+               -f $NOTEBOOK_DOCKERFILE \
+               --platform linux/amd64 .
+}
+
+# launches container
+launch_model_container() {
+  local WORKSPACE_DIR=$1
+  remove_model_container
+  docker run -it \
+  -v ${WORKSPACE_DIR}:/workspace \
+  -p 8181:8888 \
+  --name $NOTEBOOK_CONTAINER_NAME \
+  $CONTAINER_REGISTRY/$IMAGE_NAME:$VERSION_TAG \
+  jupyter-lab --ip=0.0.0.0 --allow-root
+}
+
+gcp_auth(){
+  gcloud auth login
+  gcloud auth configure-docker $CONTAINER_REGISTRY
+  gcloud container clusters get-credentials $GKE_CLUSTER_NAME \
+                                            --zone $GCP_ZONE \
+                                            --project $GCP_PROJECT
+}
+
+push_model_image() {
+  docker image push $CONTAINER_REGISTRY/$IMAGE_NAME:$VERSION_TAG
+}
+
+jupyterhub_up() {
+  # install the helm chart
+  helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
+  helm repo update
+  helm upgrade --cleanup-on-fail \
+               --install $HELM_RELEASE_NAME jupyterhub/jupyterhub \
+               --version=$JUPYTERHUB_HELM_VERSION \
+               --values $HELM_VALUES_CONFIG
+}
+
+jupyterhub_down() {
+  helm delete $HELM_RELEASE_NAME
+}
+
+reset_user_password() {
+  local USER_EMAIL=$1
+  curl --request POST \
+       --url https:/giga-notebooks.us.auth0.com/dbconnections/change_password \
+       --header 'Content-Type: application/json' \
+       --data  "{\"client_id\":\"$AUTH0_CLIENT_ID\", \"email\": \"$USER_EMAIL\", \"connection\": \"Username-Password-Authentication\"}"
+}
+
+stack_up() {
+  create_image
+  push_model_image
+  jupyterhub_up
+}
+
+stack_down() {
+  jupyterhub_down
+}
+
+# Shows usage
+usage() {
+  printf "  up \t\t\t\t\t\tDeploys the notebook stack to a k8s cluster\n"
+  printf "  down \t\t\t\t\t\tTears down the notebook stack\n"
+  printf "  install \t\t\t\t\tInstall minikube, helm, etc.\n"
+  printf "  auth \t\t\t\t\t\tAuthenticate with GCP\n"
+  printf "  create-image \t\t\t\t\tBuilds docker image for off-platform models\n"
+  printf "  push-image \t\t\t\t\tPushes model docker image to a remote registry\n"
+  printf "  start-container <workspace-dir> \t\tLaunches a Docker container and mounts a workspace directory to it\n"
+  printf "  launch  \t\t\t\t\tLaunches jupyterhub on a kubernetes cluster using helm\n"
+  printf "  stop  \t\t\t\t\tStops the jupyterhub deployment\n"
+  printf "  reset-password  <user-email> \t\t\tSends a password reset email for notebook user\n"
+
+}
+
+case $1 in
+  install)
+    install_tools $2
+    ;;
+  auth)
+    gcp_auth
+    ;;
+  create-image)
+    create_image
+    ;;
+  push-image)
+    push_model_image
+    ;;
+  start-container)
+    launch_model_container $2
+    ;;
+  launch)
+    jupyterhub_up
+    ;;
+  stop)
+    jupyterhub_down
+    ;;
+  reset-password)
+    reset_user_password $2
+    ;;
+  up)
+    stack_up
+    ;;
+  down)
+    stack_down
+    ;;
+  *)
+    usage
+    ;;
+esac
