@@ -1,9 +1,19 @@
-from typing import List, Union
+from typing import List, Union, Literal
 from enum import Enum
 from pydantic import BaseModel
 
 from giga.schemas.geo import PairwiseDistance
 from giga.schemas.tech import ConnectivityTechnology
+
+
+class PowerConnectionCosts(BaseModel):
+
+    electricity_opex: float = 0.0  # USD
+    electricity_capex: float = 0.0  # USD
+    cost_type: Literal["Grid", "Solar"] = "Grid"
+
+    class Config:
+        case_sensitive = False
 
 
 class NonConnectionReason(str, Enum):
@@ -24,6 +34,7 @@ class SchoolConnectionCosts(BaseModel):
     technology: ConnectivityTechnology
     feasible: bool = True
     reason: str = None
+    electricity: PowerConnectionCosts = None
 
     class Config:
         use_enum_values = True

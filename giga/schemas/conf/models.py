@@ -3,6 +3,23 @@ from typing import List, Literal, Union
 import math
 
 
+class ElectricityCapexConf(BaseModel):
+
+    solar_panel_costs: float # USD
+    battery_costs: float # USD
+
+
+class ElectricityOpexConf(BaseModel):
+
+    cost_per_kwh: float  # USD
+
+
+class ElectricityCostConf(BaseModel):
+
+    capex: ElectricityCapexConf
+    opex: ElectricityOpexConf
+
+
 class BandwidthCost(BaseModel):
 
     bandwidth_threshold: float  # Mbps
@@ -23,6 +40,7 @@ class GeneralizedInternetOpex(BaseModel):
 class GeneralizedInternetCosntraints(BaseModel):
 
     maximum_bandwithd: float = 2_000  # Mbps
+    required_power: float = 10  # annual kWh
 
 
 class FiberOpex(BaseModel):
@@ -42,6 +60,7 @@ class FiberCosntraints(BaseModel):
 
     maximum_connection_length: float = math.inf  # meters
     maximum_bandwithd: float = 2_000  # Mbps
+    required_power: float = 500  # annual kWh
 
 
 class FiberTechnologyCostConf(BaseModel):
@@ -49,6 +68,7 @@ class FiberTechnologyCostConf(BaseModel):
     opex: FiberOpex
     constraints: FiberCosntraints
     technology: str = "Fiber"
+    electricity_config: ElectricityCostConf = None
 
 
 class SatelliteTechnologyCostConf(BaseModel):
@@ -56,6 +76,7 @@ class SatelliteTechnologyCostConf(BaseModel):
     opex: GeneralizedInternetOpex
     constraints: GeneralizedInternetCosntraints
     technology: str = "Satellite"
+    electricity_config: ElectricityCostConf = None
 
 
 TechnologyConfiguration = Union[FiberTechnologyCostConf, SatelliteTechnologyCostConf]
