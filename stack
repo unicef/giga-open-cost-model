@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Docker Image Parameters
+# Pull version tag from the .toml file
+VERSION_TAG=$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
 CONTAINER_REGISTRY="us-central1-docker.pkg.dev"
 IMAGE_NAME="actual-artifacts/giga-models/notebooks"
-VERSION_TAG="0.1.0"
 NOTEBOOK_CONTAINER_NAME="giga-models"
 NOTEBOOK_DOCKERFILE="Dockerfile"
 
