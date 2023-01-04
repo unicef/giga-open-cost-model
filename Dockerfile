@@ -21,5 +21,5 @@ COPY notebooks /app/notebooks
 
 RUN pip install -e /app/models
 
-RUN chown ${NB_UID}:${NB_GID} /app
+RUN chown -R ${NB_UID}:${NB_GID} /app
 USER ${NB_UID}
