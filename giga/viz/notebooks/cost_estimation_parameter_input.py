@@ -13,6 +13,7 @@ from ipysheet import sheet, column, to_dataframe
 from giga.schemas.conf.models import (
     FiberTechnologyCostConf,
     SatelliteTechnologyCostConf,
+    CellularTechnologyCostConf,
     MinimumCostScenarioConf,
     SingleTechnologyScenarioConf,
     ElectricityCostConf,
@@ -26,20 +27,9 @@ SCENARIO_PARAMETERS = [
         "parameter_name": "scenario_tpye",
         "parameter_input_name": "Cost Scenario",
         "parameter_interactive": Dropdown(
-            options=["Minimum Cost", "Fiber", "Satellite"],
-            value="Fiber",
+            options=["Minimum Cost", "Fiber", "Satellite", "Cellular"],
+            value="Minimum Cost",
             description="Cost Scenario:",
-            style={"description_width": "initial"},
-            layout=Layout(width="400px"),
-        ),
-    },
-    {
-        "parameter_name": "opex_responsible",
-        "parameter_input_name": "Responsible for OpEx",
-        "parameter_interactive": Dropdown(
-            options=["Consumer", "Provider", "Both"],
-            value="Consumer",
-            description="Responsible for OpEx:",
             style={"description_width": "initial"},
             layout=Layout(width="400px"),
         ),
@@ -55,7 +45,7 @@ SCENARIO_SHEET_PARAMETERS = [
     {
         "parameter_name": "bandwidth_demand",
         "parameter_input_name": "Bandwidth Demand (Mbps)",
-        "parameter_interactive": FloatSlider(20, min=1, max=500, step=1),
+        "parameter_interactive": FloatSlider(40, min=1, max=500, step=1),
     },
 ]
 
@@ -80,11 +70,6 @@ FIBER_MODEL_PARAMETERS = [
         "parameter_input_name": "Maximum Connection Length (km)",
         "parameter_interactive": IntSlider(20, min=0, max=100),
     },
-    {  # TODO: add this to config and model calculations
-        "parameter_name": "distance_multiplier",
-        "parameter_input_name": "Fiber Distance Multiplier",
-        "parameter_interactive": FloatSlider(1.0, min=1.0, max=5.0),
-    },
     {
         "parameter_name": "power_requirement",
         "parameter_input_name": "Annual Power Required (kWh)",
@@ -101,7 +86,7 @@ SATELLITE_MODEL_PARAMETERS = [
     {
         "parameter_name": "install_costs",
         "parameter_input_name": "Installation Cost (USD)",
-        "parameter_interactive": IntSlider(600, min=0, max=2_500, step=10),
+        "parameter_interactive": IntSlider(600, min=0, max=4_000, step=10),
     },
     {
         "parameter_name": "per_mbps_cost",
@@ -117,6 +102,34 @@ SATELLITE_MODEL_PARAMETERS = [
         "parameter_name": "power_requirement",
         "parameter_input_name": "Annual Power Required (kWh)",
         "parameter_interactive": IntSlider(200, min=0, max=1_000, step=10),
+    },
+]
+
+CELLULAR_MODEL_PARAMETERS = [
+    {
+        "parameter_name": "install_costs",
+        "parameter_input_name": "Installation Cost (USD)",
+        "parameter_interactive": IntSlider(500, min=0, max=2_500, step=10),
+    },
+    {
+        "parameter_name": "per_mbps_cost",
+        "parameter_input_name": "Annual cost per Mbps (USD)",
+        "parameter_interactive": IntSlider(10, min=0, max=100, step=1),
+    },
+    {
+        "parameter_name": "fixed_costs",
+        "parameter_input_name": "Annual Maintenance Cost (USD)",
+        "parameter_interactive": IntSlider(0, min=0, max=1_000, step=10),
+    },
+    {
+        "parameter_name": "power_requirement",
+        "parameter_input_name": "Annual Power Required (kWh)",
+        "parameter_interactive": IntSlider(10, min=0, max=100, step=10),
+    },
+    {
+        "parameter_name": "maximum_range",
+        "parameter_input_name": "Maximum Cell Tower Range (km)",
+        "parameter_interactive": IntSlider(8, min=0, max=25),
     },
 ]
 
@@ -219,6 +232,25 @@ class CostEstimationParameterInput:
         )
         return s
 
+    def cellular_parameters_input(self, sheet_name="cellular"):
+        s = sheet(
+            sheet_name,
+            columns=2,
+            rows=len(CELLULAR_MODEL_PARAMETERS),
+            column_headers=False,
+            row_headers=False,
+            column_width=2,
+        )
+        name_column = column(
+            0,
+            list(map(lambda x: x["parameter_input_name"], CELLULAR_MODEL_PARAMETERS)),
+        )
+        input_column = column(
+            1,
+            list(map(lambda x: x["parameter_interactive"], CELLULAR_MODEL_PARAMETERS)),
+        )
+        return s
+
     def electricity_parameters_input(self, sheet_name="electricity"):
         s = sheet(
             sheet_name,
@@ -282,6 +314,25 @@ class CostEstimationParameterInput:
                          "required_power": required_power},
         )
 
+    def cellular_parameters(self, sheet_name="cellular"):
+        s = sheet(sheet_name)
+        df = to_dataframe(s)
+        annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
+        install_cost = float(df[df["A"] == "Installation Cost (USD)"]["B"])
+        maintenance_cost = float(df[df["A"] == "Annual Maintenance Cost (USD)"]["B"])
+        required_power = float(df[df["A"] == "Annual Power Required (kWh)"]["B"])
+        max_range = float(df[df["A"] == "Maximum Cell Tower Range (km)"]["B"]) * 1000.0
+        return CellularTechnologyCostConf(
+            capex={"fixed_costs": install_cost},
+            opex={
+                "fixed_costs": maintenance_cost,
+                "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
+            },
+            constraints={"maximum_bandwithd": 100.0,  # should be pulled from defaults
+                         "required_power": required_power,
+                         "maximum_range": max_range},
+        )
+
     def electricity_parameters(self, sheet_name="electricity"):
         s = sheet(sheet_name)
         df = to_dataframe(s)
@@ -296,7 +347,7 @@ class CostEstimationParameterInput:
     def _process_nonsheet_scenario_parameters(self, s):
         return {
             "scenario_type": s["scenario_tpye"].value,
-            "opex_responsible": s["opex_responsible"].value,
+            "opex_responsible": "Consumer"#s["opex_responsible"].value,
         }
 
     def _process_sheet_scenario_parameters(self, s):
@@ -323,14 +374,26 @@ class CostEstimationParameterInput:
             return SingleTechnologyScenarioConf(
                 technology=p["scenario_type"], tech_config=tech_params, **p
             )
+        elif p["scenario_type"] == "Cellular":
+            tech_params = self.cellular_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
+            p = SingleTechnologyScenarioConf(
+                technology=p["scenario_type"], tech_config=tech_params, **p
+            )
+            p.tech_config = tech_params
+            return p
         else:
             fiber_params = self.fiber_parameters()
             satellite_params = self.satellite_parameters()
+            cellular_params = self.cellular_parameters()
             fiber_params.electricity_config = self.electricity_parameters()
             satellite_params.electricity_config = self.electricity_parameters()
-            return MinimumCostScenarioConf(
-                **p, technologies=[fiber_params, satellite_params]
+            cellular_params.electricity_config = self.electricity_parameters()
+            p = MinimumCostScenarioConf(
+                **p, technologies=[fiber_params, satellite_params, cellular_params]
             )
+            p.technologies[2] = cellular_params
+            return p
 
     def data_parameters_upload_input(self, sheet_name="data"):
         self._hashed_sheets[sheet_name + UPLOAD_SUFFIX] = {
@@ -450,6 +513,8 @@ class CostEstimationParameterInput:
         f = self.fiber_parameters_input()
         t3 = HTML(value="<hr><b>Satellite - LEO Model Configuration</b>")
         sa = self.satellite_parameters_input()
-        t4 = HTML(value="<hr><b>Electricity Model Configuration</b>")
+        t4 = HTML(value="<hr><b>Cellular Model Configuration</b>")
+        sc = self.cellular_parameters_input()
+        t5 = HTML(value="<hr><b>Electricity Model Configuration</b>")
         e = self.electricity_parameters_input()
-        return VBox([t1, d, s, t2, f, t3, sa, t4, e])
+        return VBox([t1, d, s, t2, f, t3, sa, t4, sc, t5, e])

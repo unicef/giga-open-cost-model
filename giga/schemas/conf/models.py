@@ -62,6 +62,12 @@ class FiberCosntraints(BaseModel):
     maximum_bandwithd: float = 2_000  # Mbps
     required_power: float = 500  # annual kWh
 
+class CellularCosntraints(BaseModel):
+
+    maximum_range: float = math.inf  # meters
+    maximum_bandwithd: float = 2_000  # Mbps
+    required_power: float = 500  # annual kWh
+
 
 class FiberTechnologyCostConf(BaseModel):
     capex: FiberCapex
@@ -78,8 +84,15 @@ class SatelliteTechnologyCostConf(BaseModel):
     technology: str = "Satellite"
     electricity_config: ElectricityCostConf = None
 
+class CellularTechnologyCostConf(BaseModel):
+    capex: GeneralizedInternetCapex
+    opex: GeneralizedInternetOpex
+    constraints: CellularCosntraints
+    technology: str = "Cellular"
+    electricity_config: ElectricityCostConf = None
 
-TechnologyConfiguration = Union[FiberTechnologyCostConf, SatelliteTechnologyCostConf]
+
+TechnologyConfiguration = Union[FiberTechnologyCostConf, SatelliteTechnologyCostConf, CellularTechnologyCostConf]
 
 
 class SingleTechnologyScenarioConf(BaseModel):

@@ -6,6 +6,7 @@ from giga.schemas.output import OutputSpace, SchoolConnectionCosts
 from giga.schemas.conf.models import MinimumCostScenarioConf
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
+from giga.models.components.cellular_cost_model import CellularCostModel
 
 
 class MinimumCostScenario:
@@ -28,6 +29,8 @@ class MinimumCostScenario:
             return FiberCostModel(model_config)
         elif model_config.technology == "Satellite":
             return SatelliteCostModel(model_config)
+        elif model_config.technology == "Cellular":
+            return CellularCostModel(model_config)
         else:
             raise ValueError("No Supported Technology")
 
@@ -36,6 +39,8 @@ class MinimumCostScenario:
             self.output_space.fiber_costs = output
         elif config.technology == "Satellite":
             self.output_space.satellite_costs = output
+        elif config.technology == "Cellular":
+            self.output_space.cellular_costs = output
         else:
             return self.output_space
         return self.output_space
