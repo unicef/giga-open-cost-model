@@ -25,14 +25,18 @@ def plot_coordinate_map(
     coordinates,
     coordinate_name="Coordinate",
     show_id=True,
+    show_properties=False,
     color="green",
     coordinate_radius=9,
     m=folium.Map(tiles="cartodbpositron", zoom_start=10),
 ):
     for c in coordinates:
-        popup = (
-            f"{coordinate_name} {c.coordinate_id}" if show_id else f"{coordinate_name}"
-        )
+        popup = f"{coordinate_name}"
+        if show_id:
+            popup += f" {c.coordinate_id}"
+        if show_properties:
+            for k, v in c.properties.items():
+                popup += f" {k}: {v}"
         folium.CircleMarker(
             location=c.coordinate,
             popup=popup,
@@ -65,7 +69,7 @@ def plot_fiber_map(fiber_coordinates, school_coordinates, m=default_rwanda_map()
         fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m
     )
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", color="#43adde", m=m
+        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
     )
     return m
 
@@ -83,7 +87,7 @@ def plot_data_map(
         cell_tower_coordinates, coordinate_name="Cell Tower", color="#bfb673", m=m
     )
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", color="#43adde", m=m
+        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
     )
     return m
 
