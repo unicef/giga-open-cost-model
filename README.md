@@ -1,5 +1,15 @@
 # Giga Models
 
+You can find a reference glossary that provides in-depth explanations below.
+
+## Glossary
+
+* [Local Environment Setup](#setup)
+* [Library Architecture](docs/arch.md)
+* [Model Documentation](docs/models.md)
+* [Notebooks Overview](notebooks/README.md)
+* [Application Deployment](#deployment)
+
 ## Setup
 
 Use [poetry]() to create a local development environment.

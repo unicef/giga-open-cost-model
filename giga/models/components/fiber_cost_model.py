@@ -3,6 +3,7 @@ import math
 from pydantic import validate_arguments
 
 from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
+from giga.models.nodes.graph.pairwise_distance_model import PairwiseDistanceModel
 from giga.schemas.conf.models import FiberTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.schemas.geo import PairwiseDistance
@@ -14,6 +15,9 @@ METERS_IN_KM = 1000.0
 
 
 class FiberCostModel:
+    """ Estimates the cost of connecting a collection of schools to the internet
+        using fiber technology
+    """
     def __init__(self, config: FiberTechnologyCostConf):
         self.config = config
 
@@ -97,7 +101,7 @@ class FiberCostModel:
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def run(
-        self, data_space: ModelDataSpace, progress_bar: bool = False
+        self, data_space: ModelDataSpace, progress_bar: bool = False, distance_model = PairwiseDistanceModel()
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
@@ -107,6 +111,7 @@ class FiberCostModel:
             dynamic_connect=self.config.capex.economies_of_scale,
             progress_bar=progress_bar,
             maximum_connection_length_m=self.config.constraints.maximum_connection_length,
+            distance_model=distance_model
         )
         # determine which schools can be connected and their distances
         distances = conection_model.run(data_space.school_coordinates)
