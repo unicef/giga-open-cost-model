@@ -12,25 +12,24 @@ You can find a reference glossary that provides in-depth explanations below.
 
 ## Setup
 
-Use [poetry]() to create a local development environment.
-Poetry is a tool for dependency management in Python, and you can install it with:
+Use [poetry](https://python-poetry.org/) to create a local development environment.
+Poetry is a tool for dependency management in Python.
+You can use the helper `dev` CLI to build the environment locally:
 
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
+./dev build
 ```
 
-To build the poetry environment, navigate to the root directory and run:
+To start a local notebook server simply run:
 
 ```bash
-poetry install
+./dev start-notebook
 ```
 
-## Tests
-
-You can use poetry to run tests after the environment has been built:
+You can use the `dev` CLI to also run pytest tests:
 
 ```bash
-poetry run pytest
+./dev test
 ```
 
 ## Repository Structure
