@@ -1,5 +1,17 @@
 #!/bin/bash
 
+
+# build the environment locally
+build_local() {
+  curl -sSL https://install.python-poetry.org | python3 -
+  poetry install
+}
+
+# start the notebook server
+start_notebook() {
+   poetry run jupyter lab
+}
+
 # lint check
 run_linter() {
   poetry run flake8 .
@@ -11,14 +23,22 @@ run_formatter() {
 }
 
 # format notebooks
-clean_notebook(){
+clean_notebook() {
   local NOTEBOOK_FILE=$1
   poetry run jupyter nbconvert --clear-output --inplace $NOTEBOOK_FILE
+}
+
+# run tests
+run_tests() {
+  poetry run pytest
 }
 
 
 # Shows usage
 usage() {
+  printf "  build\t\t\t\t\tBuilds the modeling environment locally\n"
+  printf "  start-notebook\t\t\tStart a jupyterlab notebook server locally\n"
+  printf "  test\t\t\t\t\tRuns the unit test suite\n"
   printf "  lint\t\t\t\t\tRuns a flake8 lint check against PEP 8\n"
   printf "  format\t\t\t\tModifies non PEP 8 compliant code to be style compliant\n"
   printf "  clean-notebook <notebook-path> \tRemoves rendered html from jupyter notebooks\n"
@@ -26,6 +46,15 @@ usage() {
 
 
 case $1 in
+  build)
+    build_local
+    ;;
+  start-notebook)
+    start_notebook
+    ;;
+  test)
+    run_tests
+    ;;
   lint)
     run_linter
     ;;
