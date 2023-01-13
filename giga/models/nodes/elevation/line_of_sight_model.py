@@ -2,6 +2,7 @@ from pydantic import validate_arguments
 from typing import List, Text
 from haversine import haversine, Unit
 from shapely.geometry import Point, LineString
+from giga.schemas.geo import LatLonPoint, ElevationProfile
 
 DEFAULT_BUFFER = 0.0
 
@@ -14,7 +15,7 @@ class LineofSightModel:
 
     def create_buffered_profile(
         self, elevation_array: List, elevation_buffer_meters: float
-    ):
+    ) -> List:
         """
         class method that accepts an elevation array of float values
         and returns an adjusted array of float values based on buffer
@@ -32,7 +33,7 @@ class LineofSightModel:
         updated_elevations[-1] = updated_elevations[-1] - elevation_buffer_meters
         return updated_elevations
 
-    def get_elevations(self, elevation_profile: List) -> List:
+    def get_elevations(self, elevation_profile: ElevationProfile) -> List:
         """
         class method that generates an array of elevation values
 
@@ -40,19 +41,17 @@ class LineofSightModel:
                 elevation_profile : Nested Dictionary (Response from OpenData API)
             Output: Ordered array of elevation float values
         """
-        ele_arr = [x["elevation"] for x in elevation_profile["results"]]
+        ele_arr = [x.elevation for x in elevation_profile]
         return [0 if i is None else i for i in ele_arr]
 
-    def get_coordinates(self, elevation_profile: List) -> List:
+    def get_coordinates(self, elevation_profile: ElevationProfile) -> List:
         """
         class method that generates an array of coordinate pairs
 
             Input: List
             Output: List
         """
-        lat_arr = [x["location"]["lat"] for x in elevation_profile["results"]]
-        lng_arr = [x["location"]["lng"] for x in elevation_profile["results"]]
-        coordinates = list(zip(lat_arr, lng_arr))
+        coordinates = [x.coordinates for x in elevation_profile]
         return coordinates
 
     def calculate_distance(self, coordinates: List) -> List:
@@ -66,7 +65,7 @@ class LineofSightModel:
         return [haversine(start, x, unit=Unit.METERS) for x in coordinates]
 
     def determine_obstructions(
-        self, elevation_profile: List, elevation_buffer_meters: float
+        self, elevation_profile: ElevationProfile, elevation_buffer_meters: float
     ) -> List:
         """
         class method that generates an array of boolean values based on line of sight availability
@@ -96,8 +95,10 @@ class LineofSightModel:
 
     @validate_arguments
     def run(
-        self, elevation_profiles: List, elevation_buffer_meters: float = DEFAULT_BUFFER
-    ) -> List:
+        self,
+        elevation_profiles: List[ElevationProfile],
+        elevation_buffer_meters: float = DEFAULT_BUFFER,
+    ) -> List[bool]:
         """
         Class method that determines whether the line of sight is obstructed,
         given a collection of elevation profiles. Each elevation profile in the collection
@@ -113,7 +114,7 @@ class LineofSightModel:
         for profiles in elevation_profiles:
             line_of_sight_array.append(
                 self.determine_obstructions(
-                    profiles, elevation_buffer_meters=elevation_buffer_meters
+                    profiles.points, elevation_buffer_meters=elevation_buffer_meters
                 )
             )
         return line_of_sight_array
