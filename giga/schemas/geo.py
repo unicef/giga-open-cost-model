@@ -1,4 +1,4 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 from pydantic import BaseModel, Field
 import pandas as pd
 
@@ -54,3 +54,54 @@ class PairwiseDistance(BaseModel):
     coordinate1: UniqueCoordinate
     coordinate2: UniqueCoordinate
     distance_type: str = "euclidean"
+
+
+class RawElevationPoint(BaseModel):
+    """Response structure from opentopodata API"""
+
+    dataset: str
+    elevation: Optional[float] = None
+    location: Dict[str, float]
+
+    @staticmethod
+    def elevation_point_transformer(data: List[Dict]):
+        elevation_point = list(
+            map(
+                lambda x: RawElevationPoint(
+                    dataset=x["dataset"],
+                    elevation=x["elevation"],
+                    location=x["location"],
+                ),
+                data,
+            )
+        )
+        return elevation_point
+
+
+RawElevationProfile = List[RawElevationPoint]
+
+
+class ElevationPoint(BaseModel):
+    """Internal data model used for singular elevation point within the Elevation Profile"""
+
+    coordinates: LatLonPoint
+    elevation: Optional[float] = None
+
+
+class ElevationProfile(BaseModel):
+    """Internal data model of a Complete Elevation profile containing multiple elevation points"""
+
+    points: List[ElevationPoint]
+
+    @staticmethod
+    def from_raw_elevation_profile(data: RawElevationProfile):
+        p = list(
+            map(
+                lambda x: ElevationPoint(
+                    coordinates=[x.location["lat"], x.location["lng"]],
+                    elevation=x.elevation,
+                ),
+                data,
+            )
+        )
+        return ElevationProfile(points=p)
