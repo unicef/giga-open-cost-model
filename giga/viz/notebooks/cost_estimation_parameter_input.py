@@ -27,8 +27,8 @@ SCENARIO_PARAMETERS = [
         "parameter_name": "scenario_tpye",
         "parameter_input_name": "Cost Scenario",
         "parameter_interactive": Dropdown(
-            options=["Minimum Cost", "Fiber", "Satellite", "Cellular"],
-            value="Minimum Cost",
+            options=["Lowest Cost", "Fiber Only", "Satellite Only", "Cellular Only"],
+            value="Lowest Cost",
             description="Cost Scenario:",
             style={"description_width": "initial"},
             layout=Layout(width="400px"),
@@ -362,23 +362,23 @@ class CostEstimationParameterInput:
         s = sheet(sheet_name)
         from_sheet = self._process_sheet_scenario_parameters(s)
         p = {**nonsheet, **from_sheet}
-        if p["scenario_type"] == "Fiber":
+        if p["scenario_type"] == "Fiber Only":
             tech_params = self.fiber_parameters()
             tech_params.electricity_config = self.electricity_parameters()
             return SingleTechnologyScenarioConf(
-                technology=p["scenario_type"], tech_config=tech_params, **p
+                technology="Fiber", tech_config=tech_params, **p
             )
-        elif p["scenario_type"] == "Satellite":
+        elif p["scenario_type"] == "Satellite Only":
             tech_params = self.satellite_parameters()
             tech_params.electricity_config = self.electricity_parameters()
             return SingleTechnologyScenarioConf(
-                technology=p["scenario_type"], tech_config=tech_params, **p
+                technology="Satellite", tech_config=tech_params, **p
             )
-        elif p["scenario_type"] == "Cellular":
+        elif p["scenario_type"] == "Cellular Only":
             tech_params = self.cellular_parameters()
             tech_params.electricity_config = self.electricity_parameters()
             p = SingleTechnologyScenarioConf(
-                technology=p["scenario_type"], tech_config=tech_params, **p
+                technology="Cellular", tech_config=tech_params, **p
             )
             p.tech_config = tech_params
             return p

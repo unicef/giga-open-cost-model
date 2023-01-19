@@ -79,15 +79,16 @@ def plot_data_map(
     cell_tower_coordinates,
     school_coordinates,
     m=default_rwanda_map(),
+    **kwargs
 ):
     m = plot_coordinate_map(
-        fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m
+        fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m, **kwargs
     )
     m = plot_coordinate_map(
-        cell_tower_coordinates, coordinate_name="Cell Tower", color="#bfb673", m=m
+        cell_tower_coordinates, coordinate_name="Cell Tower", color="#bfb673", m=m, **kwargs
     )
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
+        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m, **kwargs
     )
     return m
 

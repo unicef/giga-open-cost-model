@@ -1,3 +1,6 @@
+from shapely.geometry import Point
+import geopandas as gpd
+
 from giga.schemas.conf.data import DataSpaceConf
 
 
@@ -49,3 +52,8 @@ class ModelDataSpace:
     @property
     def cell_tower_coordinates(self):
         return self.cell_tower_map.to_coordinates()
+
+    def school_outputs_to_frame(self, outputs):
+        lookup = {c.coordinate_id: tuple(reversed(c.coordinate)) for c in self.school_coordinates}
+        geometry = [Point(lookup[sid]) for sid in outputs['school_id']]
+        return gpd.GeoDataFrame(outputs, crs='4326', geometry=geometry)
