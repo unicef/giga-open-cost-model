@@ -1,7 +1,7 @@
 import pytest
 from pydantic.error_wrappers import ValidationError
 
-from giga.compute.elevation.open_elevation_model import OpenElevationModel
+from giga.models.nodes.elevation.open_elevation_model import OpenElevationModel
 
 
 @pytest.fixture

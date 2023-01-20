@@ -4,10 +4,10 @@ from typing import List, Text
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-from giga.compute.elevation.elevation_utilities import (
+from giga.models.nodes.elevation.elevation_utilities import (
     format_opendata_request_multipoint_request,
 )
-from giga.schemas.geo import LatLonPoint
+from giga.schemas.geo import LatLonPoint, RawElevationPoint, ElevationProfile
 
 # Constants
 NUMBER_OF_SAMPLES = 10
@@ -26,14 +26,12 @@ class ElevationProfileGenerator:
 
     """
 
-    def format_data(self, data: List[List[LatLonPoint]]) -> Text:
+    def format_data(self, data: List) -> Text:
         transformer = lambda x: format_opendata_request_multipoint_request(x)
         data_transformed = transformer(data)
         return data_transformed
 
-    def query_elevation_dataset(
-        self, data: List[List[LatLonPoint]], dataset: Text, samples: int
-    ) -> List:
+    def query_elevation_dataset(self, data: List, dataset: Text, samples: int) -> List:
         """
         class method that manages the request format
         for interacting with the OpenTopoData
@@ -69,8 +67,14 @@ class ElevationProfileGenerator:
                 session.mount("https://", HTTPAdapter(max_retries=retries))
                 session.mount("http://", HTTPAdapter(max_retries=retries))
                 response = session.post(url, params)
-                result = response.json()
-                elevation_profile_list.append(result)
+                result = response.json()["results"]
+                result_transformed = RawElevationPoint.elevation_point_transformer(
+                    result
+                )
+                ele_profile = ElevationProfile.from_raw_elevation_profile(
+                    result_transformed
+                )
+                elevation_profile_list.append(ele_profile)
         return elevation_profile_list
 
     @validate_arguments
@@ -79,7 +83,7 @@ class ElevationProfileGenerator:
         data: List[List[LatLonPoint]],
         dataset: Text = DEFAULT_DATASET,
         samples: int = NUMBER_OF_SAMPLES,
-    ) -> List:
+    ) -> List[ElevationProfile]:
         """
         Input: ordered list of lists of lat/lon coordinates
                e.g: [[1,2], [3,4]]

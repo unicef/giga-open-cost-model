@@ -1,7 +1,10 @@
 import pytest
 
 from pydantic.error_wrappers import ValidationError
-from giga.compute.elevation.elevation_profile_generator import ElevationProfileGenerator
+from giga.models.nodes.elevation.elevation_profile_generator import (
+    ElevationProfileGenerator,
+)
+from giga.schemas.geo import ElevationProfile, ElevationPoint
 
 
 @pytest.fixture()
@@ -18,31 +21,19 @@ def sample_elevation_data_points():
 @pytest.fixture()
 def sample_elevation_profile_results():
     results = [
-        {
-            "results": [
-                {
-                    "dataset": "aster30m",
-                    "elevation": 289.0,
-                    "location": {"lat": 42.06, "lng": 42.37},
-                },
-                {
-                    "dataset": "aster30m",
-                    "elevation": 493.0,
-                    "location": {"lat": -1.2293237828648182, "lng": 25.819056664864316},
-                },
-                {
-                    "dataset": "aster30m",
-                    "elevation": None,
-                    "location": {"lat": -44.40109930085374, "lng": 8.601711803089884},
-                },
-                {
-                    "dataset": "aster30m",
-                    "elevation": 0.0,
-                    "location": {"lat": -72.61, "lng": -72.52},
-                },
-            ],
-            "status": "OK",
-        }
+        ElevationProfile(
+            points=[
+                ElevationPoint(coordinates=(42.06, 42.37), elevation=289.0),
+                ElevationPoint(
+                    coordinates=(-1.2293237828648182, 25.819056664864316),
+                    elevation=493.0,
+                ),
+                ElevationPoint(
+                    coordinates=(-44.40109930085374, 8.601711803089884), elevation=None
+                ),
+                ElevationPoint(coordinates=(-72.61, -72.52), elevation=0.0),
+            ]
+        )
     ]
     return results
 
