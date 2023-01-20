@@ -4,7 +4,7 @@ from requests.adapters import HTTPAdapter, Retry
 import requests
 
 from giga.schemas.geo import LatLonPoint
-from giga.compute.elevation.elevation_utilities import (
+from giga.models.nodes.elevation.elevation_utilities import (
     format_opendata_request_singular_request,
 )
 
