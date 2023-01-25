@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "giga"
-version = "0.1.4"
+version = "0.1.5"
 description = "Giga models for internet connectivity cost estimation"
 authors = ["Max Nova <max.nova@actualhq.com>"]
 readme = "README.md"
@@ -26,6 +26,7 @@ jupyterlab = "^3.5.0"
 voila = "^0.4.0"
 ipysheet = "^0.7.0"
 grip = "^4.6.1"
+pykml = "^0.2.0"
 
 
 [build-system]

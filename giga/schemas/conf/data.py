@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Literal, Union
 
 from giga.schemas.tech import ConnectivityTechnology
@@ -31,9 +31,14 @@ class SchoolCountryConf(BaseModel):
     cost estimates need to be performed for a country
     """
 
-    country_id: Literal["Brazil", "Rwanda", "Sample"]
+    country_id: Literal["brazil", "rwanda", "sample"]
     data: Union[UploadedTablePipeline, LocalTablePipeline]
     manual_entries: List[ManualSchoolDataEntry] = []
+
+    # allow any capitalization on country IDs
+    @validator('country_id', pre=True)
+    def to_lowercase(cls, value):
+        return value.lower()
 
     def load(self):
         return self.data.load()  # loads data from the configured pipeline
