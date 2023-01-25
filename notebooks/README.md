@@ -13,4 +13,5 @@ The dashboard notebooks are as follows:
 
 The "driver" notebooks are as follows:
 
+* [Model Components](component-drivers.ipynb): demonstrates how key model components can be initialized and run
 * [Fiber Model](fiber-model.ipynb): demonstrates how to initialize and run the key nodes in the fiber model
