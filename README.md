@@ -12,6 +12,8 @@ You can find a reference glossary that provides in-depth explanations below.
 
 ## Setup
 
+Note: this repositroy uses git lfs for some of the larger files.
+Please install [git lfs](https://git-lfs.com/), and then run `git lfs pull` to fetch copies of the larger files locally.
 Use [poetry](https://python-poetry.org/) to create a local development environment.
 Poetry is a tool for dependency management in Python.
 You can use the helper `dev` CLI to build the environment locally:
