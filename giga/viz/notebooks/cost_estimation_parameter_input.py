@@ -22,6 +22,8 @@ from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config import ConfigClient, get_config
 
 
+# NOTE: Interface is a work in progress - this will be updated as UX use cases solidify
+
 SCENARIO_PARAMETERS = [
     {
         "parameter_name": "scenario_tpye",
