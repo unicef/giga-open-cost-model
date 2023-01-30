@@ -47,10 +47,15 @@ def results_to_table(results, n_years=5, responsible_opex=None):
 
 
 def output_to_table(output_space, n_years=5, responsible_opex=None):
+
     if output_space.minimum_cost_result:
         results = output_space.minimum_cost_result
     else:
-        results = output_space.technology_outputs[0].cost_results
+        if len(output_space.technology_outputs) == 0:
+            # return an empty frame
+            return pd.DataFrame()
+        else:
+            results = output_space.technology_outputs[0].cost_results
     return results_to_table(results, n_years=n_years, responsible_opex=responsible_opex)
 
 
