@@ -28,6 +28,8 @@ ipysheet = "^0.7.0"
 grip = "^4.6.1"
 pykml = "^0.2.0"
 
+[tool.poetry.scripts]
+total_cost_scenario = "giga.app.run_total_cost_scenario:main"
 
 [build-system]
 requires = ["poetry-core"]

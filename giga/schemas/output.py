@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from giga.schemas.geo import PairwiseDistance
 from giga.schemas.tech import ConnectivityTechnology
+from giga.viz.notebooks.helpers import output_to_table
 
 
 class PowerConnectionCosts(BaseModel):
@@ -73,3 +74,7 @@ class OutputSpace(BaseModel):
     def technology_outputs(self):
         techs = [self.fiber_costs, self.satellite_costs, self.cellular_costs]
         return list(filter(lambda x: x is not None, techs))
+
+    @property
+    def table(self):
+        return output_to_table(self)
