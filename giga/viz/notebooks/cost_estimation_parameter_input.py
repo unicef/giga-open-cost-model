@@ -145,7 +145,7 @@ ELECTRICITY_MODEL_PARAMETERS = [
         "parameter_name": "solar_panel_costs",
         "parameter_input_name": "Solar Panel Install Cost (USD)",
         "parameter_interactive": IntSlider(10_000, min=0, max=30_000, step=100),
-    }
+    },
 ]
 
 DASHBOARD_PARAMETERS = [
@@ -161,7 +161,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
         "parameter_name": "country_name",
         "parameter_input_name": "Country",
         "parameter_interactive": Dropdown(
-            options=["Sample", "Rwanda"], # "Brazil"
+            options=["Sample", "Rwanda"],  # "Brazil"
             value="Sample",
             disabled=False,
             description="Country:",
@@ -272,11 +272,15 @@ class CostEstimationParameterInput:
         )
         name_column = column(
             0,
-            list(map(lambda x: x["parameter_input_name"], ELECTRICITY_MODEL_PARAMETERS)),
+            list(
+                map(lambda x: x["parameter_input_name"], ELECTRICITY_MODEL_PARAMETERS)
+            ),
         )
         input_column = column(
             1,
-            list(map(lambda x: x["parameter_interactive"], ELECTRICITY_MODEL_PARAMETERS)),
+            list(
+                map(lambda x: x["parameter_interactive"], ELECTRICITY_MODEL_PARAMETERS)
+            ),
         )
         return s
 
@@ -343,8 +347,10 @@ class CostEstimationParameterInput:
                 "fixed_costs": maintenance_cost,
                 "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
             },
-            constraints={"maximum_bandwithd": 150.0,  # should be pulled from defaults
-                         "required_power": required_power},
+            constraints={
+                "maximum_bandwithd": 150.0,  # should be pulled from defaults
+                "required_power": required_power,
+            },
         )
 
     def cellular_parameters(self, sheet_name="cellular"):
@@ -361,26 +367,32 @@ class CostEstimationParameterInput:
                 "fixed_costs": maintenance_cost,
                 "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
             },
-            constraints={"maximum_bandwithd": 100.0,  # should be pulled from defaults
-                         "required_power": required_power,
-                         "maximum_range": max_range},
+            constraints={
+                "maximum_bandwithd": 100.0,  # should be pulled from defaults
+                "required_power": required_power,
+                "maximum_range": max_range,
+            },
         )
 
     def electricity_parameters(self, sheet_name="electricity"):
         s = sheet(sheet_name)
         df = to_dataframe(s)
         cost_per_kwh = float(df[df["A"] == "Cost per kWh (USD)"]["B"])
-        install_solar_panels = float(df[df["A"] == "Solar Panel Install Cost (USD)"]["B"])
+        install_solar_panels = float(
+            df[df["A"] == "Solar Panel Install Cost (USD)"]["B"]
+        )
         return ElectricityCostConf(
-            capex={"solar_panel_costs": install_solar_panels,
-                   "battery_costs": 0.0}, # TODO: ignore for now
-            opex={"cost_per_kwh": cost_per_kwh}
+            capex={
+                "solar_panel_costs": install_solar_panels,
+                "battery_costs": 0.0,
+            },  # TODO: ignore for now
+            opex={"cost_per_kwh": cost_per_kwh},
         )
 
     def _process_nonsheet_scenario_parameters(self, s):
         return {
             "scenario_type": s["scenario_tpye"].value,
-            "opex_responsible": "Consumer"#s["opex_responsible"].value,
+            "opex_responsible": "Consumer",  # s["opex_responsible"].value,
         }
 
     def _process_sheet_scenario_parameters(self, s):

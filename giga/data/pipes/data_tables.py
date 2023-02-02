@@ -6,7 +6,11 @@ from pydantic import BaseModel, validator
 from giga.schemas.geo import UniqueCoordinateTable
 from giga.schemas.school import GigaSchoolTable
 from giga.schemas.cellular import CellTowerTable
-from giga.schemas.distance_cache import SingleLookupDistanceCache, MultiLookupDistanceCache, GreedyConnectCache
+from giga.schemas.distance_cache import (
+    SingleLookupDistanceCache,
+    MultiLookupDistanceCache,
+    GreedyConnectCache,
+)
 
 """
 The pydantic below provide pipelines that can be used to load
@@ -40,10 +44,11 @@ class LocalTablePipeline(BaseModel):
         else:
             return UniqueCoordinateTable.from_csv(self.file_path)
 
+
 class LocalJSONPipeline(BaseModel):
 
     file_path: str
-    data_type: Literal['cellular-distance', 'school-distance']
+    data_type: Literal["cellular-distance", "school-distance"]
 
     @validator("file_path")
     def must_be_valid_path(cls, v):
@@ -60,6 +65,7 @@ class LocalJSONPipeline(BaseModel):
     def load(self):
         return SingleLookupDistanceCache.from_json(self.file_path)
 
+
 class LocalConnectCachePipeline(BaseModel):
 
     workspace: str
@@ -72,6 +78,7 @@ class LocalConnectCachePipeline(BaseModel):
 
     def load(self, **kwargs):
         return GreedyConnectCache.from_workspace(self.workspace, **kwargs)
+
 
 class UploadedTablePipeline(BaseModel):
 

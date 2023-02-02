@@ -78,6 +78,9 @@ class ModelDataSpace:
         return self._cellular_cache
 
     def school_outputs_to_frame(self, outputs):
-        lookup = {c.coordinate_id: tuple(reversed(c.coordinate)) for c in self.school_coordinates}
-        geometry = [Point(lookup[sid]) for sid in outputs['school_id']]
-        return gpd.GeoDataFrame(outputs, crs='4326', geometry=geometry)
+        lookup = {
+            c.coordinate_id: tuple(reversed(c.coordinate))
+            for c in self.school_coordinates
+        }
+        geometry = [Point(lookup[sid]) for sid in outputs["school_id"]]
+        return gpd.GeoDataFrame(outputs, crs="4326", geometry=geometry)

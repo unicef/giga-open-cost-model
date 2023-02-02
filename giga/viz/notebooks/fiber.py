@@ -66,10 +66,19 @@ def plot_pairwise_connections(
 
 def plot_fiber_map(fiber_coordinates, school_coordinates, m=default_rwanda_map()):
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
+        school_coordinates,
+        coordinate_name="School",
+        show_id=False,
+        show_properties=True,
+        color="#43adde",
+        m=m,
     )
     m = plot_coordinate_map(
-        fiber_coordinates, coordinate_name="Fiber Node", color="black", coordinate_radius=3, m=m
+        fiber_coordinates,
+        coordinate_name="Fiber Node",
+        color="black",
+        coordinate_radius=3,
+        m=m,
     )
     return m
 
@@ -79,16 +88,26 @@ def plot_data_map(
     cell_tower_coordinates,
     school_coordinates,
     m=default_rwanda_map(),
-    **kwargs
+    **kwargs,
 ):
     m = plot_coordinate_map(
         fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m, **kwargs
     )
     m = plot_coordinate_map(
-        cell_tower_coordinates, coordinate_name="Cell Tower", color="#bfb673", m=m, **kwargs
+        cell_tower_coordinates,
+        coordinate_name="Cell Tower",
+        color="#bfb673",
+        m=m,
+        **kwargs,
     )
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m, **kwargs
+        school_coordinates,
+        coordinate_name="School",
+        show_id=False,
+        show_properties=True,
+        color="#43adde",
+        m=m,
+        **kwargs,
     )
     return m
 
@@ -97,11 +116,20 @@ def plot_fiber_connections(
     fiber_coordinates, school_coordinates, connections, m=default_rwanda_map()
 ):
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
+        school_coordinates,
+        coordinate_name="School",
+        show_id=False,
+        show_properties=True,
+        color="#43adde",
+        m=m,
     )
     m = plot_pairwise_connections(connections, color="#dbcb3b", m=m)
     m = plot_coordinate_map(
-        fiber_coordinates, coordinate_name="Fiber Node", color="black", coordinate_radius=3, m=m
+        fiber_coordinates,
+        coordinate_name="Fiber Node",
+        color="black",
+        coordinate_radius=3,
+        m=m,
     )
     return m
 

@@ -30,25 +30,25 @@ class SatelliteCostModel:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=math.nan,
-                        opex=math.nan,
-                        opex_provider=math.nan,
-                        opex_consumer=math.nan,
-                        technology="Satellite",
-                        feasible=False,
-                        reason="SATELLITE_BW_THRESHOLD",
-                    )
+                    school_id=sid,
+                    capex=math.nan,
+                    opex=math.nan,
+                    opex_provider=math.nan,
+                    opex_consumer=math.nan,
+                    technology="Satellite",
+                    feasible=False,
+                    reason="SATELLITE_BW_THRESHOLD",
+                )
             else:
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=capex_costs,
-                        opex=opex_consumer + opex_provider,
-                        opex_provider=opex_provider,
-                        opex_consumer=opex_consumer,
-                        technology="Satellite",
-                    )
+                    school_id=sid,
+                    capex=capex_costs,
+                    opex=opex_consumer + opex_provider,
+                    opex_provider=opex_provider,
+                    opex_consumer=opex_consumer,
+                    technology="Satellite",
+                )
             c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs

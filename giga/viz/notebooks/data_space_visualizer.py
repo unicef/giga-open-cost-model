@@ -18,7 +18,11 @@ class DataSpaceVisualizer:
         fiber_coords = self.data_space.fiber_coordinates  # in green
         cell_tower_coords = self.data_space.cell_tower_coordinates
         return plot_data_map(
-            fiber_coords, cell_tower_coords, school_coords, m=default_rwanda_map(), **kwargs
+            fiber_coords,
+            cell_tower_coords,
+            school_coords,
+            m=default_rwanda_map(),
+            **kwargs
         )
 
     def plot_fiber_map(self, **kwargs):

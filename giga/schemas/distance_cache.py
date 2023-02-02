@@ -9,8 +9,9 @@ from giga.schemas.geo import PairwiseDistance, UniqueCoordinate
 
 def encode_coord(coord):
     # turn tuple to list
-    coord['coordinate'] = list(coord['coordinate'])
+    coord["coordinate"] = list(coord["coordinate"])
     return json.dumps(coord)
+
 
 def decode_coord(coord):
     return UniqueCoordinate(**json.loads(coord))
@@ -20,7 +21,7 @@ class SingleLookupDistanceCache(BaseModel):
     """Cache for existing distance data with one to one mapping"""
 
     lookup: Dict[str, PairwiseDistance]
-    cache_type: str = 'one-to-one'
+    cache_type: str = "one-to-one"
 
     @staticmethod
     def from_distances(distances):
@@ -44,12 +45,12 @@ class SingleLookupDistanceCache(BaseModel):
 
     @staticmethod
     def from_json(file):
-        with open(file, 'r') as f:
+        with open(file, "r") as f:
             d = json.load(f)
         return SingleLookupDistanceCache(**d)
 
     def to_json(self, file):
-        with open(file, 'w') as f:
+        with open(file, "w") as f:
             json.dump(self.dict(), f)
 
     @staticmethod
@@ -59,27 +60,30 @@ class SingleLookupDistanceCache(BaseModel):
         for i, row in table.iterrows():
             pair_ids = tuple(row.pair_ids.split(","))
             source_id = pair_ids[0]
-            lookup[source_id] = PairwiseDistance(pair_ids=pair_ids,
-                                                 distance=row.distance,
-                                                 coordinate1=decode_coord(row.coordinate1),
-                                                 coordinate2=decode_coord(row.coordinate2),
-                                                 distance_type=row.distance_type)
+            lookup[source_id] = PairwiseDistance(
+                pair_ids=pair_ids,
+                distance=row.distance,
+                coordinate1=decode_coord(row.coordinate1),
+                coordinate2=decode_coord(row.coordinate2),
+                distance_type=row.distance_type,
+            )
         return SingleLookupDistanceCache(lookup=lookup)
 
     def to_csv(self, file):
         flat = [v.dict() for v in self.lookup.values()]
         for c in flat:
-            c['coordinate1'] = encode_coord(c['coordinate1'])
-            c['coordinate2'] = encode_coord(c['coordinate2'])
+            c["coordinate1"] = encode_coord(c["coordinate1"])
+            c["coordinate2"] = encode_coord(c["coordinate2"])
             c["pair_ids"] = ",".join(c["pair_ids"])
         pd.DataFrame(flat).to_csv(file, index=False)
+
 
 class MultiLookupDistanceCache(BaseModel):
     """Cache for existing distance data with one to many mapping"""
 
     lookup: Dict[str, List[PairwiseDistance]]
     n_neighbors: int
-    cache_type: str = 'one-to-many'
+    cache_type: str = "one-to-many"
 
     @staticmethod
     def from_distances(distances, n_neighbors=10):
@@ -92,7 +96,10 @@ class MultiLookupDistanceCache(BaseModel):
                 # reverse ID ordering to preserve edge direction
                 revids = p.copy()
                 revids.pair_ids = tuple(reversed(revids.pair_ids))
-                revids.coordinate1, revids.coordinate2 = revids.coordinate2, revids.coordinate1
+                revids.coordinate1, revids.coordinate2 = (
+                    revids.coordinate2,
+                    revids.coordinate1,
+                )
                 if id_source in tmp:
                     tmp[id_source].append(revids)
                 else:
@@ -105,13 +112,14 @@ class MultiLookupDistanceCache(BaseModel):
 
     @staticmethod
     def from_json(file):
-        with open(file, 'r') as f:
+        with open(file, "r") as f:
             d = json.load(f)
         return MultiLookupDistanceCache(**d)
 
     def to_json(self, file):
-        with open(file, 'w') as f:
+        with open(file, "w") as f:
             json.dump(self.dict(), f)
+
 
 class GreedyConnectCache(BaseModel):
     """Cache that can be used by the greedy connection model"""
@@ -120,12 +128,20 @@ class GreedyConnectCache(BaseModel):
     unconnected_cache: MultiLookupDistanceCache = None
 
     @staticmethod
-    def from_workspace(workspace, unconnected_file='school_cache.json',
-                                  connected_file='fiber_cache.json'):
+    def from_workspace(
+        workspace,
+        unconnected_file="school_cache.json",
+        connected_file="fiber_cache.json",
+    ):
         connected_cache, unconnected_cache = None, None
         if connected_file is not None:
-            connected_cache = SingleLookupDistanceCache.from_json(os.path.join(workspace, connected_file))
+            connected_cache = SingleLookupDistanceCache.from_json(
+                os.path.join(workspace, connected_file)
+            )
         if unconnected_file is not None:
-            unconnected_cache = MultiLookupDistanceCache.from_json(os.path.join(workspace, unconnected_file))
-        return GreedyConnectCache(connected_cache=connected_cache,
-                                  unconnected_cache=unconnected_cache)
+            unconnected_cache = MultiLookupDistanceCache.from_json(
+                os.path.join(workspace, unconnected_file)
+            )
+        return GreedyConnectCache(
+            connected_cache=connected_cache, unconnected_cache=unconnected_cache
+        )
