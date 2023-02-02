@@ -6,15 +6,11 @@ import numpy as np
 import math
 from IPython.display import HTML, clear_output
 from ipywidgets import Button, Output
+from giga.utils.logging import LOGGER
 
 
 def run_message(wait_time=0.1):
-    for c in "Running":
-        sys.stdout.write(c)
-        sys.stdout.flush()
-        time.sleep(wait_time)
-    clear_output(wait=True)
-    print("Complete")
+    LOGGER.info("Run complete")
 
 def download_link_frame(df, title="Download Results", filename="results.csv"):
     csv = df.to_csv()

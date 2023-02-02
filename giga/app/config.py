@@ -49,6 +49,14 @@ class ConfigClient:
         return file
 
     @property
+    def distance_cache_workspace(self):
+        workspace = os.path.join(
+            self.cfg.data.workspace,
+            self.cfg.data.country_workspace,
+            )
+        return workspace
+
+    @property
     def local_workspace_data_space_config(self):
         return DataSpaceConf(
             school_data_conf={
@@ -68,5 +76,19 @@ class ConfigClient:
                     "file_path": self.cellular_file,
                     "table_type": "cell-towers",
                 },
+            },
+            fiber_distance_cache_conf={
+                "cache_type": "fiber-distance",
+                "data": {
+                    "workspace": self.distance_cache_workspace
+                },
+            },
+            cellular_distance_cache_conf={
+                "cache_type": "cellular-distance",
+                "cell_cache_file": self.cfg.data.cellular_distance_cache_file,
+                "data": {
+                    "workspace": self.distance_cache_workspace
+                },
+
             },
         )

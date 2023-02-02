@@ -9,6 +9,7 @@ data:
   school_file: 'schools.csv'
   fiber_file: 'fiber.csv'
   cellular_file: 'cellular.csv'
+  cellular_distance_cache_file: 'cellular_cache.json'
   school_data_source: filesystem
   fiber_data_source: filesystem
   cellular_data_source: filesystem

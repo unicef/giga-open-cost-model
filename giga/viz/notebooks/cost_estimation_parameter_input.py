@@ -148,14 +148,22 @@ ELECTRICITY_MODEL_PARAMETERS = [
     }
 ]
 
+DASHBOARD_PARAMETERS = [
+    {
+        "parameter_name": "verbose",
+        "parameter_input_name": "Verbose",
+        "parameter_interactive": Checkbox(value=True, description="ON"),
+    },
+]
+
 BASELINE_DATA_SPACE_PARAMETERS = [
     {
         "parameter_name": "country_name",
         "parameter_input_name": "Country",
         "parameter_interactive": Dropdown(
-            options=["Sample", "Brazil", "Rwanda"],
+            options=["Sample", "Rwanda"], # "Brazil"
             value="Sample",
-            disabled=True,
+            disabled=False,
             description="Country:",
             layout=Layout(width="400px"),
         ),
@@ -271,6 +279,29 @@ class CostEstimationParameterInput:
             list(map(lambda x: x["parameter_interactive"], ELECTRICITY_MODEL_PARAMETERS)),
         )
         return s
+
+    def dashboard_parameters_input(self, sheet_name="dashboard"):
+        s = sheet(
+            sheet_name,
+            columns=2,
+            rows=len(DASHBOARD_PARAMETERS),
+            column_headers=False,
+            row_headers=False,
+            column_width=2,
+        )
+        name_column = column(
+            0, list(map(lambda x: x["parameter_input_name"], DASHBOARD_PARAMETERS))
+        )
+        input_column = column(
+            1, list(map(lambda x: x["parameter_interactive"], DASHBOARD_PARAMETERS))
+        )
+        return s
+
+    def dashboard_parameters(self, sheet_name="dashboard"):
+        s = sheet(sheet_name)
+        df = to_dataframe(s)
+        verbose = bool(float(df[df["A"] == "Verbose"]["B"]))
+        return {"verbose": verbose}
 
     def fiber_parameters(self, sheet_name="fiber"):
         s = sheet(sheet_name)
@@ -478,6 +509,7 @@ class CostEstimationParameterInput:
         country_id = s["country_name"].value
         config_request = self._updated_param_request(country_id)
         config = ConfigClient(get_config(config_request))
+        return config.local_workspace_data_space_config
         return DataSpaceConf(
             school_data_conf={
                 "country_id": country_id,
@@ -519,4 +551,6 @@ class CostEstimationParameterInput:
         sc = self.cellular_parameters_input()
         t5 = HTML(value="<hr><b>Electricity Model Configuration</b>")
         e = self.electricity_parameters_input()
-        return VBox([t1, d, s, t2, f, t3, sa, t4, sc, t5, e])
+        t6 = HTML(value="<hr><b>Dashboard Configuration</b>")
+        da = self.dashboard_parameters_input()
+        return VBox([t1, d, s, t2, f, t3, sa, t4, sc, t5, e, t6, da])

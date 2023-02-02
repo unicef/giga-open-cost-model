@@ -7,6 +7,7 @@ from giga.schemas.conf.models import MinimumCostScenarioConf
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
+from giga.utils.logging import LOGGER
 
 
 class MinimumCostScenario:
@@ -86,11 +87,12 @@ class MinimumCostScenario:
             idx = np.nanargmin(totals)
             return costs[idx]
 
-    def run(self):
+    def run(self, progress_bar: bool = False):
+        LOGGER.info(f"Starting Minimum Cost Scenario")
         self._prep()
         for c in self.config.technologies:
             cost_model = self._make_model(c)
-            output = cost_model.run(self.data_space)
+            output = cost_model.run(self.data_space, progress_bar=progress_bar)
             self._to_output_space(output, c)
         aggregated = self._aggregate_outputs_by_school()
         minimum_costs = [

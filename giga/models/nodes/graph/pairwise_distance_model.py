@@ -6,7 +6,7 @@ from giga.schemas.geo import UniqueCoordinate, PairwiseDistance
 from giga.utils.progress_bar import progress_bar
 
 
-def DEFAULT_DISTANCE_FN(x, y):
+def DEFAULT_DISTANCE_FN(x, y) -> float:
     return haversine(x, y, unit="m")
 
 
