@@ -8,6 +8,7 @@ from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.schemas.geo import PairwiseDistance
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.models.components.electricity_cost_model import ElectricityCostModel
+from giga.utils.logging import LOGGER
 
 
 METERS_IN_KM = 1000.0
@@ -79,11 +80,13 @@ class CellularCostModel:
         """
         Computes a cost table for schools present in the data_space input
         """
+        LOGGER.info(f"Starting Cellular Cost Model")
         conection_model = GreedyDistanceConnector(
             data_space.cell_tower_coordinates,
             dynamic_connect=False, # this will create closest distance pairs
             progress_bar=progress_bar,
-            maximum_connection_length_m=self.config.constraints.maximum_range
+            maximum_connection_length_m=self.config.constraints.maximum_range,
+            distance_cache=data_space.cellular_cache
         )
         # determine which schools are in range of cell towers
         distances = conection_model.run(data_space.school_coordinates)

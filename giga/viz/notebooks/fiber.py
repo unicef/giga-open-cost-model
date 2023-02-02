@@ -27,7 +27,7 @@ def plot_coordinate_map(
     show_id=True,
     show_properties=False,
     color="green",
-    coordinate_radius=9,
+    coordinate_radius=2,
     m=folium.Map(tiles="cartodbpositron", zoom_start=10),
 ):
     for c in coordinates:
@@ -66,10 +66,10 @@ def plot_pairwise_connections(
 
 def plot_fiber_map(fiber_coordinates, school_coordinates, m=default_rwanda_map()):
     m = plot_coordinate_map(
-        fiber_coordinates, coordinate_name="Fiber Node", color="#68e389", m=m
+        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
     )
     m = plot_coordinate_map(
-        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
+        fiber_coordinates, coordinate_name="Fiber Node", color="black", coordinate_radius=3, m=m
     )
     return m
 
@@ -96,8 +96,13 @@ def plot_data_map(
 def plot_fiber_connections(
     fiber_coordinates, school_coordinates, connections, m=default_rwanda_map()
 ):
-    m = plot_fiber_map(fiber_coordinates, school_coordinates, m=m)
+    m = plot_coordinate_map(
+        school_coordinates, coordinate_name="School", show_id=False, show_properties=True, color="#43adde", m=m
+    )
     m = plot_pairwise_connections(connections, color="#dbcb3b", m=m)
+    m = plot_coordinate_map(
+        fiber_coordinates, coordinate_name="Fiber Node", color="black", coordinate_radius=3, m=m
+    )
     return m
 
 

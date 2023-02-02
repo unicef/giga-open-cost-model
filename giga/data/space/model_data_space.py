@@ -15,6 +15,8 @@ class ModelDataSpace:
         self._schools = None
         self._fiber_map = None
         self._cell_tower_map = None
+        self._fiber_cache = None
+        self._cellular_cache = None
 
     @property
     def schools(self):
@@ -52,6 +54,28 @@ class ModelDataSpace:
     @property
     def cell_tower_coordinates(self):
         return self.cell_tower_map.to_coordinates()
+
+    @property
+    def fiber_cache(self):
+        if self._fiber_cache is None:
+            # make cache
+            if self.config.fiber_distance_cache_conf is None:
+                # skip and return None if no configuration
+                return self._fiber_cache
+            else:
+                self._fiber_cache = self.config.fiber_distance_cache_conf.load()
+        return self._fiber_cache
+
+    @property
+    def cellular_cache(self):
+        if self._cellular_cache is None:
+            # make cache
+            if self.config.cellular_distance_cache_conf is None:
+                # skip and return None if no configuration
+                return self._cellular_cache
+            else:
+                self._cellular_cache = self.config.cellular_distance_cache_conf.load()
+        return self._cellular_cache
 
     def school_outputs_to_frame(self, outputs):
         lookup = {c.coordinate_id: tuple(reversed(c.coordinate)) for c in self.school_coordinates}

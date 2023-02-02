@@ -4,15 +4,21 @@ from tqdm import tqdm
 from giga.utils.notebooks import is_notebook
 
 
-def progress_bar(data):
+BAR_FROMAT = '{l_bar}{bar:50}{r_bar}{bar:-50b}'
+
+def progress_bar(data, description=None):
     if is_notebook():
-        return tqdm_notebook(data)
+        bar = tqdm_notebook(data)
     else:
-        return tqdm(data)
+        bar = tqdm(data, bar_format=BAR_FROMAT)
+    if description: bar.set_description(description)
+    return bar
 
 
-def managed_progress_bar(n_items):
+def managed_progress_bar(n_items, description=None):
     if is_notebook():
-        return tqdm_notebook(total=n_items)
+        bar = tqdm_notebook(total=n_items)
     else:
-        return tqdm(total=n_items)
+        bar = tqdm(total=n_items, bar_format=BAR_FROMAT)
+    if description: bar.set_description(description)
+    return bar

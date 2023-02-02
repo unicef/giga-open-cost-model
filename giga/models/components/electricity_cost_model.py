@@ -7,7 +7,6 @@ from giga.schemas.school import GigaSchool
 from giga.data.space.model_data_space import ModelDataSpace
 
 
-
 class ElectricityCostModel:
     """
         Computes the electricity costs associated with connecting

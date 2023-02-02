@@ -4,7 +4,7 @@ from typing import List, Literal, Union
 from giga.schemas.tech import ConnectivityTechnology
 
 
-from giga.data.pipes.data_tables import LocalTablePipeline, UploadedTablePipeline
+from giga.data.pipes.data_tables import LocalTablePipeline, UploadedTablePipeline, LocalJSONPipeline, LocalConnectCachePipeline
 
 
 class CoordinateMapConf(BaseModel):
@@ -43,9 +43,33 @@ class SchoolCountryConf(BaseModel):
     def load(self):
         return self.data.load()  # loads data from the configured pipeline
 
+class FiberDistanceCacheConf(BaseModel):
+    """
+    Distance cache for fiber cost models
+    """
+
+    cache_type: Literal["fiber-distance"]
+    data: LocalConnectCachePipeline
+
+    def load(self):
+        return self.data.load()  # loads data from the configured pipeline
+
+class CellularDistanceCacheConf(BaseModel):
+    """
+    Distance cache for cellular cost models
+    """
+
+    cache_type: Literal["cellular-distance"]
+    cell_cache_file: str
+    data: LocalConnectCachePipeline
+
+    def load(self):
+        return self.data.load(connected_file=self.cell_cache_file, unconnected_file=None)  # loads data from the configured pipeline
 
 class DataSpaceConf(BaseModel):
 
     school_data_conf: SchoolCountryConf
     fiber_map_conf: CoordinateMapConf = None
     cell_tower_map_conf: CoordinateMapConf = None
+    fiber_distance_cache_conf: FiberDistanceCacheConf = None
+    cellular_distance_cache_conf: CellularDistanceCacheConf = None

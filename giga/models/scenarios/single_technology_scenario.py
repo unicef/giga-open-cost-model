@@ -5,6 +5,7 @@ from giga.models.components.cellular_cost_model import CellularCostModel
 from giga.schemas.output import CostResultSpace
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.output import OutputSpace
+from giga.utils.logging import LOGGER
 
 
 class SingleTechnologyScenario:
@@ -43,8 +44,9 @@ class SingleTechnologyScenario:
         # update bw demand
         self.data_space.schools.update_bw_demand_all(self.config.bandwidth_demand)
 
-    def run(self):
+    def run(self, progress_bar: bool = False):
+        LOGGER.info(f"Starting Single Technology Scenario {self.config.technology}")
         self._prep()
         cost_model = self._make_model()
-        output = cost_model.run(self.data_space)
+        output = cost_model.run(self.data_space, progress_bar=progress_bar)
         return self._to_output_space(output)

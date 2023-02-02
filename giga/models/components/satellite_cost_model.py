@@ -5,6 +5,7 @@ from giga.schemas.conf.models import SatelliteTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.models.components.electricity_cost_model import ElectricityCostModel
+from giga.utils.logging import LOGGER
 
 
 class SatelliteCostModel:
@@ -59,6 +60,7 @@ class SatelliteCostModel:
         """
         Computes a cost table for schools present in the data_space input
         """
+        LOGGER.info(f"Starting Satellite Cost Model")
         costs = self.compute_costs(data_space)
         return CostResultSpace(
             technology_results={"model_type": "Satellite"}, cost_results=costs
