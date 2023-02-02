@@ -53,7 +53,7 @@ class ConfigClient:
         workspace = os.path.join(
             self.cfg.data.workspace,
             self.cfg.data.country_workspace,
-            )
+        )
         return workspace
 
     @property
@@ -79,16 +79,11 @@ class ConfigClient:
             },
             fiber_distance_cache_conf={
                 "cache_type": "fiber-distance",
-                "data": {
-                    "workspace": self.distance_cache_workspace
-                },
+                "data": {"workspace": self.distance_cache_workspace},
             },
             cellular_distance_cache_conf={
                 "cache_type": "cellular-distance",
                 "cell_cache_file": self.cfg.data.cellular_distance_cache_file,
-                "data": {
-                    "workspace": self.distance_cache_workspace
-                },
-
+                "data": {"workspace": self.distance_cache_workspace},
             },
         )

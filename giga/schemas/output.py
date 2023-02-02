@@ -47,6 +47,7 @@ class FiberModelResults(BaseModel):
 
     distances: List[PairwiseDistance]
 
+
 class CellularModelResults(BaseModel):
 
     distances: List[PairwiseDistance]
@@ -59,7 +60,9 @@ class GenericModelResults(BaseModel):
 
 class CostResultSpace(BaseModel):
 
-    technology_results: Union[FiberModelResults, CellularModelResults, GenericModelResults]
+    technology_results: Union[
+        FiberModelResults, CellularModelResults, GenericModelResults
+    ]
     cost_results: List[SchoolConnectionCosts]
 
 

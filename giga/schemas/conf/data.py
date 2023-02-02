@@ -4,7 +4,12 @@ from typing import List, Literal, Union
 from giga.schemas.tech import ConnectivityTechnology
 
 
-from giga.data.pipes.data_tables import LocalTablePipeline, UploadedTablePipeline, LocalJSONPipeline, LocalConnectCachePipeline
+from giga.data.pipes.data_tables import (
+    LocalTablePipeline,
+    UploadedTablePipeline,
+    LocalJSONPipeline,
+    LocalConnectCachePipeline,
+)
 
 
 class CoordinateMapConf(BaseModel):
@@ -36,12 +41,13 @@ class SchoolCountryConf(BaseModel):
     manual_entries: List[ManualSchoolDataEntry] = []
 
     # allow any capitalization on country IDs
-    @validator('country_id', pre=True)
+    @validator("country_id", pre=True)
     def to_lowercase(cls, value):
         return value.lower()
 
     def load(self):
         return self.data.load()  # loads data from the configured pipeline
+
 
 class FiberDistanceCacheConf(BaseModel):
     """
@@ -54,6 +60,7 @@ class FiberDistanceCacheConf(BaseModel):
     def load(self):
         return self.data.load()  # loads data from the configured pipeline
 
+
 class CellularDistanceCacheConf(BaseModel):
     """
     Distance cache for cellular cost models
@@ -64,7 +71,10 @@ class CellularDistanceCacheConf(BaseModel):
     data: LocalConnectCachePipeline
 
     def load(self):
-        return self.data.load(connected_file=self.cell_cache_file, unconnected_file=None)  # loads data from the configured pipeline
+        return self.data.load(
+            connected_file=self.cell_cache_file, unconnected_file=None
+        )  # loads data from the configured pipeline
+
 
 class DataSpaceConf(BaseModel):
 

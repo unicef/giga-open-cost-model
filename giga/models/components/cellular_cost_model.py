@@ -39,36 +39,36 @@ class CellularCostModel:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=math.nan,
-                        opex=math.nan,
-                        opex_provider=math.nan,
-                        opex_consumer=math.nan,
-                        technology="Cellular",
-                        feasible=False,
-                        reason="CELLULAR_BW_THRESHOLD",
-                    )
+                    school_id=sid,
+                    capex=math.nan,
+                    opex=math.nan,
+                    opex_provider=math.nan,
+                    opex_consumer=math.nan,
+                    technology="Cellular",
+                    feasible=False,
+                    reason="CELLULAR_BW_THRESHOLD",
+                )
             elif sid in connected_set:
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=capex_costs,
-                        opex=opex_consumer + opex_provider,
-                        opex_provider=opex_provider,
-                        opex_consumer=opex_consumer,
-                        technology="Cellular",
-                    )
+                    school_id=sid,
+                    capex=capex_costs,
+                    opex=opex_consumer + opex_provider,
+                    opex_provider=opex_provider,
+                    opex_consumer=opex_consumer,
+                    technology="Cellular",
+                )
             else:
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=math.nan,
-                        opex=math.nan,
-                        opex_provider=math.nan,
-                        opex_consumer=math.nan,
-                        technology="Cellular",
-                        feasible=False,
-                        reason="CELLULAR_RANGE_THRESHOLD",
-                    )
+                    school_id=sid,
+                    capex=math.nan,
+                    opex=math.nan,
+                    opex_provider=math.nan,
+                    opex_consumer=math.nan,
+                    technology="Cellular",
+                    feasible=False,
+                    reason="CELLULAR_RANGE_THRESHOLD",
+                )
             c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs
@@ -83,10 +83,10 @@ class CellularCostModel:
         LOGGER.info(f"Starting Cellular Cost Model")
         conection_model = GreedyDistanceConnector(
             data_space.cell_tower_coordinates,
-            dynamic_connect=False, # this will create closest distance pairs
+            dynamic_connect=False,  # this will create closest distance pairs
             progress_bar=progress_bar,
             maximum_connection_length_m=self.config.constraints.maximum_range,
-            distance_cache=data_space.cellular_cache
+            distance_cache=data_space.cellular_cache,
         )
         # determine which schools are in range of cell towers
         distances = conection_model.run(data_space.school_coordinates)

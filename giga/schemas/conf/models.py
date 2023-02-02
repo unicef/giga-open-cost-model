@@ -5,8 +5,8 @@ import math
 
 class ElectricityCapexConf(BaseModel):
 
-    solar_panel_costs: float # USD
-    battery_costs: float # USD
+    solar_panel_costs: float  # USD
+    battery_costs: float  # USD
 
 
 class ElectricityOpexConf(BaseModel):
@@ -62,6 +62,7 @@ class FiberConstraints(BaseModel):
     maximum_bandwithd: float = 2_000  # Mbps
     required_power: float = 500  # annual kWh
 
+
 class CellularConstraints(BaseModel):
 
     maximum_range: float = math.inf  # meters
@@ -84,6 +85,7 @@ class SatelliteTechnologyCostConf(BaseModel):
     technology: str = "Satellite"
     electricity_config: ElectricityCostConf = None
 
+
 class CellularTechnologyCostConf(BaseModel):
     capex: GeneralizedInternetCapex
     opex: GeneralizedInternetOpex
@@ -92,7 +94,9 @@ class CellularTechnologyCostConf(BaseModel):
     electricity_config: ElectricityCostConf = None
 
 
-TechnologyConfiguration = Union[FiberTechnologyCostConf, SatelliteTechnologyCostConf, CellularTechnologyCostConf]
+TechnologyConfiguration = Union[
+    FiberTechnologyCostConf, SatelliteTechnologyCostConf, CellularTechnologyCostConf
+]
 
 
 class SingleTechnologyScenarioConf(BaseModel):

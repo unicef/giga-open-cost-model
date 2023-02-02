@@ -49,7 +49,9 @@ class GigaSchool(BaseModel):
     def to_coordinates(self):
         """Transforms the school into a simplified coordinate"""
         return UniqueCoordinate(
-            coordinate_id=self.giga_id, coordinate=[self.lat, self.lon], properties={'has_electricity': self.has_electricity}
+            coordinate_id=self.giga_id,
+            coordinate=[self.lat, self.lon],
+            properties={"has_electricity": self.has_electricity},
         )
 
 

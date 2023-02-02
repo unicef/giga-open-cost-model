@@ -12,6 +12,7 @@ from giga.utils.logging import LOGGER
 def run_message(wait_time=0.1):
     LOGGER.info("Run complete")
 
+
 def download_link_frame(df, title="Download Results", filename="results.csv"):
     csv = df.to_csv()
     b64 = base64.b64encode(csv.encode())
@@ -23,21 +24,45 @@ def download_link_frame(df, title="Download Results", filename="results.csv"):
 
 def results_to_table(results, n_years=5, responsible_opex=None):
     df = pd.DataFrame(list(map(lambda x: dict(x), results)))
-    electricity_opex = list(map(lambda x: x.electricity.electricity_opex if x.feasible else math.nan, results))
-    electricity_capex = list(map(lambda x: x.electricity.electricity_capex if x.feasible else math.nan, results))
-    electricity_type = list(map(lambda x: x.electricity.cost_type if x.feasible else math.nan, results))
+    electricity_opex = list(
+        map(
+            lambda x: x.electricity.electricity_opex if x.feasible else math.nan,
+            results,
+        )
+    )
+    electricity_capex = list(
+        map(
+            lambda x: x.electricity.electricity_capex if x.feasible else math.nan,
+            results,
+        )
+    )
+    electricity_type = list(
+        map(lambda x: x.electricity.cost_type if x.feasible else math.nan, results)
+    )
     df["capex_technology"] = df["capex"]
     df["capex_electricity"] = electricity_capex
     df["opex_connectivity"] = df["opex_consumer"]
     df["opex_technology"] = df["opex_provider"]
     df["opex_electricity"] = electricity_opex
     df["capex_total"] = df["capex_technology"] + df["capex_electricity"]
-    df["opex_total"] = df["opex_connectivity"] + df["opex_technology"] + df["opex_electricity"]
+    df["opex_total"] = (
+        df["opex_connectivity"] + df["opex_technology"] + df["opex_electricity"]
+    )
     df["total_cost"] = df["capex_total"] + df["opex_total"] * n_years
-    df = df.drop(columns=["electricity", "opex_consumer", "opex_provider", "opex", "capex"])
+    df = df.drop(
+        columns=["electricity", "opex_consumer", "opex_provider", "opex", "capex"]
+    )
     df = df.replace(math.nan, np.nan).round(
-        {"opex_total": 2, "opex_connectivity": 2, "opex_electricity": 2, "opex_technology": 2,
-         "capex_total": 2, "capex_technology": 2, "capex_electricity": 2, "total_cost": 2}
+        {
+            "opex_total": 2,
+            "opex_connectivity": 2,
+            "opex_electricity": 2,
+            "opex_technology": 2,
+            "capex_total": 2,
+            "capex_technology": 2,
+            "capex_electricity": 2,
+            "total_cost": 2,
+        }
     )
     return df
 
@@ -81,8 +106,10 @@ def button_cb(description, action):
     b = Button(description=description)
     out = Output()
     display(b, out)
+
     def on_click(b):
         with out:
             clear_output(wait=True)
             action()
+
     return b, on_click

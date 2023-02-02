@@ -16,9 +16,10 @@ METERS_IN_KM = 1000.0
 
 
 class FiberCostModel:
-    """ Estimates the cost of connecting a collection of schools to the internet
-        using fiber technology
+    """Estimates the cost of connecting a collection of schools to the internet
+    using fiber technology
     """
+
     def __init__(self, config: FiberTechnologyCostConf):
         self.config = config
 
@@ -64,45 +65,48 @@ class FiberCostModel:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=math.nan,
-                        opex=math.nan,
-                        opex_provider=math.nan,
-                        opex_consumer=math.nan,
-                        technology="Fiber",
-                        feasible=False,
-                        reason="FIBER_BW_THRESHOLD",
-                    )
+                    school_id=sid,
+                    capex=math.nan,
+                    opex=math.nan,
+                    opex_provider=math.nan,
+                    opex_consumer=math.nan,
+                    technology="Fiber",
+                    feasible=False,
+                    reason="FIBER_BW_THRESHOLD",
+                )
             elif sid in capex_costs:
                 capex = capex_costs[sid]["capex"]
                 opex_consumer = self._cost_of_operation(school)
                 opex_provider = opex_costs_provider[sid]["opex"]
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=capex,
-                        opex=opex_consumer + opex_provider,
-                        opex_provider=opex_provider,
-                        opex_consumer=opex_consumer,
-                        technology="Fiber",
-                    )
+                    school_id=sid,
+                    capex=capex,
+                    opex=opex_consumer + opex_provider,
+                    opex_provider=opex_provider,
+                    opex_consumer=opex_consumer,
+                    technology="Fiber",
+                )
             else:
                 c = SchoolConnectionCosts(
-                        school_id=sid,
-                        capex=math.nan,
-                        opex=math.nan,
-                        opex_provider=math.nan,
-                        opex_consumer=math.nan,
-                        technology="Fiber",
-                        feasible=False,
-                        reason="FIBER_DISTANCE_THRESHOLD",
-                    )
+                    school_id=sid,
+                    capex=math.nan,
+                    opex=math.nan,
+                    opex_provider=math.nan,
+                    opex_consumer=math.nan,
+                    technology="Fiber",
+                    feasible=False,
+                    reason="FIBER_DISTANCE_THRESHOLD",
+                )
             c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def run(
-        self, data_space: ModelDataSpace, progress_bar: bool = False, distance_model = PairwiseDistanceModel()
+        self,
+        data_space: ModelDataSpace,
+        progress_bar: bool = False,
+        distance_model=PairwiseDistanceModel(),
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
@@ -114,7 +118,7 @@ class FiberCostModel:
             progress_bar=progress_bar,
             maximum_connection_length_m=self.config.constraints.maximum_connection_length,
             distance_model=distance_model,
-            distance_cache=data_space.fiber_cache
+            distance_cache=data_space.fiber_cache,
         )
         # determine which schools can be connected and their distances
         distances = conection_model.run(data_space.school_coordinates)
