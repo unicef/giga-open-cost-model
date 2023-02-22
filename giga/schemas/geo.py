@@ -1,6 +1,7 @@
 from typing import Tuple, List, Dict, Optional
 from pydantic import BaseModel, Field
 import pandas as pd
+import numpy as np
 
 
 LatLonPoint = Tuple[float, float]  # [lat, lon] or (lat, lon)
@@ -44,6 +45,10 @@ class UniqueCoordinateTable(BaseModel):
             )
         )
         pd.DataFrame(tabular).to_csv(file_name)
+
+    def to_coordinate_vector(self):
+        """Transforms the coordinate table into a numpy vector of coordinates"""
+        return np.array([[c.coordinate[0], c.coordinate[1]] for c in self.coordinates])
 
 
 class PairwiseDistance(BaseModel):
