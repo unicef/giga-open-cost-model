@@ -161,7 +161,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
         "parameter_name": "country_name",
         "parameter_input_name": "Country",
         "parameter_interactive": Dropdown(
-            options=["Sample", "Rwanda"],  # "Brazil"
+            options=["Sample", "Rwanda", "Brazil"],  # "Brazil"
             value="Sample",
             disabled=False,
             description="Country:",

@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List
 from pydantic import BaseModel, Field
 import pandas as pd
+import numpy as np
 
 from giga.schemas.geo import UniqueCoordinate
 
@@ -72,3 +73,7 @@ class GigaSchoolTable(BaseModel):
     def update_bw_demand_all(self, demand):
         for s in self.schools:
             s.bandwidth_demand = demand
+
+    def to_coordinate_vector(self):
+        """Transforms the school table into a numpy vector of coordinates"""
+        return np.array([[s.lat, s.lon] for s in self.schools])
