@@ -1,3 +1,4 @@
+import json
 from ipywidgets import (
     FloatSlider,
     IntSlider,
@@ -11,9 +12,6 @@ from ipywidgets import (
 from ipysheet import sheet, column, to_dataframe
 
 from giga.schemas.conf.models import (
-    FiberTechnologyCostConf,
-    SatelliteTechnologyCostConf,
-    CellularTechnologyCostConf,
     MinimumCostScenarioConf,
     SingleTechnologyScenarioConf,
     ElectricityCostConf,
@@ -21,132 +19,27 @@ from giga.schemas.conf.models import (
 from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config import ConfigClient, get_config
 
+from giga.viz.notebooks.parameters.groups.data_paramter_manager import (
+    DataParameterManager,
+)
+from giga.viz.notebooks.parameters.groups.scenario_parameter_manager import (
+    ScenarioParameterManager,
+)
+from giga.viz.notebooks.parameters.groups.fiber_technology_parameter_manager import (
+    FiberTechnologyParameterManager,
+)
+from giga.viz.notebooks.parameters.groups.satellite_technology_parameter_manager import (
+    SatelliteTechnologyParameterManager,
+)
+from giga.viz.notebooks.parameters.groups.cellular_technology_parameter_manager import (
+    CellularTechnologyParameterManager,
+)
+from giga.viz.notebooks.parameters.groups.electricity_parameter_manager import (
+    ElectricityParameterManager,
+)
+
 
 # NOTE: Interface is a work in progress - this will be updated as UX use cases solidify
-
-SCENARIO_PARAMETERS = [
-    {
-        "parameter_name": "scenario_tpye",
-        "parameter_input_name": "Cost Scenario",
-        "parameter_interactive": Dropdown(
-            options=["Lowest Cost", "Fiber Only", "Satellite Only", "Cellular Only"],
-            value="Lowest Cost",
-            description="Cost Scenario:",
-            style={"description_width": "initial"},
-            layout=Layout(width="400px"),
-        ),
-    },
-]
-
-SCENARIO_SHEET_PARAMETERS = [
-    {
-        "parameter_name": "years_opex",
-        "parameter_input_name": "OpEx Years",
-        "parameter_interactive": IntSlider(5, min=0, max=10, step=1),
-    },
-    {
-        "parameter_name": "bandwidth_demand",
-        "parameter_input_name": "Bandwidth Demand (Mbps)",
-        "parameter_interactive": FloatSlider(40, min=1, max=500, step=1),
-    },
-]
-
-FIBER_MODEL_PARAMETERS = [
-    {
-        "parameter_name": "per_mbps_cost",
-        "parameter_input_name": "Annual cost per Mbps (USD)",
-        "parameter_interactive": IntSlider(10, min=0, max=100, step=1),
-    },
-    {
-        "parameter_name": "cost_per_km",
-        "parameter_input_name": "Cost Per km (USD)",
-        "parameter_interactive": IntSlider(8_900, min=0, max=50_000, step=100),
-    },
-    {
-        "parameter_name": "fixed_costs",
-        "parameter_input_name": "Maintenance Cost per km (USD)",
-        "parameter_interactive": IntSlider(100, min=0, max=1_000, step=10),
-    },
-    {
-        "parameter_name": "maximum_connection_length",
-        "parameter_input_name": "Maximum Connection Length (km)",
-        "parameter_interactive": IntSlider(20, min=0, max=100),
-    },
-    {
-        "parameter_name": "power_requirement",
-        "parameter_input_name": "Annual Power Required (kWh)",
-        "parameter_interactive": IntSlider(500, min=0, max=1_000, step=10),
-    },
-    {
-        "parameter_name": "economies_of_scale",
-        "parameter_input_name": "Economies of Scale",
-        "parameter_interactive": Checkbox(value=True, description="ON"),
-    },
-]
-
-SATELLITE_MODEL_PARAMETERS = [
-    {
-        "parameter_name": "install_costs",
-        "parameter_input_name": "Installation Cost (USD)",
-        "parameter_interactive": IntSlider(600, min=0, max=4_000, step=10),
-    },
-    {
-        "parameter_name": "per_mbps_cost",
-        "parameter_input_name": "Annual cost per Mbps (USD)",
-        "parameter_interactive": IntSlider(15, min=0, max=100, step=1),
-    },
-    {
-        "parameter_name": "fixed_costs",
-        "parameter_input_name": "Annual Maintenance Cost (USD)",
-        "parameter_interactive": IntSlider(0, min=0, max=1_000, step=10),
-    },
-    {
-        "parameter_name": "power_requirement",
-        "parameter_input_name": "Annual Power Required (kWh)",
-        "parameter_interactive": IntSlider(200, min=0, max=1_000, step=10),
-    },
-]
-
-CELLULAR_MODEL_PARAMETERS = [
-    {
-        "parameter_name": "install_costs",
-        "parameter_input_name": "Installation Cost (USD)",
-        "parameter_interactive": IntSlider(500, min=0, max=2_500, step=10),
-    },
-    {
-        "parameter_name": "per_mbps_cost",
-        "parameter_input_name": "Annual cost per Mbps (USD)",
-        "parameter_interactive": IntSlider(10, min=0, max=100, step=1),
-    },
-    {
-        "parameter_name": "fixed_costs",
-        "parameter_input_name": "Annual Maintenance Cost (USD)",
-        "parameter_interactive": IntSlider(0, min=0, max=1_000, step=10),
-    },
-    {
-        "parameter_name": "power_requirement",
-        "parameter_input_name": "Annual Power Required (kWh)",
-        "parameter_interactive": IntSlider(10, min=0, max=100, step=10),
-    },
-    {
-        "parameter_name": "maximum_range",
-        "parameter_input_name": "Maximum Cell Tower Range (km)",
-        "parameter_interactive": IntSlider(8, min=0, max=25),
-    },
-]
-
-ELECTRICITY_MODEL_PARAMETERS = [
-    {
-        "parameter_name": "per_kwh_cost",
-        "parameter_input_name": "Cost per kWh (USD)",
-        "parameter_interactive": FloatSlider(0.10, min=0, max=1, step=0.1),
-    },
-    {
-        "parameter_name": "solar_panel_costs",
-        "parameter_input_name": "Solar Panel Install Cost (USD)",
-        "parameter_interactive": IntSlider(10_000, min=0, max=30_000, step=100),
-    },
-]
 
 DASHBOARD_PARAMETERS = [
     {
@@ -156,21 +49,7 @@ DASHBOARD_PARAMETERS = [
     },
 ]
 
-BASELINE_DATA_SPACE_PARAMETERS = [
-    {
-        "parameter_name": "country_name",
-        "parameter_input_name": "Country",
-        "parameter_interactive": Dropdown(
-            options=["Sample", "Rwanda", "Brazil"],  # "Brazil"
-            value="Sample",
-            disabled=False,
-            description="Country:",
-            layout=Layout(width="400px"),
-        ),
-    }
-]
-
-UPLOADED_DATA_SPACE_PARAMETERS = BASELINE_DATA_SPACE_PARAMETERS + [
+UPLOADED_DATA_SPACE_PARAMETERS = [
     {
         "parameter_name": "fiber_map_upload",
         "parameter_input_name": "Fiber Map",
@@ -198,91 +77,264 @@ UPLOAD_SUFFIX = "_upload"
 
 class CostEstimationParameterInput:
     """
-    xCreates an interactive dashboard in jupyter notebooks that allows users
+    Creates an interactive dashboard in jupyter notebooks that allows users
     to configure data, model, and scenario parameters for connectivity cost estimation
     """
 
-    def __init__(self, local_data_workspace="workspace"):
+    def __init__(
+        self,
+        local_data_workspace="workspace",
+        defaults=None,
+        data_parameter_manager=None,
+        scenario_parameter_manager=None,
+        fiber_parameter_manager=None,
+        satellite_parameter_manager=None,
+        cellular_parameter_manager=None,
+        electricity_parameter_manager=None,
+    ):
         self._hashed_sheets = {}
         self.workspace = local_data_workspace
+        self.defaults = defaults
+        self.data_parameter_manager = (
+            DataParameterManager(workspace=local_data_workspace)
+            if data_parameter_manager is None
+            else data_parameter_manager
+        )
+        self.scenario_parameter_manager = (
+            ScenarioParameterManager()
+            if scenario_parameter_manager is None
+            else scenario_parameter_manager
+        )
+        self.fiber_parameter_manager = (
+            FiberTechnologyParameterManager()
+            if fiber_parameter_manager is None
+            else fiber_parameter_manager
+        )
+        self.satellite_parameter_manager = (
+            SatelliteTechnologyParameterManager()
+            if satellite_parameter_manager is None
+            else satellite_parameter_manager
+        )
+        self.cellular_parameter_manager = (
+            CellularTechnologyParameterManager()
+            if cellular_parameter_manager is None
+            else cellular_parameter_manager
+        )
+        self.electricity_parameter_manager = (
+            ElectricityParameterManager()
+            if electricity_parameter_manager is None
+            else electricity_parameter_manager
+        )
+        self.managers = {
+            "data": [self.data_parameter_manager],
+            "scenario": [self.scenario_parameter_manager],
+            "technology": [
+                self.fiber_parameter_manager,
+                self.satellite_parameter_manager,
+                self.cellular_parameter_manager,
+            ],
+        }
+
+    @property
+    def config(self):
+        return {
+            "data_parameters": self.data_parameters().dict(),
+            "scenario_parameters": self.scenario_parameters().dict(),
+        }
+
+    @property
+    def config_json(self):
+        return json.dumps(self.config)
+
+    @staticmethod
+    def from_config_single_tech(config, local_data_workspace="workspace"):
+        # This static method creates a input dashboard for the single technology scenario
+        tech_config = config["scenario_parameters"]["tech_config"]
+        tech = config["scenario_parameters"]["technology"]
+        scenario_parameter_manager = ScenarioParameterManager.from_config(
+            config["scenario_parameters"]
+        )
+        electricity_parameter_manager = ElectricityParameterManager.from_config(
+            tech_config["electricity_config"]
+        )
+        data_parameter_manager = DataParameterManager.from_config(
+            config["data_parameters"], workspace=local_data_workspace
+        )
+        if tech == "Satellite":
+            satellite_parameter_manager = (
+                SatelliteTechnologyParameterManager.from_config(tech_config)
+            )
+            return CostEstimationParameterInput(
+                local_data_workspace=local_data_workspace,
+                data_parameter_manager=data_parameter_manager,
+                scenario_parameter_manager=scenario_parameter_manager,
+                satellite_parameter_manager=satellite_parameter_manager,
+                electricity_parameter_manager=electricity_parameter_manager,
+            )
+        elif tech == "Cellular":
+            cellular_parameter_manager = CellularTechnologyParameterManager.from_config(
+                tech_config
+            )
+            return CostEstimationParameterInput(
+                local_data_workspace=local_data_workspace,
+                data_parameter_manager=data_parameter_manager,
+                scenario_parameter_manager=scenario_parameter_manager,
+                satellite_parameter_manager=satellite_parameter_manager,
+                electricity_parameter_manager=electricity_parameter_manager,
+            )
+        elif tech == "Fiber":
+            fiber_parameter_manager = FiberTechnologyParameterManager.from_config(
+                tech_config
+            )
+            return CostEstimationParameterInput(
+                local_data_workspace=local_data_workspace,
+                data_parameter_manager=data_parameter_manager,
+                scenario_parameter_manager=scenario_parameter_manager,
+                fiber_parameter_manager=fiber_parameter_manager,
+                electricity_parameter_manager=electricity_parameter_manager,
+            )
+        else:
+            raise ValueError(f"Unknown technology name: {tech}")
+
+    @staticmethod
+    def from_config_minimum_cost(config, local_data_workspace="workspace"):
+        # This static method creates a input dashboard for the minimum cost scenario
+        tech_configs = {
+            t["technology"]: t for t in config["scenario_parameters"]["technologies"]
+        }
+        data_parameter_manager = DataParameterManager.from_config(
+            config["data_parameters"], workspace=local_data_workspace
+        )
+        scenario_parameter_manager = ScenarioParameterManager.from_config(
+            config["scenario_parameters"]
+        )
+        fiber_parameter_manager = FiberTechnologyParameterManager.from_config(
+            tech_configs.get("Fiber", {})
+        )
+        satellite_parameter_manager = SatelliteTechnologyParameterManager.from_config(
+            tech_configs.get("Satellite", {})
+        )
+        cellular_parameter_manager = CellularTechnologyParameterManager.from_config(
+            tech_configs.get("Cellular", {})
+        )
+        electricity_parameter_manager = ElectricityParameterManager.from_config(
+            config["scenario_parameters"]["technologies"][0].get(
+                "electricity_config", {}
+            )
+        )
+        return CostEstimationParameterInput(
+            local_data_workspace=local_data_workspace,
+            data_parameter_manager=data_parameter_manager,
+            scenario_parameter_manager=scenario_parameter_manager,
+            fiber_parameter_manager=fiber_parameter_manager,
+            satellite_parameter_manager=satellite_parameter_manager,
+            cellular_parameter_manager=cellular_parameter_manager,
+            electricity_parameter_manager=electricity_parameter_manager,
+        )
+
+    @staticmethod
+    def from_config(config, local_data_workspace="workspace"):
+        # This static method is used to create a CostEstimationParameterInput object from a config file
+        if len(config) == 0:
+            return CostEstimationParameterInput(
+                local_data_workspace=local_data_workspace
+            )
+        if config["scenario_parameters"]["scenario_id"] == "single_tech_cost":
+            return CostEstimationParameterInput.from_config_single_tech(
+                config, local_data_workspace
+            )
+            # need to pull out by technology to pass in args explicitly
+        elif config["scenario_parameters"]["scenario_id"] == "minimum_cost":
+            return CostEstimationParameterInput.from_config_minimum_cost(
+                config, local_data_workspace
+            )
+        else:
+            raise ValueError(
+                f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
+            )
+
+    def update(self, config):
+        if len(config) == 0:
+            return
+        if config["scenario_parameters"]["scenario_id"] == "minimum_cost":
+            tech_configs = {
+                t["technology"]: t
+                for t in config["scenario_parameters"]["technologies"]
+            }
+            self.data_parameter_manager.update_parameters(config["data_parameters"])
+            self.scenario_parameter_manager.update_parameters(
+                config["scenario_parameters"]
+            )
+            self.cellular_parameter_manager.update_parameters(
+                tech_configs.get("Cellular", {})
+            )
+            self.satellite_parameter_manager.update_parameters(
+                tech_configs.get("Satellite", {})
+            )
+            self.fiber_parameter_manager.update_parameters(
+                tech_configs.get("Fiber", {})
+            )
+            self.electricity_parameter_manager.update_parameters(
+                config["scenario_parameters"]["technologies"][0].get(
+                    "electricity_config", {}
+                )
+            )
+            # need to pull out by technology to pass in args explicitly
+        elif config["scenario_parameters"]["scenario_id"] == "single_tech_cost":
+            tech_config = config["scenario_parameters"]["tech_config"]
+            tech = config["scenario_parameters"]["technology"]
+            self.data_parameter_manager.update_parameters(config["data_parameters"])
+            self.scenario_parameter_manager.update_parameters(
+                config["scenario_parameters"]
+            )
+            self.electricity_parameter_manager.update_parameters(
+                tech_config["electricity_config"]
+            )
+            if tech == "Satellite":
+                self.satellite_parameter_manager.update_parameters(tech_config)
+            elif tech == "Cellular":
+                self.cellular_parameter_manager.update_parameters(tech_config)
+            elif tech == "Fiber":
+                self.fiber_parameter_manager.update_parameters(tech_config)
+            else:
+                raise ValueError(f"Unknown technology name: {tech}")
+        else:
+            raise ValueError(
+                f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
+            )
+
+    def data_parameters_input(self, sheet_name="data"):
+        return self.data_parameter_manager.input_parameters()
+
+    def data_parameters(self, sheet_name="data"):
+        return self.data_parameter_manager.get_model_parameters()
+
+    def scenario_parameter_input(self, sheet_name="scenario"):
+        return self.scenario_parameter_manager.input_parameters()
+
+    def fiber_parameters(self, sheet_name="fiber"):
+        return self.fiber_parameter_manager.get_model_parameters()
 
     def fiber_parameters_input(self, sheet_name="fiber"):
-        s = sheet(
-            sheet_name,
-            columns=2,
-            rows=len(FIBER_MODEL_PARAMETERS),
-            column_headers=False,
-            row_headers=False,
-            column_width=2,
-        )
-        name_column = column(
-            0, list(map(lambda x: x["parameter_input_name"], FIBER_MODEL_PARAMETERS))
-        )
-        input_column = column(
-            1, list(map(lambda x: x["parameter_interactive"], FIBER_MODEL_PARAMETERS))
-        )
-        return s
+        return self.fiber_parameter_manager.input_parameters()
 
     def satellite_parameters_input(self, sheet_name="satellite"):
-        s = sheet(
-            sheet_name,
-            columns=2,
-            rows=len(SATELLITE_MODEL_PARAMETERS),
-            column_headers=False,
-            row_headers=False,
-            column_width=2,
-        )
-        name_column = column(
-            0,
-            list(map(lambda x: x["parameter_input_name"], SATELLITE_MODEL_PARAMETERS)),
-        )
-        input_column = column(
-            1,
-            list(map(lambda x: x["parameter_interactive"], SATELLITE_MODEL_PARAMETERS)),
-        )
-        return s
+        return self.satellite_parameter_manager.input_parameters()
+
+    def satellite_parameters(self, sheet_name="satellite"):
+        return self.satellite_parameter_manager.get_model_parameters()
+
+    def cellular_parameters(self, sheet_name="cellular"):
+        return self.cellular_parameter_manager.get_model_parameters()
 
     def cellular_parameters_input(self, sheet_name="cellular"):
-        s = sheet(
-            sheet_name,
-            columns=2,
-            rows=len(CELLULAR_MODEL_PARAMETERS),
-            column_headers=False,
-            row_headers=False,
-            column_width=2,
-        )
-        name_column = column(
-            0,
-            list(map(lambda x: x["parameter_input_name"], CELLULAR_MODEL_PARAMETERS)),
-        )
-        input_column = column(
-            1,
-            list(map(lambda x: x["parameter_interactive"], CELLULAR_MODEL_PARAMETERS)),
-        )
-        return s
+        return self.cellular_parameter_manager.input_parameters()
 
     def electricity_parameters_input(self, sheet_name="electricity"):
-        s = sheet(
-            sheet_name,
-            columns=2,
-            rows=len(ELECTRICITY_MODEL_PARAMETERS),
-            column_headers=False,
-            row_headers=False,
-            column_width=2,
-        )
-        name_column = column(
-            0,
-            list(
-                map(lambda x: x["parameter_input_name"], ELECTRICITY_MODEL_PARAMETERS)
-            ),
-        )
-        input_column = column(
-            1,
-            list(
-                map(lambda x: x["parameter_interactive"], ELECTRICITY_MODEL_PARAMETERS)
-            ),
-        )
-        return s
+        return self.electricity_parameter_manager.input_parameters()
+
+    def electricity_parameters(self, sheet_name="electricity"):
+        return self.electricity_parameter_manager.get_model_parameters()
 
     def dashboard_parameters_input(self, sheet_name="dashboard"):
         s = sheet(
@@ -307,106 +359,8 @@ class CostEstimationParameterInput:
         verbose = bool(float(df[df["A"] == "Verbose"]["B"]))
         return {"verbose": verbose}
 
-    def fiber_parameters(self, sheet_name="fiber"):
-        s = sheet(sheet_name)
-        df = to_dataframe(s)
-        annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
-        cost_per_km = float(df[df["A"] == "Cost Per km (USD)"]["B"])
-        economies_of_scale = bool(float(df[df["A"] == "Economies of Scale"]["B"]))
-        opex_per_km = float(df[df["A"] == "Maintenance Cost per km (USD)"]["B"])
-        required_power = float(df[df["A"] == "Annual Power Required (kWh)"]["B"])
-        maximum_connection_length = (
-            float(df[df["A"] == "Maximum Connection Length (km)"]["B"]) * 1000.0
-        )  # meters
-        return FiberTechnologyCostConf(
-            capex={
-                "cost_per_km": cost_per_km,
-                "economies_of_scale": economies_of_scale,
-            },
-            opex={
-                "cost_per_km": opex_per_km,
-                "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
-            },
-            constraints={
-                "maximum_connection_length": maximum_connection_length,
-                "required_power": required_power,
-                "maximum_bandwithd": 2_000.0,
-            },  # should be pulled from defaults
-        )
-
-    def satellite_parameters(self, sheet_name="satellite"):
-        s = sheet(sheet_name)
-        df = to_dataframe(s)
-        annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
-        install_cost = float(df[df["A"] == "Installation Cost (USD)"]["B"])
-        maintenance_cost = float(df[df["A"] == "Annual Maintenance Cost (USD)"]["B"])
-        required_power = float(df[df["A"] == "Annual Power Required (kWh)"]["B"])
-        return SatelliteTechnologyCostConf(
-            capex={"fixed_costs": install_cost},
-            opex={
-                "fixed_costs": maintenance_cost,
-                "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
-            },
-            constraints={
-                "maximum_bandwithd": 150.0,  # should be pulled from defaults
-                "required_power": required_power,
-            },
-        )
-
-    def cellular_parameters(self, sheet_name="cellular"):
-        s = sheet(sheet_name)
-        df = to_dataframe(s)
-        annual_cost_per_mbps = float(df[df["A"] == "Annual cost per Mbps (USD)"]["B"])
-        install_cost = float(df[df["A"] == "Installation Cost (USD)"]["B"])
-        maintenance_cost = float(df[df["A"] == "Annual Maintenance Cost (USD)"]["B"])
-        required_power = float(df[df["A"] == "Annual Power Required (kWh)"]["B"])
-        max_range = float(df[df["A"] == "Maximum Cell Tower Range (km)"]["B"]) * 1000.0
-        return CellularTechnologyCostConf(
-            capex={"fixed_costs": install_cost},
-            opex={
-                "fixed_costs": maintenance_cost,
-                "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
-            },
-            constraints={
-                "maximum_bandwithd": 100.0,  # should be pulled from defaults
-                "required_power": required_power,
-                "maximum_range": max_range,
-            },
-        )
-
-    def electricity_parameters(self, sheet_name="electricity"):
-        s = sheet(sheet_name)
-        df = to_dataframe(s)
-        cost_per_kwh = float(df[df["A"] == "Cost per kWh (USD)"]["B"])
-        install_solar_panels = float(
-            df[df["A"] == "Solar Panel Install Cost (USD)"]["B"]
-        )
-        return ElectricityCostConf(
-            capex={
-                "solar_panel_costs": install_solar_panels,
-                "battery_costs": 0.0,
-            },  # TODO: ignore for now
-            opex={"cost_per_kwh": cost_per_kwh},
-        )
-
-    def _process_nonsheet_scenario_parameters(self, s):
-        return {
-            "scenario_type": s["scenario_tpye"].value,
-            "opex_responsible": "Consumer",  # s["opex_responsible"].value,
-        }
-
-    def _process_sheet_scenario_parameters(self, s):
-        df = to_dataframe(s)
-        years_opex = float(df[df["A"] == "OpEx Years"]["B"])
-        bandwidth_demand = float(df[df["A"] == "Bandwidth Demand (Mbps)"]["B"])
-        return {"years_opex": years_opex, "bandwidth_demand": bandwidth_demand}
-
     def scenario_parameters(self, sheet_name="scenario"):
-        s = self._hashed_sheets[sheet_name]
-        nonsheet = self._process_nonsheet_scenario_parameters(s)
-        s = sheet(sheet_name)
-        from_sheet = self._process_sheet_scenario_parameters(s)
-        p = {**nonsheet, **from_sheet}
+        p = self.scenario_parameter_manager.get_model_parameters()
         if p["scenario_type"] == "Fiber Only":
             tech_params = self.fiber_parameters()
             tech_params.electricity_config = self.electricity_parameters()
@@ -453,50 +407,6 @@ class CostEstimationParameterInput:
             )
         )
 
-    def data_parameters_input(self, sheet_name="data"):
-        self._hashed_sheets[sheet_name] = {
-            p["parameter_name"]: p["parameter_interactive"]
-            for p in BASELINE_DATA_SPACE_PARAMETERS
-        }
-        return VBox(
-            list(
-                map(
-                    lambda x: x["parameter_interactive"], BASELINE_DATA_SPACE_PARAMETERS
-                )
-            )
-        )
-
-    def _base_scenario_parameter_input(self, sheet_name="scenario"):
-        self._hashed_sheets[sheet_name] = {
-            p["parameter_name"]: p["parameter_interactive"] for p in SCENARIO_PARAMETERS
-        }
-        return VBox(
-            list(map(lambda x: x["parameter_interactive"], SCENARIO_PARAMETERS))
-        )
-
-    def _sheet_scenario_parameter_input(self, sheet_name="scenario"):
-        s = sheet(
-            sheet_name,
-            columns=2,
-            rows=len(SCENARIO_SHEET_PARAMETERS),
-            column_headers=False,
-            row_headers=False,
-            column_width=2,
-        )
-        name_column = column(
-            0, list(map(lambda x: x["parameter_input_name"], SCENARIO_SHEET_PARAMETERS))
-        )
-        input_column = column(
-            1,
-            list(map(lambda x: x["parameter_interactive"], SCENARIO_SHEET_PARAMETERS)),
-        )
-        return s
-
-    def scenario_parameter_input(self, sheet_name="scenario"):
-        non_sheet = self._base_scenario_parameter_input(sheet_name=sheet_name)
-        sheet = self._sheet_scenario_parameter_input(sheet_name=sheet_name)
-        return VBox([non_sheet, sheet])
-
     def _updated_param_request(self, country):
         return [f"data={country.lower()}", f"data.workspace={self.workspace}"]
 
@@ -517,46 +427,13 @@ class CostEstimationParameterInput:
             },
         )
 
-    def _process_baseline_data_parameters(self, s):
-        country_id = s["country_name"].value
-        config_request = self._updated_param_request(country_id)
-        config = ConfigClient(get_config(config_request))
-        return config.local_workspace_data_space_config
-        return DataSpaceConf(
-            school_data_conf={
-                "country_id": country_id,
-                "data": {"file_path": config.school_file, "table_type": "school"},
-            },
-            fiber_map_conf={
-                "map_type": "fiber-nodes",
-                "data": {
-                    "file_path": config.fiber_file,
-                    "table_type": "coordinate-map",
-                },
-            },
-            cell_tower_map_conf={
-                "map_type": "cell-towers",
-                "data": {
-                    "file_path": config.cellular_file,
-                    "table_type": "cell-towers",
-                },
-            },
-        )
-
-    def data_parameters(self, sheet_name="data"):
-        if sheet_name + UPLOAD_SUFFIX in self._hashed_sheets:
-            s = self._hashed_sheets[sheet_name + UPLOAD_SUFFIX]
-            return self._process_uploaded_data_parameters(s)
-        else:
-            s = self._hashed_sheets[sheet_name]
-            return self._process_baseline_data_parameters(s)
-
     def parameter_input(self):
+        # main method that exposes the parameter input interface to users in a notebook
         t1 = HTML(value="<hr><b>Scenario Configuration</b>")
         d = self.data_parameters_input()
         s = self.scenario_parameter_input()
         t2 = HTML(value="<hr><b>Fiber Model Configuration</b>")
-        f = self.fiber_parameters_input()
+        f = self.fiber_parameter_manager.input_parameters()
         t3 = HTML(value="<hr><b>Satellite - LEO Model Configuration</b>")
         sa = self.satellite_parameters_input()
         t4 = HTML(value="<hr><b>Cellular Model Configuration</b>")

@@ -22,6 +22,27 @@ def download_link_frame(df, title="Download Results", filename="results.csv"):
     return HTML(html)
 
 
+def download_link_scenario_config(
+    scenario, title="Export Configuration", filename="config.json"
+):
+    payload = scenario.config_json
+    b64 = base64.b64encode(payload.encode())
+    payload = b64.decode()
+    html = """<html>
+              <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              </head>
+              <body>
+              <a download="{filename}" href="data:text/csv;base64,{payload}" download>
+              <button class="p-Widget jupyter-widgets jupyter-button widget-button mod-warning">{title}</button>
+              </a>
+              </body>
+              </html>
+          """
+    html = html.format(payload=payload, title=title, filename=filename)
+    return HTML(html)
+
+
 def results_to_table(results, n_years=5, responsible_opex=None):
     df = pd.DataFrame(list(map(lambda x: dict(x), results)))
     electricity_opex = list(
