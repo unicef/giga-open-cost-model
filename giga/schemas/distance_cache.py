@@ -135,13 +135,17 @@ class GreedyConnectCache(BaseModel):
     ):
         connected_cache, unconnected_cache = None, None
         if connected_file is not None:
-            connected_cache = SingleLookupDistanceCache.from_json(
-                os.path.join(workspace, connected_file)
-            )
+            # check to see if the file exists
+            if os.path.exists(os.path.join(workspace, connected_file)):
+                connected_cache = SingleLookupDistanceCache.from_json(
+                    os.path.join(workspace, connected_file)
+                )
         if unconnected_file is not None:
-            unconnected_cache = MultiLookupDistanceCache.from_json(
-                os.path.join(workspace, unconnected_file)
-            )
+            # check to see if the file exists
+            if os.path.exists(os.path.join(workspace, unconnected_file)):
+                unconnected_cache = MultiLookupDistanceCache.from_json(
+                    os.path.join(workspace, unconnected_file)
+                )
         return GreedyConnectCache(
             connected_cache=connected_cache, unconnected_cache=unconnected_cache
         )
