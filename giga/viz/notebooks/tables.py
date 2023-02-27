@@ -39,6 +39,7 @@ def output_to_capex_details(output_table):
         .groupby("technology")
         .mean()["Per School"]
     )
+    df_means = df_means.fillna(0)
     df_sums = (
         output_table.rename(columns={"capex_technology": "Total Costs"})
         .groupby("technology")
@@ -79,15 +80,15 @@ def output_to_electricity_capex(output_table):
 
 
 def output_to_opex_details(output_table):
-    output_table["School Per Month"] = output_table["opex_connectivity"] / 12.0
+    output_table["School Per Month"] = (output_table["opex_connectivity"] + output_table["opex_technology"]) / 12.0
     output_table["Electricity Per Month"] = output_table["opex_electricity"] / 12.0
     output_table["Total Annual per School Cost"] = (
-        output_table["opex_connectivity"] + output_table["opex_electricity"]
+        output_table["opex_connectivity"] + output_table["opex_technology"]
     )
     output_table["Total Annual per Provider Cost"] = output_table["opex_technology"]
 
     df_means_month = output_table.groupby("technology").mean()["School Per Month"]
-    df_means_year = output_table.groupby("technology").sum()["opex_connectivity"]
+    df_means_year = output_table.groupby("technology").sum()["Total Annual per School Cost"]
 
     dfop = pd.DataFrame([df_means_month, df_means_year]).round(decimals=0)
     dfop["Electricity Costs"] = [
@@ -96,7 +97,8 @@ def output_to_opex_details(output_table):
     ]
     dfop = dfop.transpose().round(decimals=0)
     dfop.index = dfop.index.rename("")
-    dfop = dfop.rename(columns={"opex_connectivity": "Total Annual Cost"})
+    dfop = dfop.rename(columns={"Total Annual per School Cost": "Total Annual Cost"})
+    dfop = dfop.fillna(0)
     return dfop
 
 
@@ -144,10 +146,10 @@ def display_summary_table(output_space):
         HTML("<hr><b><font color='#5b8ff0'>Breakout by Technology</b><hr>"),
         dft.style.hide_columns(),
     )
-    display(HTML("<hr><hr><b><font color='#5b8ff0'>CapEx Details</b><hr>"), dfcap)
+    display(HTML("<hr><hr><b><font color='#5b8ff0'>Technology CapEx</b><hr>"), dfcap)
     display(
         HTML(
-            f"<b><font color='#50ba83'>Total CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b><hr><hr>"
+            f"<b><font color='#50ba83'>Total Technology CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b><hr><hr>"
         )
     )
     display(HTML("<b><font color='#5b8ff0'>Electricity CapEx</b><hr>"), df_solar)
