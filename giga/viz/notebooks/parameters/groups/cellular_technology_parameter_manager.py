@@ -104,7 +104,7 @@ class CellularTechnologyParameterManager:
         ] = constraints["required_power"]
         input_parameters["maximum_range"]["parameter_interactive"][
             "value"
-        ] = constraints["maximum_range"]
+        ] = constraints["maximum_range"] / METERS_PER_KM
         input_parameters = list(input_parameters.values())  # unpack
         return CellularTechnologyParameterManager(
             sheet_name=sheet_name, parameters=input_parameters
@@ -123,7 +123,7 @@ class CellularTechnologyParameterManager:
             "rßequired_power", config["constraints"]["required_power"]
         )
         self.sheet.update_parameter(
-            "maximum_range", config["constraints"]["maximum_range"]
+            "maximum_range", config["constraints"]["maximum_range"] / METERS_PER_KM
         )
 
     def input_parameters(self):
