@@ -9,6 +9,16 @@ def cleanup_numeric_string(s):
         return s
 
 
+def map_numeric_string_to_decimal(s):
+    if type(s) == str:
+        if s == "":
+            return 0.0
+        else:
+            return float(s.replace(",", "."))
+    else:
+        return float(s)
+
+
 def cell_towers_to_standard_format(frame: pd.DataFrame):
     # sanitizes and transforms giga cell tower data into standardized format used by the models
     t = frame.rename(
@@ -30,7 +40,9 @@ def cell_towers_to_standard_format(frame: pd.DataFrame):
     t["technologies"] = t["technologies"].apply(
         lambda x: ["3G"] if x == "3G Only" else x.split("/")
     )
-    t["height"] = t["height"].apply(lambda x: 0.0 if x == "IBS" else float(x))
+    t["height"] = t["height"].apply(
+        lambda x: 0.0 if x == "IBS" else map_numeric_string_to_decimal(x)
+    )
     return t
 
 

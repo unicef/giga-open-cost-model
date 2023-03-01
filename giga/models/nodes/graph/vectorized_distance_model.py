@@ -92,5 +92,7 @@ class VectorizedDistanceModel:
         for i in iterable:
             start = i * chunk_size
             end = start + chunk_size
+            if len(set1[start:end]) == 0:
+                continue
             pairs.extend(self.run((set1[start:end], set2), progress_bar=False))
         return pairs

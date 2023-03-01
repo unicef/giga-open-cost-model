@@ -16,6 +16,7 @@ class CellTechnology(str, Enum):
     two_g = "2G"
     three_g = "3G"
     four_g = "4G"
+    lte = "LTE"
 
 
 class CellularTower(BaseModel):
