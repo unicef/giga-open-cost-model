@@ -77,6 +77,12 @@ class ModelDataSpace:
                 self._cellular_cache = self.config.cellular_distance_cache_conf.load()
         return self._cellular_cache
 
+    def filter_schools(self, school_ids):
+        # load schools if not already loaded
+        _ = self.schools
+        self._schools = self._schools.filter_schools_by_id(school_ids)
+        return self
+
     def school_outputs_to_frame(self, outputs):
         lookup = {
             c.coordinate_id: tuple(reversed(c.coordinate))

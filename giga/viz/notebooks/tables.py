@@ -80,7 +80,9 @@ def output_to_electricity_capex(output_table):
 
 
 def output_to_opex_details(output_table):
-    output_table["School Per Month"] = (output_table["opex_connectivity"] + output_table["opex_technology"]) / 12.0
+    output_table["School Per Month"] = (
+        output_table["opex_connectivity"] + output_table["opex_technology"]
+    ) / 12.0
     output_table["Electricity Per Month"] = output_table["opex_electricity"] / 12.0
     output_table["Total Annual per School Cost"] = (
         output_table["opex_connectivity"] + output_table["opex_technology"]
@@ -88,14 +90,16 @@ def output_to_opex_details(output_table):
     output_table["Total Annual per Provider Cost"] = output_table["opex_technology"]
 
     df_means_month = output_table.groupby("technology").mean()["School Per Month"]
-    df_means_year = output_table.groupby("technology").sum()["Total Annual per School Cost"]
+    df_means_year = output_table.groupby("technology").sum()[
+        "Total Annual per School Cost"
+    ]
 
     dfop = pd.DataFrame([df_means_month, df_means_year]).round(decimals=0)
     dfop["Electricity Costs"] = [
         output_table["opex_electricity"].mean() / 12.0,
         output_table["opex_electricity"].sum(),
     ]
-    dfop = dfop.transpose().round(decimals=0)
+    dfop = dfop.transpose().round(decimals=2)
     dfop.index = dfop.index.rename("")
     dfop = dfop.rename(columns={"Total Annual per School Cost": "Total Annual Cost"})
     dfop = dfop.fillna(0)

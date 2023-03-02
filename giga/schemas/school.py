@@ -66,6 +66,11 @@ class GigaSchoolTable(BaseModel):
         frame = pd.read_csv(file_name, keep_default_na=False)
         return GigaSchoolTable(schools=frame.to_dict("records"))
 
+    def filter_schools_by_id(self, school_ids):
+        # Filter schools by school_id - uses giga_id as the school_id
+        schools = [s for s in self.schools if s.giga_id in school_ids]
+        return GigaSchoolTable(schools=schools)
+
     def to_coordinates(self):
         """Transforms the school table into a table of simplified coordinate"""
         return [s.to_coordinates() for s in self.schools]

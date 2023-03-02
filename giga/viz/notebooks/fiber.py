@@ -58,8 +58,11 @@ def plot_pairwise_connections(
     )
 
     for c in connections:
+        popup = f"distance: {np.round(c.distance / METERS_IN_KM, decimals=2)} km"
         loc = [c.coordinate1.coordinate, c.coordinate2.coordinate]
-        folium.PolyLine(loc, color=color, weight=weight, opacity=opacity).add_to(m)
+        folium.PolyLine(
+            loc, color=color, weight=weight, opacity=opacity, popup=popup
+        ).add_to(m)
     m.get_root().html.add_child(folium.Element(title_html))
     return m
 

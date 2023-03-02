@@ -14,7 +14,12 @@ SCENARIO_BASE_PARAMETERS = [
         "parameter_interactive": {
             "parameter_type": "categorical_dropdown",
             "value": "Lowest Cost",
-            "options": ["Lowest Cost", "Fiber Only", "Satellite Only", "Cellular Only"],
+            "options": [
+                "Lowest Cost",
+                "Fiber Only",
+                "Satellite LEO Only",
+                "Cellular Only",
+            ],
             "description": "Cost Scenario:",
         },
     },
@@ -37,7 +42,7 @@ SCENARIO_SHEET_PARAMETERS = [
         "parameter_input_name": "Bandwidth Demand (Mbps)",
         "parameter_interactive": {
             "parameter_type": "int_slider",
-            "value": 40,
+            "value": 20,
             "min": 1,
             "max": 500,
             "step": 1,
@@ -57,7 +62,7 @@ def get_scenario_type(config):
         config["scenario_id"] == "single_tech_cost"
         and config["technology"] == "Satellite"
     ):
-        return "Satellite Only"
+        return "Satellite LEO Only"
     elif (
         config["scenario_id"] == "single_tech_cost"
         and config["technology"] == "Cellular"
@@ -131,7 +136,7 @@ class ScenarioParameterManager:
         ):
             input_base_parameters["scenario_tpye"]["parameter_interactive"][
                 "value"
-            ] = "Satellite Only"
+            ] = "Satellite LEO Only"
         elif (
             config["scenario_id"] == "single_tech_cost"
             and config["technology"] == "Cellular"

@@ -58,7 +58,7 @@ def show_cost_map(data_space, output_space):
     linear = cm.LinearColormap(
         ["green", "yellow", "red"],
         vmin=table["total_cost"].min(),
-        vmax=table["total_cost"].nlargest(2).iloc[1],
+        vmax=table["total_cost"].max(),
     )
 
     for s in data_space.school_entities:
