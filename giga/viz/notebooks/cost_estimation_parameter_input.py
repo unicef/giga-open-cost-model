@@ -367,7 +367,7 @@ class CostEstimationParameterInput:
             return SingleTechnologyScenarioConf(
                 technology="Fiber", tech_config=tech_params, **p
             )
-        elif p["scenario_type"] == "Satellite Only":
+        elif p["scenario_type"] == "Satellite LEO Only":
             tech_params = self.satellite_parameters()
             tech_params.electricity_config = self.electricity_parameters()
             return SingleTechnologyScenarioConf(

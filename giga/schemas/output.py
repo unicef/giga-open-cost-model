@@ -36,7 +36,7 @@ class SchoolConnectionCosts(BaseModel):
     opex_consumer: float  # Consumer operating costs
     technology: ConnectivityTechnology
     feasible: bool = True
-    reason: str = None
+    reason: str = "Included"
     electricity: PowerConnectionCosts = None
 
     class Config:
