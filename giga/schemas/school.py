@@ -41,7 +41,10 @@ class GigaSchool(BaseModel):
     giga_id: str = Field(..., alias="giga_id_school")
     school_zone: SchoolZone = Field(..., alias="environment")
     connected: bool = False
-    has_electricity: bool = True
+    connectivity_status: str = Field(
+        "Unknown", alias="connectivity_speed_status"
+    )  # 'Good', 'Moderate', 'No connection', 'Unknown'
+    has_electricity: bool = False
     bandwidth_demand: float = 20.0  # Mbps
 
     class Config:
@@ -66,6 +69,21 @@ class GigaSchoolTable(BaseModel):
         frame = pd.read_csv(file_name, keep_default_na=False)
         return GigaSchoolTable(schools=frame.to_dict("records"))
 
+    @property
+    def school_ids(self):
+        return [s.giga_id for s in self.schools]
+
+    def to_csv(self, file_name: str):
+        frame = self.to_data_frame()
+        frame = frame.rename(
+            columns={
+                "giga_id": "giga_id_school",
+                "school_zone": "environment",
+                "connectivity_status": "connectivity_speed_status",
+            }
+        )
+        frame.to_csv(file_name)
+
     def filter_schools_by_id(self, school_ids):
         # Filter schools by school_id - uses giga_id as the school_id
         schools = [s for s in self.schools if s.giga_id in school_ids]
@@ -82,3 +100,6 @@ class GigaSchoolTable(BaseModel):
     def to_coordinate_vector(self):
         """Transforms the school table into a numpy vector of coordinates"""
         return np.array([[s.lat, s.lon] for s in self.schools])
+
+    def to_data_frame(self):
+        return pd.DataFrame([e.dict() for e in self.schools])

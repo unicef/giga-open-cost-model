@@ -6,7 +6,7 @@ import giga.utils.requests as giga_requests
 from giga.utils.logging import LOGGER
 
 
-DEFAULT_SCHOOL_ID_MAP = {"Brazil": 144, "Rwanda": 32}
+DEFAULT_SCHOOL_ID_MAP = {"brazil": 144, "rwanda": 32}
 
 
 class GigaAPIClient:
@@ -69,12 +69,14 @@ class GigaAPIClient:
         Fetches school data from the project connect API
         Schools are organized by document pages
         """
-        assert country in self.school_id_map, f"Country {country} is not supported"
+        assert (
+            country.lower() in self.school_id_map
+        ), f"Country {country} is not supported"
         school_url = kwargs.get(
             "school_url",
-            "https://uni-connect-services-dev.azurewebsites.net/api/v1/schools/country",
+            "https://uni-connect-services-dev.azurewebsites.net/api/v1/schools_connectivity/country",
         )
-        country_id = self.school_id_map[country]
+        country_id = self.school_id_map[country.lower()]
         base_url = f"{school_url}/{country_id}"
         schools = self._get_document_pages(
             base_url,
