@@ -23,6 +23,7 @@ class VectorizedDistanceModel:
     def __init__(self, **kwargs):
         self.progress_bar = kwargs.get("progress_bar", False)
         self.n_nearest_neighbors = kwargs.get("n_nearest_neighbors", math.inf)
+        self.maximum_distance = kwargs.get("maximum_distance", math.inf)
 
     def _to_radian_vector(self, coordinates: List[UniqueCoordinate]):
         # convert to an (n x 2) array of radians
@@ -66,14 +67,18 @@ class VectorizedDistanceModel:
         for i, c1 in enumerate(iterable):
             closest_coords, closest_dist = self._get_closest(distances[i], set2)
             for j, c2 in enumerate(closest_coords):
-                pairs.append(
-                    PairwiseDistance(
-                        pair_ids=(c1.coordinate_id, c2.coordinate_id),
-                        coordinate1=c1,
-                        coordinate2=c2,
-                        distance=closest_dist[j],
+                if closest_dist[j] > self.maximum_distance:
+                    # check the maximum distance threshold, skip if exceeded
+                    continue
+                else:
+                    pairs.append(
+                        PairwiseDistance(
+                            pair_ids=(c1.coordinate_id, c2.coordinate_id),
+                            coordinate1=c1,
+                            coordinate2=c2,
+                            distance=closest_dist[j],
+                        )
                     )
-                )
         return pairs
 
     @validate_arguments

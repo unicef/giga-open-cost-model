@@ -61,10 +61,10 @@ launch_model_container() {
   remove_model_container
   docker run -it \
   -v ${WORKSPACE_DIR}:/workspace \
-  -p 8181:8888 \
+  -p 8181:8181 \
   --name $NOTEBOOK_CONTAINER_NAME \
   $CONTAINER_REGISTRY/$IMAGE_NAME:$VERSION_TAG \
-  jupyter-lab --ip=0.0.0.0 --allow-root
+  jupyter-lab --ip=0.0.0.0 --allow-root --port 8181
 }
 
 gcp_auth(){
