@@ -61,6 +61,29 @@ class PairwiseDistance(BaseModel):
     distance_type: str = "euclidean"
 
 
+class PairwiseDistanceTable(BaseModel):
+    """
+    A table of pairwise distances between uniquely identifiable, ordered coordinates
+    """
+
+    distances: List[PairwiseDistance] = Field(..., min_items=0)
+
+    def group_by_source(self):
+        """Group distances by source coordinate node"""
+        grouped = {}
+        for d in self.distances:
+            try:
+                # try to get id of source node from properties
+                source_id = d.coordinate1.properties["source"]
+                if source_id in grouped:
+                    grouped[source_id].append(d)
+                else:
+                    grouped[source_id] = [d]
+            except KeyError:
+                grouped[d.coordinate1.coordinate_id] = [d]
+        return grouped
+
+
 class RawElevationPoint(BaseModel):
     """Response structure from opentopodata API"""
 
