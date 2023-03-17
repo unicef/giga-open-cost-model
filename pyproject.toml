@@ -6,7 +6,7 @@ authors = ["Max Nova <max.nova@actualhq.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.8,<3.12"
 pandas = ">=1.3.0"
 geopandas = "^0.11.1"
 numpy = "^1.23.3"
@@ -24,13 +24,14 @@ black = "^22.10.0"
 hydra-core = "^1.2.0"
 jupyterlab = "^3.5.0"
 voila = "^0.4.0"
-ipysheet = "^0.7.0"
 grip = "^4.6.1"
 pykml = "^0.2.0"
 scipy = "^1.10.0"
 scikit-learn = "^1.2.1"
 jupyterlab-widgets = "^3.0.3"
 widgetsnbextension = "^4.0.3"
+ipysheet = "^0.7.0"
+networkx = "^3.0"
 
 [tool.poetry.scripts]
 total_cost_scenario = "giga.app.run_total_cost_scenario:main"

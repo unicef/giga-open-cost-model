@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Literal, Union
 import math
 
@@ -99,6 +99,13 @@ TechnologyConfiguration = Union[
 ]
 
 
+class CostMinimizerConf(BaseModel):
+
+    years_opex: int = 5
+    budget_constraint: float = math.inf  # USD
+    economies_of_scale: bool = True
+
+
 class SingleTechnologyScenarioConf(BaseModel):
     """
     Configuration for a model scenario that estimates connectivity budget
@@ -131,6 +138,11 @@ class MinimumCostScenarioConf(BaseModel):
         "Provider", "Consumer", "Both"
     ]  # type of opex costs to consider
     bandwidth_demand: float  # Mbps
+    cost_minimizer_config: CostMinimizerConf = None
 
     class Config:
         case_sensitive = False
+
+    @validator("cost_minimizer_config", always=True)
+    def validate_minimizer_conf(cls, value, values):
+        return CostMinimizerConf(years_opex=values["years_opex"])

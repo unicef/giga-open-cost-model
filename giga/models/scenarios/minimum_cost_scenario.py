@@ -7,6 +7,10 @@ from giga.schemas.conf.models import MinimumCostScenarioConf
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
+from giga.models.components.optimizers.economies_of_scale_minimizer import (
+    EconomiesOfScaleMinimizer,
+)
+from giga.models.components.optimizers.baseline_minimizer import BaselineMinimizer
 from giga.utils.logging import LOGGER
 
 
@@ -24,6 +28,12 @@ class MinimumCostScenario:
     def _prep(self):
         # update bw demand
         self.data_space.schools.update_bw_demand_all(self.config.bandwidth_demand)
+
+    def _create_minimizer(self):
+        if self.config.cost_minimizer_config.economies_of_scale:
+            return EconomiesOfScaleMinimizer(self.config.cost_minimizer_config)
+        else:
+            return BaselineMinimizer(self.config.cost_minimizer_config)
 
     def _make_model(self, model_config):
         if model_config.technology == "Fiber":
@@ -57,47 +67,29 @@ class MinimumCostScenario:
                     agg[sid].append(cost_result)
         return agg
 
-    def _compute_total_cost(self, cost):
-        if self.config.opex_responsible == "Consumer":
-            opex = cost.opex_consumer
-        elif self.config.opex_responsible == "Provider":
-            opex = cost.opex_provider
-        else:
-            opex = cost.opex
-        return cost.capex + self.config.years_opex * opex
-
-    def _find_minmum_cost(self, costs, school_id):
-        feasible = any(list(map(lambda x: x.feasible, costs)))
-        if not feasible:
-            reasons = ",".join(
-                list(map(lambda x: "" if x.reason is None else x.reason, costs))
-            ).strip(",")
-            return SchoolConnectionCosts(
-                school_id=school_id,
-                capex=math.nan,
-                opex=math.nan,
-                opex_provider=math.nan,
-                opex_consumer=math.nan,
-                technology="None",
-                feasible=False,
-                reason=reasons,
-            )
-        else:
-            totals = list(map(lambda x: self._compute_total_cost(x), costs))
-            idx = np.nanargmin(totals)
-            return costs[idx]
+    def _aggregate_outputs_by_technology(self, by_school):
+        by_tech = {}
+        for sid, costs in by_school.items():
+            by_tech[sid] = {c.technology.lower(): c for c in costs}
+        return by_tech
 
     def run(self, progress_bar: bool = False):
+        """
+        Runs the minimum cost scenario by computing the cost of each technology
+        and then applying a minimizer to find the minimum cost solution.
+        """
         LOGGER.info(f"Starting Minimum Cost Scenario")
         self._prep()
+        # compute baseline costs for all the technologies
         for c in self.config.technologies:
             cost_model = self._make_model(c)
             output = cost_model.run(self.data_space, progress_bar=progress_bar)
             self._to_output_space(output, c)
         aggregated = self._aggregate_outputs_by_school()
-        minimum_costs = [
-            self._find_minmum_cost(costs, school_id)
-            for school_id, costs in aggregated.items()
-        ]
-        self.output_space.minimum_cost_result = minimum_costs
+        self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
+            aggregated
+        )
+        # find the minimum cost for each school using the minimizer
+        minimizer = self._create_minimizer()
+        self.output_space.minimum_cost_result = minimizer.run(self.output_space)
         return self.output_space
