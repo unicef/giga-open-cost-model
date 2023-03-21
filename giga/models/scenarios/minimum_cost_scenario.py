@@ -10,11 +10,21 @@ from giga.models.components.cellular_cost_model import CellularCostModel
 from giga.models.components.optimizers.economies_of_scale_minimizer import (
     EconomiesOfScaleMinimizer,
 )
+from giga.models.components.optimizers.constrained_economies_of_scale_minimizer import (
+    ConstrainedEconomiesOfScaleMinimizer,
+)
 from giga.models.components.optimizers.baseline_minimizer import BaselineMinimizer
 from giga.utils.logging import LOGGER
 
 
 class MinimumCostScenario:
+    """
+    Estimates the cost of connecting a collection of schools to the internet
+    using the technologies specified in the configuration
+    computes the minimum cost of connectivity by optimizing over the
+    net project value of the technology over the configured time horizon.
+    """
+
     def __init__(
         self,
         config: MinimumCostScenarioConf,
@@ -31,7 +41,12 @@ class MinimumCostScenario:
 
     def _create_minimizer(self):
         if self.config.cost_minimizer_config.economies_of_scale:
-            return EconomiesOfScaleMinimizer(self.config.cost_minimizer_config)
+            if self.config.cost_minimizer_config.budget_constraint == math.inf:
+                return EconomiesOfScaleMinimizer(self.config.cost_minimizer_config)
+            else:
+                return ConstrainedEconomiesOfScaleMinimizer(
+                    self.config.cost_minimizer_config
+                )
         else:
             return BaselineMinimizer(self.config.cost_minimizer_config)
 

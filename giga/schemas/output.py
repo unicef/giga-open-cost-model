@@ -27,6 +27,7 @@ class NonConnectionReason(str, Enum):
     satellite_bw_threshold_exceeded = "SATELLITE_BW_THRESHOLD"
     cellular_bw_threshold_exceeded = "CELLULAR_BW_THRESHOLD"
     cellular_range_threshold_exceeded = "CELLULAR_RANGE_THRESHOLD"
+    budget_exceeded = "BUDGET_EXCEEDED"
 
 
 class SchoolConnectionCosts(BaseModel):
@@ -53,6 +54,19 @@ class SchoolConnectionCosts(BaseModel):
             opex_provider=math.inf,
             opex_consumer=math.inf,
             technology=tech,
+        )
+
+    @staticmethod
+    def budget_exceeded_cost(school_id, tech):
+        return SchoolConnectionCosts(
+            school_id=school_id,
+            capex=math.inf,
+            opex=math.inf,
+            opex_provider=math.inf,
+            opex_consumer=math.inf,
+            technology=tech,
+            feasible=False,
+            reason=NonConnectionReason.budget_exceeded,
         )
 
     def technology_connectivity_cost(self, num_years: int):
