@@ -256,7 +256,7 @@ class CostEstimationParameterInput:
     def update(self, config):
         if len(config) == 0:
             return
-        if config["scenario_parameters"]["scenario_id"] == "minimum_cost":
+        if config["scenario_parameters"]["scenario_id"] == "minimum_cost" or config["scenario_parameters"]["scenario_id"] == "budget_constrained":
             tech_configs = {
                 t["technology"]: t
                 for t in config["scenario_parameters"]["technologies"]
@@ -388,11 +388,15 @@ class CostEstimationParameterInput:
             fiber_params.electricity_config = self.electricity_parameters()
             satellite_params.electricity_config = self.electricity_parameters()
             cellular_params.electricity_config = self.electricity_parameters()
-            p = MinimumCostScenarioConf(
-                **p, technologies=[fiber_params, satellite_params, cellular_params]
+            conf = MinimumCostScenarioConf(
+                **p,
+                technologies=[fiber_params, satellite_params, cellular_params],
             )
-            p.technologies[2] = cellular_params
-            return p
+            conf.technologies[2] = cellular_params
+            if p["scenario_type"] == "Budget Constrained":
+                conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"]["budget_constraint"]
+                conf.scenario_id = "budget_constrained"
+            return conf
 
     def data_parameters_upload_input(self, sheet_name="data"):
         self._hashed_sheets[sheet_name + UPLOAD_SUFFIX] = {
