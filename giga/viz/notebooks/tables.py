@@ -22,6 +22,7 @@ def output_to_school_stats(output_table):
                 "Schools requiring electricity": len(
                     output_table[output_table["capex_electricity"] > 0.0]
                 ),
+                "Schools that could be connected with additional budget": len(output_table[output_table["reason"] == "BUDGET_EXCEEDED"])
             }
         ]
     )
@@ -34,6 +35,7 @@ def output_to_technology_stats(output_table):
 
 
 def output_to_capex_details(output_table):
+    output_table = output_table[output_table["reason"] != "BUDGET_EXCEEDED"]
     df_means = (
         output_table.rename(columns={"capex_technology": "Per School"})
         .groupby("technology")
@@ -80,6 +82,7 @@ def output_to_electricity_capex(output_table):
 
 
 def output_to_opex_details(output_table):
+    output_table = output_table[output_table["reason"] != "BUDGET_EXCEEDED"]
     output_table["School Per Month"] = (
         output_table["opex_connectivity"] + output_table["opex_technology"]
     ) / 12.0

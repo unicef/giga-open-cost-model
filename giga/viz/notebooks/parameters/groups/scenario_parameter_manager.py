@@ -2,6 +2,7 @@ from copy import deepcopy
 import ipysheet
 from ipywidgets import VBox
 from pydantic import parse_obj_as
+from traitlets import directional_link
 
 from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
@@ -16,6 +17,7 @@ SCENARIO_BASE_PARAMETERS = [
             "value": "Lowest Cost",
             "options": [
                 "Lowest Cost",
+                "Budget Constrained",
                 "Fiber Only",
                 "Satellite LEO Only",
                 "Cellular Only",
@@ -48,12 +50,27 @@ SCENARIO_SHEET_PARAMETERS = [
             "step": 1,
         },
     },
+    {
+        "parameter_name": "budget_constraint",
+        "parameter_input_name": "Project Budget (Millions USD)",
+        "parameter_interactive": {
+            "parameter_type": "float_slider",
+            "value": 1,
+            "min": 0,
+            "max": 500,
+            "step": 0.1,
+        },
+    },
 ]
+
+MILLION_DOLLARS = 1_000_000
 
 
 def get_scenario_type(config):
     if config["scenario_id"] == "minimum_cost":
         return "Lowest Cost"
+    elif config["scenario_id"] == "budget_constrained":
+        return "Budget Constrained"
     elif (
         config["scenario_id"] == "single_tech_cost" and config["technology"] == "Fiber"
     ):
@@ -70,6 +87,12 @@ def get_scenario_type(config):
         return "Cellular Only"
     else:
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
+
+def constraint_disabled_transform(scenario_type):
+    if scenario_type == "Budget Constrained":
+        return False
+    else:
+        return True
 
 
 class ScenarioParameterManager:
@@ -91,6 +114,11 @@ class ScenarioParameterManager:
             ).parameter
             for p in base_parameters
         }
+        # link the scenario to the budget
+        scenario_type = self._hash['scenario_tpye']
+        budget_constraint = self.sheet.get_interactive_parameter("budget_constraint")
+        directional_link((scenario_type, 'value'), (budget_constraint, 'disabled'), constraint_disabled_transform)
+
 
     @staticmethod
     def from_config(
@@ -123,6 +151,13 @@ class ScenarioParameterManager:
             input_base_parameters["scenario_tpye"]["parameter_interactive"][
                 "value"
             ] = "Lowest Cost"
+        elif config["scenario_id"] == "budget_constrained":
+            input_base_parameters["scenario_tpye"]["parameter_interactive"][
+                "value"
+            ] = "Budget Constrained"
+            input_sheet_parameters["budget_constraint"]["parameter_interactive"][
+                "value"
+            ] = config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS
         elif (
             config["scenario_id"] == "single_tech_cost"
             and config["technology"] == "Fiber"
@@ -160,6 +195,7 @@ class ScenarioParameterManager:
         self._hash["scenario_tpye"].value = get_scenario_type(config)
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
+        self.sheet.update_parameter("budget_constraint", config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS)
 
     def input_parameters(self):
         # specaial handling for scenario type in base parameters
@@ -180,8 +216,10 @@ class ScenarioParameterManager:
         }
         years_opex = float(self.get_parameter_from_sheet("years_opex"))
         bandwidth_demand = float(self.get_parameter_from_sheet("bandwidth_demand"))
+        budget_constraint = float(self.get_parameter_from_sheet("budget_constraint"))
         sheet_parameters = {
             "years_opex": years_opex,
             "bandwidth_demand": bandwidth_demand,
+            "cost_minimizer_config": {"budget_constraint": budget_constraint * MILLION_DOLLARS},
         }
         return {**base_parameters, **sheet_parameters}

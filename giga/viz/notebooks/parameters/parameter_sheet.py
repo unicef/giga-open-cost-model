@@ -37,6 +37,15 @@ class ParameterSheet:
                 self.interactive_parameters[i].value = value
                 break
 
+    def get_interactive_parameter(self, name):
+        """
+        Returns the value of a parameter
+        """
+        for i, p in enumerate(self.parameters):
+            if p["parameter_name"] == name:
+                return self.interactive_parameters[i]
+        return None
+
     def _create_sheet(self):
         # unpack parameters and refence them
         sheet = ipysheet.sheet(
