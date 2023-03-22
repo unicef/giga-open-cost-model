@@ -121,7 +121,7 @@ def plot_fiber_connections(
     m = plot_coordinate_map(
         school_coordinates,
         coordinate_name="School",
-        show_id=False,
+        show_id=True,
         show_properties=True,
         color="#43adde",
         m=m,
