@@ -18,6 +18,8 @@ RUN mkdir /app/models
 RUN mkdir /app/notebooks
 COPY . /app/models
 COPY notebooks /app/notebooks
+# cleanup a duplicate of notebooks directory
+RUN rm -rf /app/models/notebooks
 
 RUN pip install -e /app/models
 

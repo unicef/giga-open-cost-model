@@ -1,4 +1,5 @@
 deployment
 experiments
-notebooks/experiment
+notebooks/experiments
 notebooks/test
+.git
