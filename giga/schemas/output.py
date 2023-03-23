@@ -71,7 +71,9 @@ class SchoolConnectionCosts(BaseModel):
 
     def technology_connectivity_cost(self, num_years: int):
         # estimate of total cost of connectivity over the length of the project
-        return self.capex + self.opex * num_years
+        total_capex = self.capex + self.electricity.electricity_capex
+        total_opex = self.opex + self.electricity.electricity_opex
+        return total_capex + total_opex * num_years
 
 
 class FiberModelResults(BaseModel):
