@@ -9,6 +9,7 @@ You can find a reference glossary that provides in-depth explanations below.
 * [Model Documentation](docs/models.md)
 * [Notebooks Overview](notebooks/README.md)
 * [Application Deployment](#deployment)
+* [Command Line Interfaces](#cli)
 
 ## Setup
 
@@ -137,3 +138,41 @@ The full deployment workflow looks as follows, which can all be managed with the
 You can stop the jupyterhub cluster by running `./stack stop`.
 If you need to update the single user image, you can rebuild it using the CLI above.
 You can interact with the single user container locally by running `./stack start-container <local-workspace>`.
+
+
+## CLI
+
+The library exposes the following CLI, each with a different purpose.
+
+For local development, the `./dev` CLI can be used with the following sub-commands:
+
+```
+  build					Builds the modeling environment locally
+  start-notebook		        Start a jupyterlab notebook server locally
+  test					Runs the unit test suite
+  lint					Runs a flake8 lint check against PEP 8
+  format				Modifies non PEP 8 compliant code to be style compliant
+  clean-notebook <notebook-path> 	Removes rendered html from jupyter notebooks
+```
+
+For managing deployments, the `./stack` CLI can be used with the following sub-commands:
+
+```
+  up 						        Deploys the notebook stack to a k8s cluster
+  down 						        Tears down the notebook stack
+  install 					        Install minikube, helm, etc.
+  auth 						        Authenticate with GCP
+  create-image 					        Builds docker image for off-platform models
+  push-image 					        Pushes model docker image to a remote registry
+  start-container <workspace-dir> 	                Launches a Docker container and mounts a workspace directory to it
+  launch  					        Launches jupyterhub on a kubernetes cluster using helm
+  stop  					        Stops the jupyterhub deployment
+  reset-password  <user-email> 		                Sends a password reset email for notebook user
+```
+
+For running the models and relevant data pipelines, the `./run` CLI can be used with the following sub-commands:
+
+```
+  upload-workspace <workspace-dir> 			Copies the data workspace from the specified target directory to a storage bucket
+  fetch-workspace <workspace-dir> 			Copies the data workspace from a storage bucket to the specified target directory
+```

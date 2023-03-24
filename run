@@ -1,0 +1,35 @@
+#!/bin/bash
+
+
+DATA_WORKSPACE_BUCKET="gs://actual-engteam-sandbox/giga/data_workspace"
+
+
+upload_workspace() {
+  local source_workspace=$1
+  gsutil -m rsync -x '\..*|.*/\.[^/]*$|.*/\..*/.*$' -r $source_workspace $DATA_WORKSPACE_BUCKET
+}
+
+fetch_workspace() {
+  local target_workspace=$1
+  gsutil -m rsync -r $DATA_WORKSPACE_BUCKET $target_workspace
+}
+
+
+# Shows usage
+usage() {
+   printf "  upload-workspace <workspace-dir> \t\t\tCopies the data workspace from the specified target directory to a storage bucket\n"
+   printf "  fetch-workspace <workspace-dir> \t\t\tCopies the data workspace from a storage bucket to the specified target directory\n"
+}
+
+
+case $1 in
+  upload-workspace)
+    upload_workspace $2
+    ;;
+  fetch-workspace)
+    fetch_workspace $2
+    ;;
+  *)
+    usage
+    ;;
+esac
