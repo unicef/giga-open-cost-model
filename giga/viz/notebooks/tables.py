@@ -22,7 +22,9 @@ def output_to_school_stats(output_table):
                 "Schools requiring electricity": len(
                     output_table[output_table["capex_electricity"] > 0.0]
                 ),
-                "Schools that could be connected with additional budget": len(output_table[output_table["reason"] == "BUDGET_EXCEEDED"])
+                "Schools that could be connected with additional budget": len(
+                    output_table[output_table["reason"] == "BUDGET_EXCEEDED"]
+                ),
             }
         ]
     )
@@ -134,6 +136,7 @@ def display_summary_table(output_space):
     dfcap = output_to_capex_details(output_table)
     df_solar = output_to_electricity_capex(output_table)
     dfop = output_to_opex_details(output_table)
+    total_costs = sum(output_table["total_cost"].dropna())
 
     cap_total = format_currency(
         sum(dfcap["Total Costs"]), currency="USD", locale="en_US"
@@ -164,6 +167,11 @@ def display_summary_table(output_space):
     display(
         HTML(
             f"<b><font color='#50ba83'>Total OpEx Costs {get_space('&emsp;', 12)} {op_total}</b><hr><hr>"
+        )
+    )
+    display(
+        HTML(
+            f"<b><font color='#2a2d30'>Total Costs: {value_to_dollar_format(total_costs)}</b><hr><hr>"
         )
     )
     display(HTML("<b><font color='#5b8ff0'>Cost Breakdown</b>"))
