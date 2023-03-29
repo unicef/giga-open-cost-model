@@ -53,15 +53,18 @@ class ConstrainedEconomiesOfScaleMinimizer:
         return ordered_costs
 
     def _process_cost_graph_under_budget(
-        self, budget_remaining, cost_graph, root_nodes
+        self, budget_remaining, cost_graph, root_nodes, output
     ):
         """
         This method processes a cost graph that fully falls below the budget constraint.
         """
-        # update budget
-        budget_remaining -= cost_graph.total_cost
         # get the schools that are connected
         schools = [n for n in list(cost_graph.graph.nodes()) if n not in root_nodes]
+        # update budget
+        connectivity_cost = output.project_lifetime_cost(
+            schools, "fiber", self.config.years_opex
+        )
+        budget_remaining -= connectivity_cost
         # get the connections between the schools
         connections = cost_graph.to_pairwise_distances()
         return budget_remaining, schools, connections
@@ -114,7 +117,7 @@ class ConstrainedEconomiesOfScaleMinimizer:
                     cluster_schools,
                     cluster_connections,
                 ) = self._process_cost_graph_under_budget(
-                    budget_remaining, cost_graph, root_nodes
+                    budget_remaining, cost_graph, root_nodes, output
                 )
                 school_ids += cluster_schools
                 connections += cluster_connections
