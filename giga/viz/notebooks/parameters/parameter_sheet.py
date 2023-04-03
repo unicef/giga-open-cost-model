@@ -1,4 +1,5 @@
-import ipysheet
+import ipywidgets as widgets
+from typing import Dict, List
 from pydantic import parse_obj_as
 
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
@@ -12,21 +13,23 @@ class ParameterSheet:
     a Jupyter widget input.
     """
 
-    def __init__(self, sheet_name, parameters, columns=2, column_width=2):
+    def __init__(self, sheet_name, parameters: List[Dict], columns=2, width="1000px"):
         """
         sheet_name: Name of the sheet
-        parameters: dictionary of parameters containing
-            parameter name, dispaly name, interactive widget, and scaling factor
+        parameters: list of dictionaries containing
+            parameter name, display name, and interactive widget
+        columns: number of columns in the grid layout
         """
         self.sheet_name = sheet_name
         self.columns = columns
-        self.column_width = column_width
+        self.width = width
         self.parameters = parameters
         self.interactive_parameters = [
             parse_obj_as(InputParameter, p["parameter_interactive"]).parameter
             for p in self.parameters
         ]
         self.sheet = None
+        self._sheet_lookup = {}
 
     def update_parameter(self, name, value):
         """
@@ -46,26 +49,28 @@ class ParameterSheet:
                 return self.interactive_parameters[i]
         return None
 
+    def get_parameter_value(self, parameter_name):
+        return self._sheet_lookup[parameter_name].value
+
     def _create_sheet(self):
-        # unpack parameters and refence them
-        sheet = ipysheet.sheet(
-            self.sheet_name,
-            columns=self.columns,
-            rows=len(self.parameters),
-            column_headers=False,
-            row_headers=False,
-            column_width=self.column_width,
-        )
-        name_column = ipysheet.column(
-            0,
-            list(map(lambda x: x["parameter_input_name"], self.parameters)),
-        )
-        input_column = ipysheet.column(1, self.interactive_parameters)
-        return sheet
+        # Calculate the number of rows needed
+        rows = len(self.parameters)
+
+        # Create a GridspecLayout with the calculated number of rows and columns
+        grid = widgets.GridspecLayout(rows, self.columns, width=self.width)
+
+        # Add parameter labels and interactive widgets to the grid
+        for i, p in enumerate(self.parameters):
+            row = i
+            grid[row, 0] = widgets.HTML(value=p["parameter_input_name"])
+            grid[row, 1] = self.interactive_parameters[i]
+            self._sheet_lookup[p["parameter_name"]] = self.interactive_parameters[i]
+
+        return grid
 
     def input_parameters(self):
         """
-        Returns a jupyter widget that allows user input into the parameter sheet
+        Returns a Jupyter widget that allows user input into the parameter sheet
         """
         if self.sheet is None:
             self.sheet = self._create_sheet()

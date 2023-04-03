@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "giga"
-version = "0.2.3"
+version = "0.3.0"
 description = "Giga models for internet connectivity cost estimation"
 authors = ["Max Nova <max.nova@actualhq.com>"]
 readme = "README.md"
@@ -22,17 +22,15 @@ haversine = "^2.7.0"
 flake8 = "^5.0.4"
 black = "^22.10.0"
 hydra-core = "^1.2.0"
-jupyterlab = "^3.5.0"
+jupyterlab = "3.5.1"
 voila = "^0.4.0"
 grip = "^4.6.1"
 pykml = "^0.2.0"
 scipy = "^1.10.0"
 scikit-learn = "^1.2.1"
-jupyterlab-widgets = "^3.0.3"
-widgetsnbextension = "^4.0.3"
-ipysheet = "^0.7.0"
 networkx = "^3.0"
 ortools = "^9.6.2534"
+ipywidgets = "8.0.6"
 
 [tool.poetry.scripts]
 total_cost_scenario = "giga.app.run_total_cost_scenario:main"
