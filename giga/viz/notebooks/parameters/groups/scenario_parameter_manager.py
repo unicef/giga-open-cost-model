@@ -1,5 +1,4 @@
 from copy import deepcopy
-import ipysheet
 from ipywidgets import VBox
 from pydantic import parse_obj_as
 from traitlets import directional_link
@@ -88,6 +87,7 @@ def get_scenario_type(config):
     else:
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
 
+
 def constraint_disabled_transform(scenario_type):
     if scenario_type == "Budget Constrained":
         return False
@@ -115,10 +115,13 @@ class ScenarioParameterManager:
             for p in base_parameters
         }
         # link the scenario to the budget
-        scenario_type = self._hash['scenario_tpye']
+        scenario_type = self._hash["scenario_tpye"]
         budget_constraint = self.sheet.get_interactive_parameter("budget_constraint")
-        directional_link((scenario_type, 'value'), (budget_constraint, 'disabled'), constraint_disabled_transform)
-
+        directional_link(
+            (scenario_type, "value"),
+            (budget_constraint, "disabled"),
+            constraint_disabled_transform,
+        )
 
     @staticmethod
     def from_config(
@@ -157,7 +160,7 @@ class ScenarioParameterManager:
             ] = "Budget Constrained"
             input_sheet_parameters["budget_constraint"]["parameter_interactive"][
                 "value"
-            ] = config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS
+            ] = (config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS)
         elif (
             config["scenario_id"] == "single_tech_cost"
             and config["technology"] == "Fiber"
@@ -195,7 +198,10 @@ class ScenarioParameterManager:
         self._hash["scenario_tpye"].value = get_scenario_type(config)
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
-        self.sheet.update_parameter("budget_constraint", config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS)
+        self.sheet.update_parameter(
+            "budget_constraint",
+            config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
+        )
 
     def input_parameters(self):
         # specaial handling for scenario type in base parameters
@@ -204,10 +210,7 @@ class ScenarioParameterManager:
         return VBox([base, sheet])
 
     def get_parameter_from_sheet(self, parameter_name):
-        s = ipysheet.sheet(self.sheet_name)
-        df = ipysheet.to_dataframe(s)
-        input_name = self.sheet_parameters[parameter_name]["parameter_input_name"]
-        return df[df["A"] == input_name]["B"]
+        return self.sheet.get_parameter_value(parameter_name)
 
     def get_model_parameters(self):
         base_parameters = {
@@ -220,6 +223,8 @@ class ScenarioParameterManager:
         sheet_parameters = {
             "years_opex": years_opex,
             "bandwidth_demand": bandwidth_demand,
-            "cost_minimizer_config": {"budget_constraint": budget_constraint * MILLION_DOLLARS},
+            "cost_minimizer_config": {
+                "budget_constraint": budget_constraint * MILLION_DOLLARS
+            },
         }
         return {**base_parameters, **sheet_parameters}

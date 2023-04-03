@@ -9,7 +9,7 @@ from ipywidgets import (
     Layout,
     HTML,
 )
-from ipysheet import sheet, column, to_dataframe
+from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 
 from giga.schemas.conf.models import (
     MinimumCostScenarioConf,
@@ -45,8 +45,12 @@ DASHBOARD_PARAMETERS = [
     {
         "parameter_name": "verbose",
         "parameter_input_name": "Verbose",
-        "parameter_interactive": Checkbox(value=True, description="ON"),
-    },
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    }
 ]
 
 UPLOADED_DATA_SPACE_PARAMETERS = [
@@ -124,6 +128,9 @@ class CostEstimationParameterInput:
             ElectricityParameterManager()
             if electricity_parameter_manager is None
             else electricity_parameter_manager
+        )
+        self.dashboard_parameter_manager = ParameterSheet(
+            "dashboard", DASHBOARD_PARAMETERS
         )
         self.managers = {
             "data": [self.data_parameter_manager],
@@ -256,7 +263,10 @@ class CostEstimationParameterInput:
     def update(self, config):
         if len(config) == 0:
             return
-        if config["scenario_parameters"]["scenario_id"] == "minimum_cost" or config["scenario_parameters"]["scenario_id"] == "budget_constrained":
+        if (
+            config["scenario_parameters"]["scenario_id"] == "minimum_cost"
+            or config["scenario_parameters"]["scenario_id"] == "budget_constrained"
+        ):
             tech_configs = {
                 t["technology"]: t
                 for t in config["scenario_parameters"]["technologies"]
@@ -337,26 +347,10 @@ class CostEstimationParameterInput:
         return self.electricity_parameter_manager.get_model_parameters()
 
     def dashboard_parameters_input(self, sheet_name="dashboard"):
-        s = sheet(
-            sheet_name,
-            columns=2,
-            rows=len(DASHBOARD_PARAMETERS),
-            column_headers=False,
-            row_headers=False,
-            column_width=2,
-        )
-        name_column = column(
-            0, list(map(lambda x: x["parameter_input_name"], DASHBOARD_PARAMETERS))
-        )
-        input_column = column(
-            1, list(map(lambda x: x["parameter_interactive"], DASHBOARD_PARAMETERS))
-        )
-        return s
+        return self.dashboard_parameter_manager.input_parameters()
 
     def dashboard_parameters(self, sheet_name="dashboard"):
-        s = sheet(sheet_name)
-        df = to_dataframe(s)
-        verbose = bool(float(df[df["A"] == "Verbose"]["B"]))
+        verbose = self.dashboard_parameter_manager.get_parameter_value("verbose")
         return {"verbose": verbose}
 
     def scenario_parameters(self, sheet_name="scenario"):
@@ -394,7 +388,9 @@ class CostEstimationParameterInput:
             )
             conf.technologies[2] = cellular_params
             if p["scenario_type"] == "Budget Constrained":
-                conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"]["budget_constraint"]
+                conf.cost_minimizer_config.budget_constraint = p[
+                    "cost_minimizer_config"
+                ]["budget_constraint"]
                 conf.scenario_id = "budget_constrained"
             return conf
 

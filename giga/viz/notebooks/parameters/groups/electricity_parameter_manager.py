@@ -1,5 +1,4 @@
 from copy import deepcopy
-import ipysheet
 
 from giga.schemas.conf.models import ElectricityCostConf
 from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
@@ -80,10 +79,7 @@ class ElectricityParameterManager:
         return self.sheet.input_parameters()
 
     def get_parameter_from_sheet(self, parameter_name):
-        s = ipysheet.sheet(self.sheet_name)
-        df = ipysheet.to_dataframe(s)
-        input_name = self.parameters[parameter_name]["parameter_input_name"]
-        return df[df["A"] == input_name]["B"]
+        return self.sheet.get_parameter_value(parameter_name)
 
     def get_model_parameters(self):
         cost_per_kwh = float(self.get_parameter_from_sheet("per_kwh_cost"))
