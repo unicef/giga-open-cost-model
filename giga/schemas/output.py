@@ -27,6 +27,9 @@ class NonConnectionReason(str, Enum):
     satellite_bw_threshold_exceeded = "SATELLITE_BW_THRESHOLD"
     cellular_bw_threshold_exceeded = "CELLULAR_BW_THRESHOLD"
     cellular_range_threshold_exceeded = "CELLULAR_RANGE_THRESHOLD"
+    p2p_bw_threshold_exceeded = "P2P_BW_THRESHOLD"
+    p2p_range_threshold_exceeded = "P2P_RANGE_THRESHOLD"
+    p2p_los_threshold_exceeded = "P2P_LOS_THRESHOLD"  # TODO wire this up
     budget_exceeded = "BUDGET_EXCEEDED"
 
 
@@ -86,6 +89,10 @@ class CellularModelResults(BaseModel):
 
     distances: List[PairwiseDistance]
 
+class P2PModelResults(BaseModel):
+
+	distances: List[PairwiseDistance]
+
 
 class GenericModelResults(BaseModel):
 
@@ -95,7 +102,7 @@ class GenericModelResults(BaseModel):
 class CostResultSpace(BaseModel):
 
     technology_results: Union[
-        FiberModelResults, CellularModelResults, GenericModelResults
+        FiberModelResults, CellularModelResults, P2PModelResults, GenericModelResults
     ]
     cost_results: List[SchoolConnectionCosts]
 
@@ -105,12 +112,13 @@ class OutputSpace(BaseModel):
     fiber_costs: CostResultSpace = None
     satellite_costs: CostResultSpace = None
     cellular_costs: CostResultSpace = None
+    p2p_costs: CostResultSpace = None
     aggregated_costs: Dict[str, Dict[str, SchoolConnectionCosts]] = {}
     minimum_cost_result: List[SchoolConnectionCosts] = []
 
     @property
     def technology_outputs(self):
-        techs = [self.fiber_costs, self.satellite_costs, self.cellular_costs]
+        techs = [self.fiber_costs, self.satellite_costs, self.cellular_costs, self.p2p_costs]
         return list(filter(lambda x: x is not None, techs))
 
     @property

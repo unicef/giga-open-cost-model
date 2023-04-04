@@ -34,6 +34,9 @@ from giga.viz.notebooks.parameters.groups.satellite_technology_parameter_manager
 from giga.viz.notebooks.parameters.groups.cellular_technology_parameter_manager import (
     CellularTechnologyParameterManager,
 )
+from giga.viz.notebooks.parameters.groups.p2p_technology_parameter_manager import (
+    P2PTechnologyParameterManager,
+)
 from giga.viz.notebooks.parameters.groups.electricity_parameter_manager import (
     ElectricityParameterManager,
 )
@@ -94,6 +97,7 @@ class CostEstimationParameterInput:
         fiber_parameter_manager=None,
         satellite_parameter_manager=None,
         cellular_parameter_manager=None,
+        p2p_parameter_manager=None,
         electricity_parameter_manager=None,
     ):
         self._hashed_sheets = {}
@@ -124,6 +128,11 @@ class CostEstimationParameterInput:
             if cellular_parameter_manager is None
             else cellular_parameter_manager
         )
+        self.p2p_parameter_manager = (
+            P2PTechnologyParameterManager()
+            if p2p_parameter_manager is None
+            else p2p_parameter_manager
+        )
         self.electricity_parameter_manager = (
             ElectricityParameterManager()
             if electricity_parameter_manager is None
@@ -139,6 +148,7 @@ class CostEstimationParameterInput:
                 self.fiber_parameter_manager,
                 self.satellite_parameter_manager,
                 self.cellular_parameter_manager,
+                self.p2p_parameter_manager,
             ],
         }
 
@@ -189,6 +199,15 @@ class CostEstimationParameterInput:
                 satellite_parameter_manager=satellite_parameter_manager,
                 electricity_parameter_manager=electricity_parameter_manager,
             )
+        elif tech == "P2P":
+            p2p_parameter_manager = P2PTechnologyParameterManager.from_config(tech_config)
+            return CostEstimationParameterInput(
+                local_data_workspace=local_data_workspace,
+                data_parameter_manager=data_parameter_manager,
+                scenario_parameter_manager=scenario_parameter_manager,
+                p2p_parameter_manager=p2p_parameter_manager,
+                electricity_parameter_manager=electricity_parameter_manager,
+            )
         elif tech == "Fiber":
             fiber_parameter_manager = FiberTechnologyParameterManager.from_config(
                 tech_config
@@ -224,6 +243,9 @@ class CostEstimationParameterInput:
         cellular_parameter_manager = CellularTechnologyParameterManager.from_config(
             tech_configs.get("Cellular", {})
         )
+        p2p_parameter_manager = P2PTechnologyParameterManager.from_config(
+            tech_configs.get("P2P", {})
+        )
         electricity_parameter_manager = ElectricityParameterManager.from_config(
             config["scenario_parameters"]["technologies"][0].get(
                 "electricity_config", {}
@@ -236,6 +258,7 @@ class CostEstimationParameterInput:
             fiber_parameter_manager=fiber_parameter_manager,
             satellite_parameter_manager=satellite_parameter_manager,
             cellular_parameter_manager=cellular_parameter_manager,
+            p2p_parameter_manager=p2p_parameter_manager,
             electricity_parameter_manager=electricity_parameter_manager,
         )
 
@@ -284,6 +307,9 @@ class CostEstimationParameterInput:
             self.fiber_parameter_manager.update_parameters(
                 tech_configs.get("Fiber", {})
             )
+            self.p2p_parameter_manager.update_parameters(
+                tech_configs.get("P2P", {})
+            )
             self.electricity_parameter_manager.update_parameters(
                 config["scenario_parameters"]["technologies"][0].get(
                     "electricity_config", {}
@@ -306,6 +332,8 @@ class CostEstimationParameterInput:
                 self.cellular_parameter_manager.update_parameters(tech_config)
             elif tech == "Fiber":
                 self.fiber_parameter_manager.update_parameters(tech_config)
+            elif tech == "P2P":
+                self.p2p_parameter_manager.update_parameters(tech_config)
             else:
                 raise ValueError(f"Unknown technology name: {tech}")
         else:
@@ -339,6 +367,12 @@ class CostEstimationParameterInput:
 
     def cellular_parameters_input(self, sheet_name="cellular"):
         return self.cellular_parameter_manager.input_parameters()
+
+    def p2p_parameters(self, sheet_name="p2p"):
+        return self.p2p_parameter_manager.get_model_parameters()
+
+    def p2p_parameters_input(self, sheet_name="p2p"):
+        return self.p2p_parameter_manager.input_parameters()
 
     def electricity_parameters_input(self, sheet_name="electricity"):
         return self.electricity_parameter_manager.input_parameters()
@@ -375,18 +409,29 @@ class CostEstimationParameterInput:
             )
             p.tech_config = tech_params
             return p
+        elif p["scenario_type"] == "P2P Only":
+            tech_params = self.p2p_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
+            p = SingleTechnologyScenarioConf(
+                technology="P2P", tech_config=tech_params, **p
+            )
+            p.tech_config = tech_params
+            return p
         else:
             fiber_params = self.fiber_parameters()
             satellite_params = self.satellite_parameters()
             cellular_params = self.cellular_parameters()
+            p2p_params = self.p2p_parameters()
             fiber_params.electricity_config = self.electricity_parameters()
             satellite_params.electricity_config = self.electricity_parameters()
             cellular_params.electricity_config = self.electricity_parameters()
+            p2p_params.electricity_config = self.electricity_parameters()
             conf = MinimumCostScenarioConf(
                 **p,
-                technologies=[fiber_params, satellite_params, cellular_params],
+                technologies=[fiber_params, satellite_params, cellular_params, p2p_params],
             )
             conf.technologies[2] = cellular_params
+            conf.technologies[3] = p2p_params
             if p["scenario_type"] == "Budget Constrained":
                 conf.cost_minimizer_config.budget_constraint = p[
                     "cost_minimizer_config"
@@ -438,8 +483,10 @@ class CostEstimationParameterInput:
         sa = self.satellite_parameters_input()
         t4 = HTML(value="<hr><b>Cellular Model Configuration</b>")
         sc = self.cellular_parameters_input()
-        t5 = HTML(value="<hr><b>Electricity Model Configuration</b>")
+        t5 = HTML(value="<hr><b>P2P Model Configuration</b>")
+        sp = self.p2p_parameters_input()
+        t6 = HTML(value="<hr><b>Electricity Model Configuration</b>")
         e = self.electricity_parameters_input()
-        t6 = HTML(value="<hr><b>Dashboard Configuration</b>")
+        t7 = HTML(value="<hr><b>Dashboard Configuration</b>")
         da = self.dashboard_parameters_input()
-        return VBox([t1, d, s, t2, f, t3, sa, t4, sc, t5, e, t6, da])
+        return VBox([t1, d, s, t2, f, t3, sa, t4, sc, t5, sp, t6, e, t7, da])

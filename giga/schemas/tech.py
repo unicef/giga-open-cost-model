@@ -7,4 +7,5 @@ class ConnectivityTechnology(str, Enum):
     fiber = "Fiber"
     cellular = "Cellular"
     sattelitle = "Satellite"
+    p2p = "P2P"
     none = "None"

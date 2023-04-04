@@ -20,6 +20,7 @@ SCENARIO_BASE_PARAMETERS = [
                 "Fiber Only",
                 "Satellite LEO Only",
                 "Cellular Only",
+                "P2P Only",
             ],
             "description": "Cost Scenario:",
         },
@@ -84,6 +85,11 @@ def get_scenario_type(config):
         and config["technology"] == "Cellular"
     ):
         return "Cellular Only"
+    elif (
+        config["scenario_id"] == "single_tech_cost"
+        and config["technology"] == "P2P"
+    ):
+        return "P2P Only"
     else:
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
 
@@ -182,6 +188,13 @@ class ScenarioParameterManager:
             input_base_parameters["scenario_tpye"]["parameter_interactive"][
                 "value"
             ] = "Cellular Only"
+        elif (
+            config["scenario_id"] == "single_tech_cost"
+            and config["technology"] == "P2P"
+        ):
+            input_base_parameters["scenario_tpye"]["parameter_interactive"][
+				"value"
+			] = "P2P Only"
         else:
             raise ValueError(
                 f'Unknown scenario type {config["scenario_parameters"]["scenario_id"]}'

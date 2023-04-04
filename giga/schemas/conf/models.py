@@ -69,6 +69,13 @@ class CellularConstraints(BaseModel):
     maximum_bandwithd: float = 2_000  # Mbps
     required_power: float = 500  # annual kWh
 
+class P2PConstraints(BaseModel):
+
+    # Can get these values from Giga / figure out reasonable defaults for P2P
+    maximum_range: float = math.inf  # meters
+    maximum_bandwithd: float = 2_000  # Mbps
+    required_power: float = 500  # annual kWh
+
 
 class FiberTechnologyCostConf(BaseModel):
     capex: FiberCapex
@@ -94,8 +101,20 @@ class CellularTechnologyCostConf(BaseModel):
     electricity_config: ElectricityCostConf = None
 
 
+class P2PTechnologyCostConf(BaseModel):
+    capex: GeneralizedInternetCapex
+    opex: GeneralizedInternetOpex
+    constraints: P2PConstraints
+    # max range, signal strength, etc. see CellularConstarint
+    technology: str = "P2P"
+    electricity_config: ElectricityCostConf = None
+
+
 TechnologyConfiguration = Union[
-    FiberTechnologyCostConf, SatelliteTechnologyCostConf, CellularTechnologyCostConf
+    FiberTechnologyCostConf,
+    SatelliteTechnologyCostConf,
+    CellularTechnologyCostConf,
+    P2PTechnologyCostConf
 ]
 
 
@@ -113,7 +132,7 @@ class SingleTechnologyScenarioConf(BaseModel):
     """
 
     scenario_id: str = "single_tech_cost"
-    technology: Literal["Fiber", "Cellular", "Microwave", "Satellite"]
+    technology: Literal["Fiber", "Cellular", "Microwave", "Satellite", "P2P"]
     years_opex: int = 5
     opex_responsible: Literal[
         "Provider", "Consumer", "Both"

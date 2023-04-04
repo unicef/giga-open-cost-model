@@ -17,6 +17,7 @@ class ModelDataSpace:
         self._cell_tower_map = None
         self._fiber_cache = None
         self._cellular_cache = None
+        self._p2p_cache = None
 
     @property
     def schools(self):
@@ -76,6 +77,17 @@ class ModelDataSpace:
             else:
                 self._cellular_cache = self.config.cellular_distance_cache_conf.load()
         return self._cellular_cache
+
+    @property
+    def p2p_cache(self):
+        if self._p2p_cache is None:
+            # make cache
+            if self.config.p2p_distance_cache_conf is None:
+                # skip and return None if no configuration
+                return self._p2p_cache
+            else:
+                self._p2p_cache = self.config.p2p_distance_cache_conf.load()
+        return self._p2p_cache
 
     def filter_schools(self, school_ids):
         # load schools if not already loaded

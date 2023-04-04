@@ -96,15 +96,16 @@ def single_tech_scenario_config_fiber(fiber_config):
     )
 
 @pytest.fixture()
-def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config):
+def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config, p2p_config):
     c = MinimumCostScenarioConf(
         scenario_id="minimum_cost_test_scenario",
         years_opex=5,
         opex_responsible="Consumer",
         bandwidth_demand=40,
-        technologies=[fiber_config, satellite_config, cellular_config]
+        technologies=[fiber_config, satellite_config, cellular_config, p2p_config]
     )
     c.technologies[2] = cellular_config
+    c.technologies[3] = p2p_config
     return c
 
 @pytest.fixture()
