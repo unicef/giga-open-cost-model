@@ -76,6 +76,20 @@ class CellularDistanceCacheConf(BaseModel):
         )  # loads data from the configured pipeline
 
 
+class P2PDistanceCacheConf(BaseModel):
+    """
+    Distance cache for p2p cost models
+    """
+
+    cache_type: Literal["p2p-distance"]
+    p2p_cache_file: str
+    data: LocalConnectCachePipeline
+
+    def load(self):
+        return self.data.load(
+            connected_file=self.p2p_cache_file, unconnected_file=None
+        )  # loads data from the configured pipeline
+
 class DataSpaceConf(BaseModel):
 
     school_data_conf: SchoolCountryConf
@@ -83,3 +97,4 @@ class DataSpaceConf(BaseModel):
     cell_tower_map_conf: CoordinateMapConf = None
     fiber_distance_cache_conf: FiberDistanceCacheConf = None
     cellular_distance_cache_conf: CellularDistanceCacheConf = None
+    p2p_distance_cache_conf: P2PDistanceCacheConf = None

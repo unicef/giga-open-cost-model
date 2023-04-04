@@ -7,6 +7,7 @@ from giga.schemas.conf.models import MinimumCostScenarioConf
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
+from giga.models.components.p2p_cost_model import P2PCostModel
 from giga.models.components.optimizers.economies_of_scale_minimizer import (
     EconomiesOfScaleMinimizer,
 )
@@ -57,6 +58,8 @@ class MinimumCostScenario:
             return SatelliteCostModel(model_config)
         elif model_config.technology == "Cellular":
             return CellularCostModel(model_config)
+        elif model_config.technology == "P2P":
+            return P2PCostModel(model_config)
         else:
             raise ValueError("No Supported Technology")
 
@@ -67,6 +70,8 @@ class MinimumCostScenario:
             self.output_space.satellite_costs = output
         elif config.technology == "Cellular":
             self.output_space.cellular_costs = output
+        elif config.technology == "P2P":
+            self.output_space.p2p_costs = output
         else:
             return self.output_space
         return self.output_space

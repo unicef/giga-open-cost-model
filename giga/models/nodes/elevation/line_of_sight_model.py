@@ -9,7 +9,7 @@ DEFAULT_BUFFER = 0.0
 
 class LineofSightModel:
     """
-    Classs that determines the current line of sight for a given set of cooridnates
+    Classs that determines the current line of sight for a given set of coordinates
     based on the elevation profile
     """
 

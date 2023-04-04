@@ -5,11 +5,11 @@ You can use the script below to run the total cost scenario by doing the followi
 ```bash
 ./total_cost_scenario.py --workspace <path-to-data-workspace>
 					     --output-file <desired-output-file> # e.g. costs.csv
-					     --scenario-type minimum-cost # minimum-cost, fiber, cellular, or satellite
+					     --scenario-type minimum-cost # minimum-cost, fiber, cellular, p2p, or satellite
 ```
 
 The script above will use the school, fiber, and cellular data in the workspace specified, to create an output .csv table that contains cost information for each school in the input data set.
-Additionally, you can specify the scenario type by choosing between a `minimum-cost` scenario or a single technology cost scenario (`fiber`, `cellular`, `satellite`).
+Additionally, you can specify the scenario type by choosing between a `minimum-cost` scenario or a single technology cost scenario (`fiber`, `cellular`, `p2p`, `satellite`).
 
 ## Preparing a Workspace
 
@@ -43,5 +43,11 @@ You can generate a pairwise distance cache to help warm-start the cellular model
 ./create_cellular_distance_cache.py --workspace <model-workspace>
 ```
 
+You can generate a line-of-sight cache to help warm-start the P2P model using the CLI below:
+
+```bash
+./create_p2p_distance_cache.py --workspace <model-workspace>
+```
+
 After each run completes, the cache will be written to the model workspace.
-If you load the model data space from that workspace, it will automatically use and load the distance cache for model calculations when it exists. 
+If you load the model data space from that workspace, it will automatically use and load the distance cache for model calculations when it exists.

@@ -2,6 +2,7 @@ from giga.schemas.conf.models import SingleTechnologyScenarioConf
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
+from giga.models.components.p2p_cost_model import P2PCostModel
 from giga.schemas.output import CostResultSpace
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.output import OutputSpace
@@ -26,6 +27,8 @@ class SingleTechnologyScenario:
             return SatelliteCostModel(self.config.tech_config)
         elif self.config.technology == "Cellular":
             return CellularCostModel(self.config.tech_config)
+        elif self.config.technology == "P2P":
+            return P2PCostModel(self.config.tech_config)
         else:
             raise ValueError("No Supported Technology")
 
@@ -36,6 +39,8 @@ class SingleTechnologyScenario:
             self.output_space.satellite_costs = output
         elif self.config.technology == "Cellular":
             self.output_space.cellular_costs = output
+        elif self.config.technology == "P2P":
+            self.output_space.p2p_costs = output
         else:
             return self.output_space
         return self.output_space

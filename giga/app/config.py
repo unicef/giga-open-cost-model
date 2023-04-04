@@ -86,4 +86,9 @@ class ConfigClient:
                 "cell_cache_file": self.cfg.data.cellular_distance_cache_file,
                 "data": {"workspace": self.distance_cache_workspace},
             },
+            p2p_distance_cache_conf={
+				"cache_type": "p2p-distance",
+                "p2p_cache_file": self.cfg.data.p2p_distance_cache_file,
+                "data": {"workspace": self.distance_cache_workspace},
+			},
         )
