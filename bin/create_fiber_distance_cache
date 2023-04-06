@@ -17,6 +17,7 @@ from giga.schemas.distance_cache import (
     SingleLookupDistanceCache,
     MultiLookupDistanceCache,
 )
+from giga.utils.logging import LOGGER
 
 
 def get_uncached_schools(schools, args, cache_file):
@@ -74,6 +75,7 @@ def main():
         os.path.join(args.workspace_directory, "schools.csv")
     )
 
+    LOGGER.info(f"Creating fiber distance cache in {args.workspace_directory}")
     model = VectorizedDistanceModel(
         progress_bar=True,
         n_nearest_neighbors=args.n_nearest_neighbors,
@@ -87,6 +89,7 @@ def main():
         os.path.join(args.workspace_directory, f"fiber{args.file_suffix}.json")
     )
 
+    LOGGER.info(f"Creating school distance cache in {args.workspace_directory}")
     model = VectorizedDistanceModel(
         progress_bar=True,
         n_nearest_neighbors=args.n_nearest_neighbors,

@@ -1,94 +1,43 @@
 import os
-from hydra import compose, initialize
+import fnmatch
+import json
 from typing import List
-from omegaconf import DictConfig
-from giga.schemas.conf.data import DataSpaceConf
+
+from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 
 
-# Use to update the baseline application configurations
-CONFIG_PATH = "../../conf"
-CONFIG_NAME = "config"
-
-# Global configuration init happens here
-initialize(version_base=None, config_path=CONFIG_PATH)
-
-
-def get_config(overrides: List[str] = []):
-    return compose(config_name=CONFIG_NAME, overrides=overrides)
+def get_registered_countries(directory: str) -> None:
+    countries = []
+    for root, _, filenames in os.walk(directory):
+        for filename in fnmatch.filter(filenames, "*.json"):
+            countries.append(filename.split(".")[0])
+    return countries
 
 
-class ConfigClient:
-    def __init__(self, cfg: DictConfig):
-        self.cfg = cfg
+def get_registered_country_names(default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE):
+    countries = get_registered_countries(default_parameter_dir)
+    return [c.replace("_", " ").title() for c in countries]
 
-    @property
-    def school_file(self):
-        file = os.path.join(
-            self.cfg.data.workspace,
-            self.cfg.data.country_workspace,
-            self.cfg.data.school_file,
-        )
-        return file
 
-    @property
-    def fiber_file(self):
-        file = os.path.join(
-            self.cfg.data.workspace,
-            self.cfg.data.country_workspace,
-            self.cfg.data.fiber_file,
-        )
-        return file
+def get_country_defaults(
+    workspace="workspace", default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE
+):
+    # NOTE: if the defaults need to be loaded from another data store you can reimplement
+    # this function to pull from a known database or other data store
+    countries = get_registered_countries(default_parameter_dir)
+    defaults = {}
+    for country in countries:
+        with open(os.path.join(default_parameter_dir, f"{country}.json")) as f:
+            default = json.load(f)
+        default["data"]["workspace"] = workspace
+        defaults[country] = default
+    return defaults
 
-    @property
-    def cellular_file(self):
-        file = os.path.join(
-            self.cfg.data.workspace,
-            self.cfg.data.country_workspace,
-            self.cfg.data.cellular_file,
-        )
-        return file
 
-    @property
-    def distance_cache_workspace(self):
-        workspace = os.path.join(
-            self.cfg.data.workspace,
-            self.cfg.data.country_workspace,
-        )
-        return workspace
-
-    @property
-    def local_workspace_data_space_config(self):
-        return DataSpaceConf(
-            school_data_conf={
-                "country_id": self.cfg.data.country,
-                "data": {"file_path": self.school_file, "table_type": "school"},
-            },
-            fiber_map_conf={
-                "map_type": "fiber-nodes",
-                "data": {
-                    "file_path": self.fiber_file,
-                    "table_type": "coordinate-map",
-                },
-            },
-            cell_tower_map_conf={
-                "map_type": "cell-towers",
-                "data": {
-                    "file_path": self.cellular_file,
-                    "table_type": "cell-towers",
-                },
-            },
-            fiber_distance_cache_conf={
-                "cache_type": "fiber-distance",
-                "data": {"workspace": self.distance_cache_workspace},
-            },
-            cellular_distance_cache_conf={
-                "cache_type": "cellular-distance",
-                "cell_cache_file": self.cfg.data.cellular_distance_cache_file,
-                "data": {"workspace": self.distance_cache_workspace},
-            },
-            p2p_distance_cache_conf={
-				"cache_type": "p2p-distance",
-                "p2p_cache_file": self.cfg.data.p2p_distance_cache_file,
-                "data": {"workspace": self.distance_cache_workspace},
-			},
-        )
+def get_country_code_lookup(default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE):
+    defaults = get_country_defaults(default_parameter_dir=default_parameter_dir)
+    return {
+        c: default["data"]["country_code"]
+        for c, default in defaults.items()
+        if default["data"]["country_code"]
+    }

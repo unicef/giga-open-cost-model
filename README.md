@@ -96,6 +96,76 @@ To autoformat code that is non PEP 8 compliant run:
 ./dev format
 ```
 
+## Adding a New Country
+
+The library provides a number of helpers to add new countries that can be supported in the models.
+There are a few steps that need to be completed in order to do this. 
+
+1. Determine the default cost drivers for the country, and the code for the country that can be used with Project Connect APIs. Create a json file that has these parameters, see [here](conf/countries/rwanda.json) for an example of how to structure this file.
+2. To drive the models, you need additional data for this country: electricity (optional), fiber node data, cellular tower data. You can find the format for these in the sub-sections below. Aggregate the data that you will need and place it in the workspace for this country.
+3. You can add a new country by using the CLI as follows:  `./run add-new-country <your-country-parameters.json> <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN>`. This will register the country and make it available to the library models, fetch the most up to date school data for that country, merge that data with any existing workspace data like electricity data, and create a cache for schools and infrastructure data
+4. Synchronize the new country data with remote storage, the current CLI is setup to work with an object store called Google Cloud Store, where all the workspace blobs/artifacts are persisted and updated using `./run upload-workspace <path-to-country-workspace>`
+5. You are all set! After the updated version of the application has been re-deployed, the new country will be available to run models against 
+
+Note that step 3 above combines multiple commands into a single executable for simplicity.
+If you want to run each of these commands separately see the [Appendix](#appendix) for more information.
+
+For more information on how you can use the `run` CLI, see the descriptions below (to generate the help text, execute `./run` from command line without any input arguments, see [here](run#L53) for the description):
+
+```
+  upload-workspace <workspace-dir> 				Copies the data workspace from the specified target directory to a storage bucket
+  fetch-workspace <workspace-dir> 				Copies the data workspace from a storage bucket to the specified target directory
+  register-country <parameter-file> 				Registers a new country in the modeling library
+  fetch-school-data <workspace> <api-key> <country> 		Pulls up to date school data from Project Connect APIs
+  create-cache <workspace> 					Creates a cache of pairwise distances that can be used by the models
+  add-new-country <parameter-file> <workspace> <api-key> 	Registers country, pulls school data, creates cache
+  remove-country <parameter-file> 				Removes a country from the modeling library
+```
+
+### Electricity Data
+
+Electricity data is currently not available through Project Connect APIs, and is thus managed independently.
+If you know the electricity status of the schools in your country of interest, you can populate the workspace with a .csv table that contains entries of the following form:
+
+| Field         | Type          | Description                   |
+| ------------- | ------------- | ----------------------------- |
+| giga_id_school | str           | Unique school identifier |
+| has_electricity    | bool   | Whether the school has electricity   |
+
+If no electricity data is provided all schools will be assumed to not have electricity.
+
+---
+
+### Fiber Node Data
+
+Fiber nodes for a country can be specified as unique coordinates using the schema below in a csv table of the countries' workspace:
+
+
+| Field         | Type          | Description                   |
+| ------------- | ------------- | ----------------------------- |
+| coordinate_id | str           | Unique coordinate identifier |
+| coordinate    | LatLonPoint   | Latitude and longitude point  |
+| properties    | json (optional) | Additional properties         |
+
+---
+
+### Cell Tower Data
+
+Cell tower data for a country can be specified using the schema below in a csv table of the countries' workspace:
+
+| Field        | Type                     | Description                      |
+| ------------ | ------------------------ | -------------------------------- |
+| tower_id     | str                      | Unique tower identifier          |
+| operator     | str                      | Cellular tower operator          |
+| outdoor      | bool                     | Whether the tower is outdoor     |
+| lat          | float                    | Latitude of the tower            |
+| lon          | float                    | Longitude of the tower           |
+| height       | float                    | Height of the tower              |
+| technologies | List[CellTechnology]     | List of supported technologies [2G, 3G, 4G, LTE] |
+
+---
+
+
 ## Deployment
 
 To build the model container and re-deploy the notebook cluster simply run:
@@ -176,3 +246,13 @@ For running the models and relevant data pipelines, the `./run` CLI can be used 
   upload-workspace <workspace-dir> 			Copies the data workspace from the specified target directory to a storage bucket
   fetch-workspace <workspace-dir> 			Copies the data workspace from a storage bucket to the specified target directory
 ```
+
+## Appendix
+
+The individual steps for registering a new country can be found below.
+These steps are combined in the command: `./run add-new-country <your-country-parameters.json> <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN>`.
+
+1. Register the country using the CLI: `./run register-country <your-country-parameters.json>`
+2. Now the country is registered and will be available to the models. However, to drive the models, you need additional data for this country: electricity (optional), fiber node data, cellular tower data. You can find the format for these in the sub-sections below. Aggregate the data that you will need and place it in the workspace for this country.
+3. Generate the most up to date school dataset for this country by using the CLI: `./run fetch-school-data <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN> <country-name>`
+4. [OPTIONAL] If you would like, create a cache for the schools and infrastructure data that can be used to improve compute times in the models by using the CLI: `./run create-cache <path-to-country-workspace>`

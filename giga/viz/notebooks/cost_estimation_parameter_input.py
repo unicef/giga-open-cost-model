@@ -17,9 +17,10 @@ from giga.schemas.conf.models import (
     ElectricityCostConf,
 )
 from giga.schemas.conf.data import DataSpaceConf
-from giga.app.config import ConfigClient, get_config
+from giga.app.config_client import ConfigClient
+from giga.app.config import get_country_defaults
 
-from giga.viz.notebooks.parameters.groups.data_paramter_manager import (
+from giga.viz.notebooks.parameters.groups.data_parameter_manager import (
     DataParameterManager,
 )
 from giga.viz.notebooks.parameters.groups.scenario_parameter_manager import (
@@ -91,7 +92,6 @@ class CostEstimationParameterInput:
     def __init__(
         self,
         local_data_workspace="workspace",
-        defaults=None,
         data_parameter_manager=None,
         scenario_parameter_manager=None,
         fiber_parameter_manager=None,
@@ -102,7 +102,10 @@ class CostEstimationParameterInput:
     ):
         self._hashed_sheets = {}
         self.workspace = local_data_workspace
-        self.defaults = defaults
+        self.defaults = {
+            k: ConfigClient.from_registered_country(k, local_data_workspace).defaults
+            for k, v in get_country_defaults(workspace=local_data_workspace).items()
+        }
         self.data_parameter_manager = (
             DataParameterManager(workspace=local_data_workspace)
             if data_parameter_manager is None
@@ -151,6 +154,25 @@ class CostEstimationParameterInput:
                 self.p2p_parameter_manager,
             ],
         }
+        # link country selection to default parameters for that country
+        def update_country_defaults(change):
+            country = change["new"].lower()
+            defaults = self.defaults[country].model_defaults
+            self.scenario_parameter_manager.update_country_parameters(
+                defaults.scenario.dict()
+            )
+            self.fiber_parameter_manager.update_parameters(defaults.fiber.dict())
+            self.satellite_parameter_manager.update_parameters(
+                defaults.satellite.dict()
+            )
+            self.cellular_parameter_manager.update_parameters(defaults.cellular.dict())
+            self.electricity_parameter_manager.update_parameters(
+                defaults.electricity.dict()
+            )
+
+        self.data_parameter_manager.interactive_country_parameter.observe(
+            update_country_defaults, names="value"
+        )
 
     @property
     def config(self):
@@ -200,7 +222,9 @@ class CostEstimationParameterInput:
                 electricity_parameter_manager=electricity_parameter_manager,
             )
         elif tech == "P2P":
-            p2p_parameter_manager = P2PTechnologyParameterManager.from_config(tech_config)
+            p2p_parameter_manager = P2PTechnologyParameterManager.from_config(
+                tech_config
+            )
             return CostEstimationParameterInput(
                 local_data_workspace=local_data_workspace,
                 data_parameter_manager=data_parameter_manager,
@@ -307,9 +331,7 @@ class CostEstimationParameterInput:
             self.fiber_parameter_manager.update_parameters(
                 tech_configs.get("Fiber", {})
             )
-            self.p2p_parameter_manager.update_parameters(
-                tech_configs.get("P2P", {})
-            )
+            self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
             self.electricity_parameter_manager.update_parameters(
                 config["scenario_parameters"]["technologies"][0].get(
                     "electricity_config", {}
@@ -340,6 +362,10 @@ class CostEstimationParameterInput:
             raise ValueError(
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
             )
+
+    def get_update_country_cb(self):
+
+        return fn
 
     def data_parameters_input(self, sheet_name="data"):
         return self.data_parameter_manager.input_parameters()
@@ -428,7 +454,12 @@ class CostEstimationParameterInput:
             p2p_params.electricity_config = self.electricity_parameters()
             conf = MinimumCostScenarioConf(
                 **p,
-                technologies=[fiber_params, satellite_params, cellular_params, p2p_params],
+                technologies=[
+                    fiber_params,
+                    satellite_params,
+                    cellular_params,
+                    p2p_params,
+                ],
             )
             conf.technologies[2] = cellular_params
             conf.technologies[3] = p2p_params
@@ -452,13 +483,11 @@ class CostEstimationParameterInput:
             )
         )
 
-    def _updated_param_request(self, country):
-        return [f"data={country.lower()}", f"data.workspace={self.workspace}"]
-
     def _process_uploaded_data_parameters(self, s):
         country_id = s["country_name"].value
-        config_request = self._updated_param_request(country_id)
-        config = ConfigClient(get_config(config_request))
+        config = ConfigClient.from_registered_country(
+            country_id.lower(), self.workspace
+        )
         school_dataset = config.school_file
         content = s["fiber_map_upload"].value[0].content
         return DataSpaceConf(
@@ -474,19 +503,21 @@ class CostEstimationParameterInput:
 
     def parameter_input(self):
         # main method that exposes the parameter input interface to users in a notebook
-        t1 = HTML(value="<hr><b>Scenario Configuration</b>")
-        d = self.data_parameters_input()
-        s = self.scenario_parameter_input()
-        t2 = HTML(value="<hr><b>Fiber Model Configuration</b>")
-        f = self.fiber_parameter_manager.input_parameters()
-        t3 = HTML(value="<hr><b>Satellite - LEO Model Configuration</b>")
-        sa = self.satellite_parameters_input()
-        t4 = HTML(value="<hr><b>Cellular Model Configuration</b>")
-        sc = self.cellular_parameters_input()
-        t5 = HTML(value="<hr><b>P2P Model Configuration</b>")
-        sp = self.p2p_parameters_input()
-        t6 = HTML(value="<hr><b>Electricity Model Configuration</b>")
-        e = self.electricity_parameters_input()
-        t7 = HTML(value="<hr><b>Dashboard Configuration</b>")
-        da = self.dashboard_parameters_input()
-        return VBox([t1, d, s, t2, f, t3, sa, t4, sc, t5, sp, t6, e, t7, da])
+        return VBox([
+        HTML(value="<hr><b>Scenario Configuration</b>"),
+        self.data_parameters_input(),
+        self.scenario_parameter_input(),
+        HTML(value="<hr><b>Fiber Model Configuration</b>"),
+        self.fiber_parameter_manager.input_parameters(),
+        HTML(value="<hr><b>Satellite - LEO Model Configuration</b>"),
+        self.satellite_parameters_input(),
+        HTML(value="<hr><b>Cellular Model Configuration</b>"),
+        self.cellular_parameters_input(),
+        HTML(value="<hr><b>P2P Model Configuration</b>"),
+        self.p2p_parameters_input(),
+        HTML(value="<hr><b>Electricity Model Configuration</b>"),
+        self.electricity_parameters_input(),
+        HTML(value="<hr><b>Dashboard Configuration</b>"),
+        self.dashboard_parameters_input(),
+        HTML(value="<hr>")
+        ])

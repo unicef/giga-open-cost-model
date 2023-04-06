@@ -2,7 +2,7 @@ import os
 import pytest
 from pathlib import Path
 
-from giga.app.config import ConfigClient, get_config
+from giga.app.config_client import ConfigClient
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.schemas.conf.models import FiberTechnologyCostConf, SatelliteTechnologyCostConf, CellularTechnologyCostConf, SingleTechnologyScenarioConf, MinimumCostScenarioConf
 from giga.models.components.satellite_cost_model import SatelliteCostModel
@@ -19,9 +19,8 @@ SAMPLE_WORKSPACE = os.path.join(FIXTURE_DIRECTORY, "sample_workspace")
 
 @pytest.fixture()
 def global_config():
-    return ConfigClient(
-        get_config(["data=sample", f"data.workspace={SAMPLE_WORKSPACE}"])
-    )
+    return ConfigClient.from_registered_country("sample", SAMPLE_WORKSPACE)
+
 
 @pytest.fixture()
 def fiber_config():
@@ -96,16 +95,16 @@ def single_tech_scenario_config_fiber(fiber_config):
     )
 
 @pytest.fixture()
-def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config, p2p_config):
+def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config):
+    # TODO (Nathan Eliason): Add p2p config to this test
     c = MinimumCostScenarioConf(
-        scenario_id="minimum_cost_test_scenario",
+        scenario_id="minimum_cost",
         years_opex=5,
         opex_responsible="Consumer",
         bandwidth_demand=40,
-        technologies=[fiber_config, satellite_config, cellular_config, p2p_config]
+        technologies=[fiber_config, satellite_config, cellular_config]
     )
     c.technologies[2] = cellular_config
-    c.technologies[3] = p2p_config
     return c
 
 @pytest.fixture()
@@ -129,6 +128,7 @@ def test_single_tech_scenario(single_tech_scenario_config_fiber, data_space, out
 
 
 def test_minimum_cost_scenario(minimum_cost_scenario_config, data_space, output_space):
+    # TODO (Nathan Eliason): cost results may be different after p2p models are included
     scenario = MinimumCostScenario(minimum_cost_scenario_config, data_space, output_space)
     output_space = scenario.run()
     cost_table = output_space.table

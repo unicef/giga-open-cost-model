@@ -18,7 +18,6 @@ from giga.utils.logging import LOGGER
 
 REGISTERED_COUNTRIES = get_registered_countries(COUNTRY_DEFAULT_WORKSPACE)
 
-
 def main():
     parser = argparse.ArgumentParser()
     required = parser.add_argument_group("required arguments")
@@ -42,8 +41,7 @@ def main():
     try:
         el = pd.read_csv(os.path.join(args.workspace_directory, "electricity.csv"))
         electricity_lookup = {
-            str(row.giga_id_school): bool(row.has_electricity)
-            for i, row in el.iterrows()
+            str(row.giga_id_school): bool(row.has_electricity) for i, row in el.iterrows()
         }
     except FileNotFoundError:
         electricity_lookup = {}
@@ -56,9 +54,7 @@ def main():
             return False
 
     # transform raw school data
-    assert (
-        len(raw_schools) > 0
-    ), "No schools found for country, perhaps there is an issue with the project connect API"
+    assert len(raw_schools) > 0, "No schools found for country, perhaps there is an issue with the project connect API"
     table = GigaSchoolTable(schools=raw_schools)
     frame = table.to_data_frame()
     frame["connected"] = frame["connectivity_status"].apply(

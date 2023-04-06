@@ -2,7 +2,7 @@ import os
 import pytest
 from pathlib import Path
 
-from giga.app.config import ConfigClient, get_config
+from giga.app.config_client import ConfigClient
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.schemas.conf.models import FiberTechnologyCostConf
 from giga.models.components.satellite_cost_model import SatelliteCostModel
@@ -18,9 +18,7 @@ SAMPLE_WORKSPACE = os.path.join(FIXTURE_DIRECTORY, "sample_workspace")
 
 @pytest.fixture()
 def global_config():
-    return ConfigClient(
-        get_config(["data=sample", f"data.workspace={SAMPLE_WORKSPACE}"])
-    )
+    return ConfigClient.from_registered_country("sample", SAMPLE_WORKSPACE)
 
 
 @pytest.fixture()

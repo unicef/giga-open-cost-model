@@ -1,0 +1,73 @@
+{
+    "data": {
+        "country": "rwanda",
+        "country_code": 32,
+        "workspace": "workspace",
+        "school_file": "schools.csv",
+        "fiber_file": "fiber.csv",
+        "cellular_file": "cellular.csv",
+        "cellular_distance_cache_file": "cellular_cache.json",
+        "p2p_distance_cache_file": "p2p_cache.json"
+    },
+    "model_defaults": {
+        "scenario": {
+            "years_opex": 5,
+            "bandwidth_demand": 20.0
+        },
+        "fiber": {
+            "capex": {
+                "cost_per_km": 8900.0,
+                "fixed_costs": 0.0,
+                "economies_of_scale": true
+            },
+            "opex": {
+                "cost_per_km": 100.0,
+                "annual_bandwidth_cost_per_mbps": 10.0
+            },
+            "constraints": {
+                "maximum_connection_length": 20000.0,
+                "maximum_bandwithd": 2000.0,
+                "required_power": 500.0
+            },
+            "technology": "Fiber"
+        },
+        "satellite": {
+            "capex": {
+                "fixed_costs": 600.0
+            },
+            "opex": {
+                "fixed_costs": 0.0,
+                "annual_bandwidth_cost_per_mbps": 15.0
+            },
+            "constraints": {
+                "maximum_bandwithd": 150.0,
+                "required_power": 200.0
+            },
+            "technology": "Satellite"
+        },
+        "cellular": {
+            "capex": {
+                "fixed_costs": 500.0
+            },
+            "opex": {
+                "fixed_costs": 0.0,
+                "annual_bandwidth_cost_per_mbps": 10.0
+            },
+            "constraints": {
+                "maximum_range": 8000.0,
+                "maximum_bandwithd": 100.0,
+                "required_power": 10.0
+            },
+            "technology": "Cellular"
+        },
+        "electricity": {
+            "capex": {
+                "solar_panel_costs": 10000.0,
+                "battery_costs": 0.0
+            },
+            "opex": {
+                "cost_per_kwh": 0.1
+            }
+        }
+    }
+}

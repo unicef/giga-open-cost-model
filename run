@@ -14,20 +14,77 @@ fetch_workspace() {
   gsutil -m rsync -r $DATA_WORKSPACE_BUCKET $target_workspace
 }
 
+register_country() {
+  local country_parameters=$1
+  poetry run ./bin/register_country --country-parameters $country_parameters
+}
 
-# Shows usage
-usage() {
-   printf "  upload-workspace <workspace-dir> \t\t\tCopies the data workspace from the specified target directory to a storage bucket\n"
-   printf "  fetch-workspace <workspace-dir> \t\t\tCopies the data workspace from a storage bucket to the specified target directory\n"
+remove_country() {
+  local country=$1
+  poetry run ./bin/remove_country --country $country
+}
+
+fetch_school_data() {
+  local workspace=$1
+  local api_token=$2
+  local country=$3
+  poetry run ./bin/update_schools --workspace-directory $workspace --api-token $api_token --country $country
+}
+
+create_cache() {
+  local workspace=$1
+  poetry run ./bin/create_fiber_distance_cache --workspace-directory $workspace
+  poetry run ./bin/create_cellular_distance_cache --workspace-directory $workspace
+}
+
+add_new_country_to_model_library() {
+  local country_parameters=$1
+  local workspace=$2
+  local api_token=$3
+  register_country $country_parameters
+  local country=$(jq '.data."country"' $country_parameters | tr -d '"')
+  fetch_school_data $workspace $api_token $country
+  create_cache $workspace
+
 }
 
 
-case $1 in
+# Shows usage
+usage() {
+  # NOTE: The descriptions below are also described in the main README.md file, if they are updated please update the README.md file as well.
+  printf "  upload-workspace <workspace-dir> \t\t\t\tCopies the data workspace from the specified target directory to a storage bucket\n"
+  printf "  fetch-workspace <workspace-dir> \t\t\t\tCopies the data workspace from a storage bucket to the specified target directory\n"
+  printf "  register-country <parameter-file> \t\t\t\tRegisters a new country in the modeling library\n"
+  printf "  fetch-school-data <workspace> <api-key> <country> \t\tPulls up to date school data from Project Connect APIs\n"
+  printf "  create-cache <workspace> \t\t\t\t\tCreates a cache of pairwise distances that can be used by the models\n"
+  printf "  add-new-country <parameter-file> <workspace> <api-key> \tRegisters country, pulls school data, creates cache\n"
+  printf "  remove-country <parameter-file> \t\t\t\tRemoves a country from the modeling library\n"
+}
+
+
+action=$1
+shift 1 # Remove the first argument action and shift the remaining arguments to the left
+case $action in
   upload-workspace)
-    upload_workspace $2
+    upload_workspace $@
     ;;
   fetch-workspace)
-    fetch_workspace $2
+    fetch_workspace $@
+    ;;
+  register-country)
+    register_country $@
+    ;;
+  fetch-school-data)
+    fetch_school_data $@
+    ;;
+  create-cache)
+    create_cache $@
+    ;;
+  add-new-country)
+    add_new_country_to_model_library $@
+    ;;
+  remove-country)
+    remove_country $@
     ;;
   *)
     usage
