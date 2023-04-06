@@ -3,21 +3,25 @@ from typing import Callable
 from pydantic import validate_arguments
 
 import giga.utils.requests as giga_requests
+from giga.app.config import get_country_code_lookup
 from giga.utils.logging import LOGGER
 
 
-DEFAULT_SCHOOL_ID_MAP = {"brazil": 144, "rwanda": 32}
-
-
 class GigaAPIClient:
+    """
+    Interacts with the Giga project connect APIs to retrieve school data
+    Giga provisions non-expiring auth tokens as a means of granting access
+    to the API. The token is passed to the client on instantiation.
+    The client is responsible for managing the token's lifecycle.
+    Country codes are used to identify the country for which data is being
+    requested. The country code is loaded from the registry of known countries.
+    """
+
     def __init__(self, auth_token: str, **kwargs):
-        """
-        Interacts with the Giga project connect APIs to retrieve school data
-        Giga provisions non-expiring auth tokens as a means of granting access
-        Client must be configured with the provisioning token
-        """
+
         self.auth_token = auth_token
-        self.school_id_map = kwargs.get("school_id_map", DEFAULT_SCHOOL_ID_MAP)
+        # loads the country -> country ID if not specified from known countries
+        self.school_id_map = kwargs.get("school_id_map", get_country_code_lookup())
 
     @property
     def auth_header(self):

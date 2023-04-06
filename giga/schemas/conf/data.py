@@ -2,14 +2,27 @@ from pydantic import BaseModel, validator
 from typing import List, Literal, Union
 
 from giga.schemas.tech import ConnectivityTechnology
-
-
+from giga.app.config import get_registered_countries
+from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 from giga.data.pipes.data_tables import (
     LocalTablePipeline,
     UploadedTablePipeline,
     LocalJSONPipeline,
     LocalConnectCachePipeline,
 )
+
+REGISTERED_COUNTRIES = tuple(get_registered_countries(COUNTRY_DEFAULT_WORKSPACE))
+
+
+class SATCostGraphConf(BaseModel):
+    """Configuration for SAT cost graph"""
+
+    base_node_cost: int = 0
+    base_n_cost: int = 0
+    base_per_km_cost: int = 0
+    relational_graph_edge_threshold: int = (
+        800  # determines at what point to create a simplified graph
+    )
 
 
 class CoordinateMapConf(BaseModel):
@@ -36,7 +49,7 @@ class SchoolCountryConf(BaseModel):
     cost estimates need to be performed for a country
     """
 
-    country_id: Literal["brazil", "rwanda", "sample"]
+    country_id: Literal[REGISTERED_COUNTRIES]
     data: Union[UploadedTablePipeline, LocalTablePipeline]
     manual_entries: List[ManualSchoolDataEntry] = []
 

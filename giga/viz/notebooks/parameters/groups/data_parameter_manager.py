@@ -2,8 +2,10 @@ from copy import deepcopy
 from ipywidgets import VBox
 from pydantic import parse_obj_as
 
-from giga.app.config import ConfigClient, get_config
+from giga.app.config_client import ConfigClient
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
+from giga.app.config import get_registered_country_names
+
 
 BASELINE_DATA_SPACE_PARAMETERS = [
     {
@@ -12,7 +14,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
         "parameter_interactive": {
             "parameter_type": "categorical_dropdown",
             "value": "Sample",
-            "options": ["Sample", "Rwanda", "Brazil"],
+            "options": get_registered_country_names(),  # load in the available countries dynamically
             "description": "Country:",
         },
     }
@@ -31,6 +33,10 @@ class DataParameterManager:
             ).parameter
             for p in parameters
         }
+
+    @property
+    def interactive_country_parameter(self):
+        return self._hash["country_name"]
 
     @staticmethod
     def from_config(
@@ -53,11 +59,9 @@ class DataParameterManager:
         # specaial handling for scenario type in base parameters
         return VBox(list(self._hash.values()))
 
-    def get_model_parameters(self, workspace="workspace"):
+    def get_model_parameters(self):
         country_id = self._hash["country_name"].value
-        config_request = [
-            f"data={country_id.lower()}",
-            f"data.workspace={self.workspace}",
-        ]
-        config = ConfigClient(get_config(config_request))
+        config = ConfigClient.from_registered_country(
+            country_id.lower(), self.workspace
+        )
         return config.local_workspace_data_space_config

@@ -5,7 +5,7 @@ import argparse
 import logging
 
 from giga.utils.logging import LOGGER
-from giga.app.config import ConfigClient, get_config
+from giga.app.config_client import ConfigClient
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.schemas.output import OutputSpace
 from giga.models.scenarios.scenario_dispatcher import create_scenario
@@ -25,50 +25,49 @@ from giga.data.space.model_data_space import ModelDataSpace
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Required data is loaded from here
-DEFAULT_WORKPACE = os.path.join(ROOT_DIR, '../../notebooks/sample_workspace')
+DEFAULT_WORKPACE = os.path.join(ROOT_DIR, "../../notebooks/sample_workspace")
 
 
-DEFAULT_SCENARIO_PARAMS = {'opex_responsible': 'Consumer',
-                           'years_opex': 5.0,
-                           'bandwidth_demand': 40.0} # in mbs
+DEFAULT_SCENARIO_PARAMS = {
+    "opex_responsible": "Consumer",
+    "years_opex": 5.0,
+    "bandwidth_demand": 40.0,
+}  # in mbs
 
 DEFAULT_ELECTRICITY_CONF = ElectricityCostConf(
-                                capex={"solar_panel_costs": 10_000, # USD
-                                       "battery_costs": 0.0},
-                                opex={"cost_per_kwh": 0.10} # USD
-                            )
+    capex={"solar_panel_costs": 10_000, "battery_costs": 0.0},  # USD
+    opex={"cost_per_kwh": 0.10},  # USD
+)
 
 DEFAULT_FIBER_CONF = FiberTechnologyCostConf(
-                        capex={
-                            "cost_per_km": 7_500, # USD
-                            "economies_of_scale": True,
-                        },
-                        opex={
-                            "cost_per_km": 100, # USD
-                            "annual_bandwidth_cost_per_mbps": 10, # in USD
-                        },
-                        constraints={
-                            "maximum_connection_length": 20_000, # in meters
-                            "required_power": 500, # in kWh
-                            "maximum_bandwithd": 2_000.0, # mbps
-                        },
-                        electricity_config=DEFAULT_ELECTRICITY_CONF
-                    )
+    capex={
+        "cost_per_km": 7_500,  # USD
+        "economies_of_scale": True,
+    },
+    opex={
+        "cost_per_km": 100,  # USD
+        "annual_bandwidth_cost_per_mbps": 10,  # in USD
+    },
+    constraints={
+        "maximum_connection_length": 20_000,  # in meters
+        "required_power": 500,  # in kWh
+        "maximum_bandwithd": 2_000.0,  # mbps
+    },
+    electricity_config=DEFAULT_ELECTRICITY_CONF,
+)
 
 DEFAULT_SATELLITE_CONF = SatelliteTechnologyCostConf(
-            capex={
-                "fixed_costs": 500 # USD hardware installation
-            },
-            opex={
-                "fixed_costs": 0.0, # USD hardware maintance
-                "annual_bandwidth_cost_per_mbps": 15.0,
-            },
-            constraints={
-                "maximum_bandwithd": 150.0,  # should be pulled from defaults
-                "required_power": 200.0,
-            },
-            electricity_config=DEFAULT_ELECTRICITY_CONF
-        )
+    capex={"fixed_costs": 500},  # USD hardware installation
+    opex={
+        "fixed_costs": 0.0,  # USD hardware maintance
+        "annual_bandwidth_cost_per_mbps": 15.0,
+    },
+    constraints={
+        "maximum_bandwithd": 150.0,  # should be pulled from defaults
+        "required_power": 200.0,
+    },
+    electricity_config=DEFAULT_ELECTRICITY_CONF,
+)
 
 DEFAULT_CELLULAR_CONF = CellularTechnologyCostConf(
             capex={"fixed_costs": 500.0},
@@ -120,25 +119,25 @@ def main():
     args = parser.parse_args()
 
     # Configure data space client - we'll use a helper here that will point to the local workspace
-    global_config = ConfigClient(get_config(["data={args.country}", f"data.workspace={args.workspace}"]))
+    global_config = ConfigClient.from_registered_country(args.country, args.workspace)
     data_space_config = global_config.local_workspace_data_space_config
     data_space = ModelDataSpace(data_space_config)
 
     # Configure scenario
-    if args.scenario_type == 'fiber':
+    if args.scenario_type == "fiber":
         scenario_config = SingleTechnologyScenarioConf(
-                technology="Fiber",
-                tech_config=DEFAULT_FIBER_CONF,
-                **DEFAULT_SCENARIO_PARAMS
-            )
-    elif args.scenario_type == 'cellular':
+            technology="Fiber",
+            tech_config=DEFAULT_FIBER_CONF,
+            **DEFAULT_SCENARIO_PARAMS,
+        )
+    elif args.scenario_type == "cellular":
         scenario_config = SingleTechnologyScenarioConf(
-                technology="Cellular",
-                tech_config=DEFAULT_CELLULAR_CONF,
-                **DEFAULT_SCENARIO_PARAMS
-            )
+            technology="Cellular",
+            tech_config=DEFAULT_CELLULAR_CONF,
+            **DEFAULT_SCENARIO_PARAMS,
+        )
         scenario_config.tech_config = DEFAULT_CELLULAR_CONF
-    elif args.scenario_type == 'satellite':
+    elif args.scenario_type == "satellite":
         scenario_config = SingleTechnologyScenarioConf(
                 technology="Satellite",
                 tech_config=DEFAULT_SATELLITE_CONF,
@@ -172,5 +171,5 @@ def main():
     output_space.table.to_csv(args.output_file)
 
 
-if __name__=='__main__':
+if __name__ == "__main__":
     main()

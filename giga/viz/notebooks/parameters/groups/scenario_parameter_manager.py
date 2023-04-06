@@ -215,6 +215,10 @@ class ScenarioParameterManager:
             "budget_constraint",
             config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
         )
+    
+    def update_country_parameters(self, config):
+        self.sheet.update_parameter("years_opex", config["years_opex"])
+        self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
 
     def input_parameters(self):
         # specaial handling for scenario type in base parameters
