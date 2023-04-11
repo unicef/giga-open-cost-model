@@ -57,14 +57,14 @@ class GreedyDistanceConnector:
     def _queue_non_cached(self, q, set1, set2):
         distances = self.distance_model.run((set1, set2))
         distances = list(
-            filter(lambda x: x.distance < self.maximum_connection_length_m, distances)
+            filter(lambda x: x is not None and x.distance < self.maximum_connection_length_m, distances)
         )
         return add_distances(q, distances)
 
     def _queue_from_cache(self, q, set1, set2, cache):
         if cache.cache_type == "one-to-one":
             coord_ids = [c.coordinate_id for c in set1]
-            distances = [cache.lookup[cid] for cid in coord_ids]
+            distances = [cache.lookup.get(cid, None) for cid in coord_ids]
         elif cache.cache_type == "one-to-many":
             # single cache in set 2
             coord_ids = [c.coordinate_id for c in set2]
@@ -74,7 +74,7 @@ class GreedyDistanceConnector:
         else:
             raise Exception("Trying to use a cache of unsupported type")
         distances = list(
-            filter(lambda x: x.distance < self.maximum_connection_length_m, distances)
+            filter(lambda x: x is not None and x.distance < self.maximum_connection_length_m, distances)
         )
         return add_distances(q, distances)
 

@@ -2,24 +2,20 @@
 
 import os
 import argparse
-import logging
 import math
 
 from giga.utils.logging import LOGGER
-import pandas as pd
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 from giga.models.nodes.elevation.elevation_profile_generator import ElevationProfileGenerator
 from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
 from giga.schemas.school import GigaSchoolTable
-from giga.schemas.cellular import CellTowerTable
+from giga.schemas.cellular import CellTowerTable, CellularTower
 from giga.schemas.geo import UniqueCoordinate, ElevationProfile, LatLonPoint, PairwiseDistance
 from giga.models.nodes.elevation.line_of_sight_model import LineofSightModel
 from giga.models.nodes.graph.vectorized_distance_model import VectorizedDistanceModel
-from giga.schemas.distance_cache import (
-    SingleLookupDistanceCache,
-    MultiLookupDistanceCache,
-)
+from giga.schemas.distance_cache import SingleLookupDistanceCache, MultiLookupDistanceCache
+from giga.utils.progress_bar import progress_bar as pb
 
 
 class P2PCacheCreatorArgs():
@@ -28,6 +24,9 @@ class P2PCacheCreatorArgs():
     n_nearest_neighbors: int = 20
     n_elevation_profile_samples: int = 4
     maximum_distance_meters: float = math.inf
+    los_buffer_meters: float = 5
+    receiver_height_meters: float = 5
+    progress_bar: bool = True
     file_suffix: str = "_cache"
 
 
@@ -36,31 +35,20 @@ class P2PCacheCreator():
 
     def __init__(self, args: P2PCacheCreatorArgs):
         self.args = args
-        self._tower_coords: List[UniqueCoordinate] = None
+        self._towers: Dict[UniqueCoordinate, CellularTower] = None
         self._school_coords: List[UniqueCoordinate] = None
+        self._egp: ElevationProfileGenerator = ElevationProfileGenerator()
+        self._los: LineofSightModel = LineofSightModel()
 
-    def closest_towers(self) -> List[PairwiseDistance]:
-        """
-        Returns merged list of closest towers for each school.
-        """
-        model = VectorizedDistanceModel(
-            progress_bar=True,
-            n_nearest_neighbors=self.args.n_nearest_neighbors,
-            maximum_distance=self.args.maximum_distance_meters,
-        )
-        return model.run_chunks(
-            (self.school_coords, self.tower_coords),
-            n_chunks=self.args.n_chunks,
-        )
-
+    # Mapping from coordinate ID (== tower ID) to tower.
     @property
-    def tower_coords(self) -> List[UniqueCoordinate]:
-        if self._tower_coords is None:
+    def towers(self) -> Dict[str, CellularTower]:
+        if self._towers is None:
             cell_tower_table = CellTowerTable.from_csv(
                 os.path.join(self.args.workspace_directory, "cellular.csv")
             )
-            self._tower_coords = cell_tower_table.to_coordinates()
-        return self._tower_coords
+            self._towers = {t.to_coordinates().coordinate_id: t for t in cell_tower_table.towers}
+        return self._towers
 
     @property
     def school_coords(self) -> List[UniqueCoordinate]:
@@ -71,39 +59,54 @@ class P2PCacheCreator():
             self._school_coords = school_table.to_coordinates()
         return self._school_coords
 
+    def closest_towers(self) -> List[PairwiseDistance]:
+        """
+        Returns merged list of closest towers for each school.
+        """
+        dist_model = VectorizedDistanceModel(
+            progress_bar=self.args.progress_bar,
+            n_nearest_neighbors=self.args.n_nearest_neighbors,
+            maximum_distance=self.args.maximum_distance_meters,
+        )
+        tower_coords = [t.to_coordinates() for t in self.towers.values()]
+        return dist_model.run_chunks(
+            (self.school_coords, tower_coords),
+            n_chunks=self.args.n_chunks,
+        )
+
+    def prune_obstructed_towers(self, school_coord: UniqueCoordinate, pairs: List[PairwiseDistance]) -> List[PairwiseDistance]:
+        towers: List[CellularTower] = [self.towers[d.coordinate1.coordinate_id] for d in pairs]
+        coords = [[school_coord.coordinate, t.to_coordinates().coordinate] for t in towers]
+        profiles: List[ElevationProfile] = self._egp.run(coords, samples=self.args.n_elevation_profile_samples)
+
+        # Account for height buffer, school receiver height, and cell tower height.
+        for ep, tower in zip(profiles, towers):
+            ep.points[0].elevation += self.args.receiver_height_meters
+            ep.points[-1].elevation += tower.height
+            for pt in ep.points[1:-1]:
+                pt.elevation += self.args.los_buffer_meters
+
+        los_results: List[bool] = self._los.run(profiles)
+        return [p for p, has_los in zip(pairs, los_results) if has_los]
+
+
     def run(self) -> None:
-        LOGGER.info(f"towers: {len(self.tower_coords)}")
-        LOGGER.info(f"schools: {len(self.school_coords)}")
         # Temporary distance cache used to as input for LOS calculation.
         dists_towers: MultiLookupDistanceCache = MultiLookupDistanceCache.from_distances(
             self.closest_towers())
-        LOGGER.info(f"dists_towers: {len(dists_towers.lookup)}")
 
-        # Final closest tower for each school.
-        closest_visible_tower: List[PairwiseDistance] = []
-
-        model = LineofSightModel()
-        egp = ElevationProfileGenerator()
-        for school_coord in self.school_coords:
+        # Accumulate list of closest visible towers for each school.
+        closest_visible_towers: List[PairwiseDistance] = []
+        iterable = pb(self.school_coords) if self.args.progress_bar else self.school_coords
+        for school_coord in iterable:
             if school_coord.coordinate_id not in dists_towers.lookup:
-                LOGGER.info(f"no towers for {school_coord.coordinate_id}")
                 continue
-            # Perform an LOS calculation to the closest N towers, then store
-            # the closest with LOS.
-            towers: List[PairwiseDistance] = dists_towers.lookup[school_coord.coordinate_id]
-            coords = [[school_coord.coordinate, t.coordinate2.coordinate] for t in towers]
-            los_results: List[bool] = model.run(egp.run(coords, samples=self.args.n_elevation_profile_samples))
+            closest_pairs: List[PairwiseDistance] = dists_towers.lookup[school_coord.coordinate_id]
+            closest_visible_towers += self.prune_obstructed_towers(school_coord, closest_pairs)
 
-            for tower, has_los in zip(towers, los_results):
-                if not has_los:
-                    continue
-                closest_visible_tower.append(tower)
-                LOGGER.info(f"found tower for {school_coord.coordinate_id}")
-                break
-
-        LOGGER.info("saving")
         # Save the final cache.
-        p2p_cache = SingleLookupDistanceCache.from_distances(closest_visible_tower)
+        dist_cache = [p.reversed() for p in closest_visible_towers]
+        p2p_cache = SingleLookupDistanceCache.from_distances(dist_cache)
         p2p_cache.to_json(
             os.path.join(self.args.workspace_directory, f"p2p{self.args.file_suffix}.json")
         )
@@ -143,13 +146,28 @@ def main():
         help="Specifies the suffix to use for the cache file",
     )
     optional.add_argument(
-		"--n-elevation-profile-samples",
-		"-es",
-		type=int,
-		default=4,
-		help="Specifies the number of samples to use for the elevation profile",
-	)
+        "--n-elevation-profile-samples",
+        "-es",
+        type=int,
+        default=4,
+        help="Specifies the number of samples to use for the elevation profile",
+    )
+    optional.add_argument(
+        "--los-buffer-meters",
+        "-lb",
+        type=float,
+        default=5,
+        help="Specifies the buffer to use for the line-of-sight model",
+    )
+    optional.add_argument(
+        "--receiver-height-meters",
+        "-rh",
+        type=float,
+        default=5,
+        help="Specifies the height of the school-side receiver in meters",
+    )
     args: P2PCacheCreatorArgs = parser.parse_args()
+    args.progress_bar = True
     cache_creator = P2PCacheCreator(args)
     cache_creator.run()
 

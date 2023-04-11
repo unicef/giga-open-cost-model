@@ -81,13 +81,12 @@ class P2PCostModel:
         Computes a cost table for schools present in the data_space input
         """
         LOGGER.info(f"Starting P2P Cost Model")
-        # TODO(nathan): Update this to use p2p_cache instead.
         connect_model = GreedyDistanceConnector(
             data_space.cell_tower_coordinates,
             dynamic_connect=False,  # this will create closest distance pairs
             progress_bar=progress_bar,
             maximum_connection_length_m=self.config.constraints.maximum_range,
-            distance_cache=data_space.cellular_cache,
+            distance_cache=data_space.p2p_cache,
         )
         # determine which schools are in range of cell towers
         distances = connect_model.run(data_space.school_coordinates)
