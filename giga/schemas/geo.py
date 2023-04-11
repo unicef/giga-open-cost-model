@@ -60,6 +60,16 @@ class PairwiseDistance(BaseModel):
     coordinate2: UniqueCoordinate
     distance_type: str = "euclidean"
 
+    def reversed(self) -> "PairwiseDistance":
+        """Returns a new pairwise distance with the coordinates reversed"""
+        return PairwiseDistance(
+            pair_ids=(self.pair_ids[1], self.pair_ids[0]),
+            distance=self.distance,
+            coordinate1=self.coordinate2,
+            coordinate2=self.coordinate1,
+            distance_type=self.distance_type,
+        )
+
 
 class PairwiseDistanceTable(BaseModel):
     """
