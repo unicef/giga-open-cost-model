@@ -86,6 +86,16 @@ outputs = model.run(schools,
 ```
 
 
+## Implementing a Model
+
+You can implement a new technology by adding a new model component.
+You can find the notebook [here](../notebooks/drivers/model-component-example.ipynb) that walks through the details of the implementation.
+In order to fully integrate a new model component into the notebook application, you'll need to complete the following additional steps:
+1. Extend the data schemas for technology definitions and scenarios to include the new technology model  
+2. Extend the scenario implementation you would like this technology to be available in
+3. Update the notebook UI to include the configurable cost drivers of this scenario 
+
+
 ## Data Schemas
 
 The schemas below define key data types used in the modeling library.
