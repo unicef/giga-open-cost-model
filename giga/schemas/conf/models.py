@@ -101,8 +101,12 @@ class CellularTechnologyCostConf(BaseModel):
     electricity_config: ElectricityCostConf = None
 
 
+class P2PInternetCapex(GeneralizedInternetCapex):
+    tower_fixed_costs: float = 0.0  # USD
+
+
 class P2PTechnologyCostConf(BaseModel):
-    capex: GeneralizedInternetCapex
+    capex: P2PInternetCapex
     opex: GeneralizedInternetOpex
     constraints: P2PConstraints
     # max range, signal strength, etc. see CellularConstarint

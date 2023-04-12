@@ -41,32 +41,6 @@ class ElectricityParameterManager:
         self.parameters = {p["parameter_name"]: p for p in parameters}
         self.sheet = ParameterSheet(sheet_name, parameters)
 
-    @staticmethod
-    def from_config(
-        config,
-        sheet_name="electricity",
-        default_parameters=ELECTRICITY_MODEL_PARAMETERS,
-    ):
-        if len(config) == 0:
-            return ElectricityParameterManager(
-                sheet_name=sheet_name, parameters=default_parameters
-            )
-        input_parameters = deepcopy(default_parameters)
-        input_parameters = {p["parameter_name"]: p for p in input_parameters}  # squish
-        capex, opex = config.get("capex", {}), config.get("opex", {})
-        # get capex
-        input_parameters["solar_panel_costs"]["parameter_interactive"]["value"] = capex[
-            "solar_panel_costs"
-        ]
-        # get opex
-        input_parameters["per_kwh_cost"]["parameter_interactive"]["value"] = opex[
-            "cost_per_kwh"
-        ]
-        input_parameters = list(input_parameters.values())  # unpack
-        return ElectricityParameterManager(
-            sheet_name=sheet_name, parameters=input_parameters
-        )
-
     def update_parameters(self, config):
         if len(config) == 0:
             return

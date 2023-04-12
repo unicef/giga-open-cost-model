@@ -58,41 +58,6 @@ class SatelliteTechnologyParameterManager:
         self.parameters = {p["parameter_name"]: p for p in parameters}
         self.sheet = ParameterSheet(sheet_name, parameters)
 
-    @staticmethod
-    def from_config(
-        config, sheet_name="satellite", default_parameters=SATELLITE_MODEL_PARAMETERS
-    ):
-        if len(config) == 0:
-            return SatelliteTechnologyParameterManager(
-                sheet_name=sheet_name, parameters=default_parameters
-            )
-        input_parameters = deepcopy(default_parameters)
-        input_parameters = {p["parameter_name"]: p for p in input_parameters}  # squish
-        capex, opex, constraints = (
-            config.get("capex", {}),
-            config.get("opex", {}),
-            config.get("constraints", {}),
-        )
-        # get capex
-        input_parameters["install_costs"]["parameter_interactive"]["value"] = capex[
-            "fixed_costs"
-        ]
-        # get opex
-        input_parameters["fixed_costs"]["parameter_interactive"]["value"] = opex[
-            "fixed_costs"
-        ]
-        input_parameters["annual_bandwidth_cost_per_mbps"]["parameter_interactive"][
-            "value"
-        ] = opex["annual_bandwidth_cost_per_mbps"]
-        # get constraints
-        input_parameters["required_power"]["parameter_interactive"][
-            "value"
-        ] = constraints["required_power"]
-        input_parameters = list(input_parameters.values())  # unpack
-        return SatelliteTechnologyParameterManager(
-            sheet_name=sheet_name, parameters=input_parameters
-        )
-
     def update_parameters(self, config):
         if len(config) == 0:
             return

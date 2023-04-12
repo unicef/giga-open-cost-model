@@ -7,7 +7,18 @@ from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 P2P_MODEL_PARAMETERS = [
     {
         "parameter_name": "install_costs",
-        "parameter_input_name": "Installation Cost (USD)",
+        "parameter_input_name": "School Endpoint Installation Cost (USD)",
+        "parameter_interactive": {
+            "parameter_type": "int_slider",
+            "value": 500,
+            "min": 0,
+            "max": 2_500,
+            "step": 10,
+        },
+    },
+    {
+        "parameter_name": "tower_install_costs",
+        "parameter_input_name": "Tower Endpoint Installation Cost (USD)",
         "parameter_interactive": {
             "parameter_type": "int_slider",
             "value": 500,
@@ -71,44 +82,6 @@ class P2PTechnologyParameterManager:
         self.parameters = {p["parameter_name"]: p for p in parameters}
         self.sheet = ParameterSheet(sheet_name, parameters)
 
-    @staticmethod
-    def from_config(
-        config, sheet_name="p2p", default_parameters=P2P_MODEL_PARAMETERS
-    ):
-        if len(config) == 0:
-            return P2PTechnologyParameterManager(
-                sheet_name=sheet_name, parameters=default_parameters
-            )
-        input_parameters = deepcopy(default_parameters)
-        input_parameters = {p["parameter_name"]: p for p in input_parameters}  # squish
-        capex, opex, constraints = (
-            config.get("capex", {}),
-            config.get("opex", {}),
-            config.get("constraints", {}),
-        )
-        # get capex
-        input_parameters["install_costs"]["parameter_interactive"]["value"] = capex[
-            "fixed_costs"
-        ]
-        # get opex
-        input_parameters["fixed_costs"]["parameter_interactive"]["value"] = opex[
-            "fixed_costs"
-        ]
-        input_parameters["annual_bandwidth_cost_per_mbps"]["parameter_interactive"][
-            "value"
-        ] = opex["annual_bandwidth_cost_per_mbps"]
-        # get constraints
-        input_parameters["required_power"]["parameter_interactive"][
-            "value"
-        ] = constraints["required_power"]
-        input_parameters["maximum_range"]["parameter_interactive"]["value"] = (
-            constraints["maximum_range"] / METERS_PER_KM
-        )
-        input_parameters = list(input_parameters.values())  # unpack
-        return P2PTechnologyParameterManager(
-            sheet_name=sheet_name, parameters=input_parameters
-        )
-
     def update_parameters(self, config):
         if len(config) == 0:
             return
@@ -119,7 +92,9 @@ class P2PTechnologyParameterManager:
             config["opex"]["annual_bandwidth_cost_per_mbps"],
         )
         self.sheet.update_parameter(
-            "rßequired_power", config["constraints"]["required_power"]
+            "tower_install_costs", config["capex"]["tower_fixed_costs"])
+        self.sheet.update_parameter(
+            "required_power", config["constraints"]["required_power"]
         )
         self.sheet.update_parameter(
             "maximum_range", config["constraints"]["maximum_range"] / METERS_PER_KM
@@ -136,13 +111,17 @@ class P2PTechnologyParameterManager:
             self.get_parameter_from_sheet("annual_bandwidth_cost_per_mbps")
         )
         install_cost = float(self.get_parameter_from_sheet("install_costs"))
+        tower_install_cost = float(self.get_parameter_from_sheet("tower_install_costs"))
         maintenance_cost = float(self.get_parameter_from_sheet("fixed_costs"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         maximum_range = (
             float(self.get_parameter_from_sheet("maximum_range")) * METERS_PER_KM
         )
         return P2PTechnologyCostConf(
-            capex={"fixed_costs": install_cost},
+            capex={
+            	"fixed_costs": install_cost,
+                "tower_fixed_costs": tower_install_cost,
+            },
             opex={
                 "fixed_costs": maintenance_cost,
                 "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,

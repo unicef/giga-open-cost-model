@@ -83,7 +83,10 @@ DEFAULT_CELLULAR_CONF = CellularTechnologyCostConf(
         )
 
 DEFAULT_P2P_CONF = P2PTechnologyCostConf(
-            capex={"fixed_costs": 500.0},
+            capex={
+                "fixed_costs": 500.0,
+                "tower_fixed_costs": 500.0,
+            },
             opex={
                 "fixed_costs": 0.0,
                 "annual_bandwidth_cost_per_mbps": 10.0,

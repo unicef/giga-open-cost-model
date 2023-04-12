@@ -29,7 +29,6 @@ class NonConnectionReason(str, Enum):
     cellular_range_threshold_exceeded = "CELLULAR_RANGE_THRESHOLD"
     p2p_bw_threshold_exceeded = "P2P_BW_THRESHOLD"
     p2p_range_threshold_exceeded = "P2P_RANGE_THRESHOLD"
-    p2p_los_threshold_exceeded = "P2P_LOS_THRESHOLD"  # TODO wire this up
     budget_exceeded = "BUDGET_EXCEEDED"
 
 
