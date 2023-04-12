@@ -60,22 +60,22 @@
             },
             "technology": "Cellular"
         },
-		"p2p": {
-			"capex": {
-				"fixed_costs": 500.0,
-				"tower_fixed_costs": 500.0
-			},
-			"opex": {
-				"fixed_costs": 0.0,
-				"annual_bandwidth_cost_per_mbps": 10.0
-			},
-			"constraints": {
-				"maximum_range": 50000.0,
-				"maximum_bandwithd": 1000.0,
-				"required_power": 10.0
-			},
-			"technology": "P2P"
-		},
+        "p2p": {
+            "capex": {
+                "fixed_costs": 500.0,
+                "tower_fixed_costs": 500.0
+            },
+            "opex": {
+                "fixed_costs": 0.0,
+                "annual_bandwidth_cost_per_mbps": 10.0
+            },
+            "constraints": {
+                "maximum_range": 50000.0,
+                "maximum_bandwithd": 1000.0,
+                "required_power": 10.0
+            },
+            "technology": "P2P"
+        },
         "electricity": {
             "capex": {
                 "solar_panel_costs": 10000.0,
