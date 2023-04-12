@@ -38,18 +38,6 @@ class DataParameterManager:
     def interactive_country_parameter(self):
         return self._hash["country_name"]
 
-    @staticmethod
-    def from_config(
-        config, default_parameters=BASELINE_DATA_SPACE_PARAMETERS, workspace="workspace"
-    ):
-        input_parameters = deepcopy(default_parameters)
-        input_parameters = {p["parameter_name"]: p for p in input_parameters}  # squish
-        input_parameters["country_name"]["parameter_interactive"]["value"] = config[
-            "school_data_conf"
-        ]["country_id"].capitalize()
-        input_parameters = list(input_parameters.values())  # unpack
-        return DataParameterManager(input_parameters, workspace=workspace)
-
     def update_parameters(self, config):
         self._hash["country_name"].value = config["school_data_conf"][
             "country_id"

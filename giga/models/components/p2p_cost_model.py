@@ -19,7 +19,7 @@ class P2PCostModel:
         self.config = config
 
     def _cost_of_setup(self):
-        return self.config.capex.fixed_costs
+        return self.config.capex.fixed_costs + self.config.capex.tower_fixed_costs
 
     def _cost_of_maintenance(self):
         return self.config.opex.fixed_costs
@@ -46,7 +46,7 @@ class P2PCostModel:
                     opex_consumer=math.nan,
                     technology="P2P",
                     feasible=False,
-                    reason="PWP_BW_THRESHOLD",
+                    reason="P2P_BW_THRESHOLD",
                 )
             elif sid in connected_set:
                 opex_consumer = self._cost_of_operation(school)

@@ -129,84 +129,6 @@ class ScenarioParameterManager:
             constraint_disabled_transform,
         )
 
-    @staticmethod
-    def from_config(
-        config,
-        sheet_name="scenario",
-        default_base_parameters=SCENARIO_BASE_PARAMETERS,
-        default_sheet_parameters=SCENARIO_SHEET_PARAMETERS,
-    ):
-        if len(config) == 0:
-            return ScenarioParameterManager(
-                sheet_name=sheet_name,
-                base_parameters=default_base_parameters,
-                sheet_parameters=default_sheet_parameters,
-            )
-        input_base_parameters = deepcopy(default_base_parameters)
-        input_sheet_parameters = deepcopy(default_sheet_parameters)
-        input_base_parameters = {
-            p["parameter_name"]: p for p in input_base_parameters
-        }  # squish
-        input_sheet_parameters = {
-            p["parameter_name"]: p for p in input_sheet_parameters
-        }  # squish
-        input_sheet_parameters["years_opex"]["parameter_interactive"]["value"] = config[
-            "years_opex"
-        ]
-        input_sheet_parameters["bandwidth_demand"]["parameter_interactive"][
-            "value"
-        ] = config["bandwidth_demand"]
-        if config["scenario_id"] == "minimum_cost":
-            input_base_parameters["scenario_tpye"]["parameter_interactive"][
-                "value"
-            ] = "Lowest Cost"
-        elif config["scenario_id"] == "budget_constrained":
-            input_base_parameters["scenario_tpye"]["parameter_interactive"][
-                "value"
-            ] = "Budget Constrained"
-            input_sheet_parameters["budget_constraint"]["parameter_interactive"][
-                "value"
-            ] = (config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS)
-        elif (
-            config["scenario_id"] == "single_tech_cost"
-            and config["technology"] == "Fiber"
-        ):
-            input_base_parameters["scenario_tpye"]["parameter_interactive"][
-                "value"
-            ] = "Fiber Only"
-        elif (
-            config["scenario_id"] == "single_tech_cost"
-            and config["technology"] == "Satellite"
-        ):
-            input_base_parameters["scenario_tpye"]["parameter_interactive"][
-                "value"
-            ] = "Satellite LEO Only"
-        elif (
-            config["scenario_id"] == "single_tech_cost"
-            and config["technology"] == "Cellular"
-        ):
-            input_base_parameters["scenario_tpye"]["parameter_interactive"][
-                "value"
-            ] = "Cellular Only"
-        elif (
-            config["scenario_id"] == "single_tech_cost"
-            and config["technology"] == "P2P"
-        ):
-            input_base_parameters["scenario_tpye"]["parameter_interactive"][
-				"value"
-			] = "P2P Only"
-        else:
-            raise ValueError(
-                f'Unknown scenario type {config["scenario_parameters"]["scenario_id"]}'
-            )
-        input_base_parameters = list(input_base_parameters.values())  # unpack
-        input_sheet_parameters = list(input_sheet_parameters.values())  # unpack
-        return ScenarioParameterManager(
-            sheet_name=sheet_name,
-            base_parameters=input_base_parameters,
-            sheet_parameters=input_sheet_parameters,
-        )
-
     def update_parameters(self, config):
         self._hash["scenario_tpye"].value = get_scenario_type(config)
         self.sheet.update_parameter("years_opex", config["years_opex"])
@@ -215,7 +137,7 @@ class ScenarioParameterManager:
             "budget_constraint",
             config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
         )
-    
+
     def update_country_parameters(self, config):
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])

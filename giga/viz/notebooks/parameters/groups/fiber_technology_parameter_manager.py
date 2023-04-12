@@ -80,47 +80,6 @@ class FiberTechnologyParameterManager:
         self.parameters = {p["parameter_name"]: p for p in parameters}
         self.sheet = ParameterSheet(sheet_name, parameters)
 
-    @staticmethod
-    def from_config(
-        config, sheet_name="fiber", default_parameters=FIBER_MODEL_PARAMETERS
-    ):
-        if len(config) == 0:
-            return FiberTechnologyParameterManager(
-                sheet_name=sheet_name, parameters=default_parameters
-            )
-        input_parameters = deepcopy(default_parameters)
-        input_parameters = {p["parameter_name"]: p for p in input_parameters}  # squish
-        capex, opex, constraints = (
-            config.get("capex", {}),
-            config.get("opex", {}),
-            config.get("constraints", {}),
-        )
-        # get capex
-        input_parameters["cost_per_km"]["parameter_interactive"]["value"] = capex[
-            "cost_per_km"
-        ]
-        input_parameters["economies_of_scale"]["parameter_interactive"][
-            "value"
-        ] = capex["economies_of_scale"]
-        # get opex
-        input_parameters["opex_cost_per_km"]["parameter_interactive"]["value"] = opex[
-            "cost_per_km"
-        ]
-        input_parameters["annual_bandwidth_cost_per_mbps"]["parameter_interactive"][
-            "value"
-        ] = opex["annual_bandwidth_cost_per_mbps"]
-        # get constraints
-        input_parameters["maximum_connection_length"]["parameter_interactive"][
-            "value"
-        ] = (constraints["maximum_connection_length"] / METERS_IN_KM)
-        input_parameters["required_power"]["parameter_interactive"][
-            "value"
-        ] = constraints["required_power"]
-        input_parameters = list(input_parameters.values())  # unpack
-        return FiberTechnologyParameterManager(
-            sheet_name=sheet_name, parameters=input_parameters
-        )
-
     def update_parameters(self, config):
         if len(config) == 0:
             return
