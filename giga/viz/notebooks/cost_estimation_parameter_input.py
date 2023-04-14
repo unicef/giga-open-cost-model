@@ -8,8 +8,12 @@ from ipywidgets import (
     VBox,
     Layout,
     HTML,
+    Output,
 )
+from IPython.display import display
+
 from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
+from giga.data.space.model_data_space import ModelDataSpace
 
 from giga.schemas.conf.models import (
     MinimumCostScenarioConf,
@@ -41,6 +45,10 @@ from giga.viz.notebooks.parameters.groups.p2p_technology_parameter_manager impor
 from giga.viz.notebooks.parameters.groups.electricity_parameter_manager import (
     ElectricityParameterManager,
 )
+
+# TODO: these are for maps, separate them out into unique UI component
+from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
+from giga.viz.notebooks.data_maps.static_data_map import StaticDataMap, DataMapConfig
 
 
 # NOTE: Interface is a work in progress - this will be updated as UX use cases solidify
@@ -81,6 +89,7 @@ UPLOADED_DATA_SPACE_PARAMETERS = [
 ]
 
 UPLOAD_SUFFIX = "_upload"
+SHOW_MAP = False  # temporary flag to show/hide map
 
 
 class CostEstimationParameterInput:
@@ -99,8 +108,14 @@ class CostEstimationParameterInput:
         cellular_parameter_manager=None,
         p2p_parameter_manager=None,
         electricity_parameter_manager=None,
+        show_map=SHOW_MAP,
     ):
         self._hashed_sheets = {}
+        self._hashed_data_layers = {}
+        self.show_map = show_map
+        self.map_output = Output(
+            layout=Layout(display="flex", justify_content="center")
+        )
         self.workspace = local_data_workspace
         self.defaults = {
             k: ConfigClient.from_registered_country(k, local_data_workspace).defaults
@@ -172,6 +187,35 @@ class CostEstimationParameterInput:
 
         self.data_parameter_manager.interactive_country_parameter.observe(
             update_country_defaults, names="value"
+        )
+
+        # link country selection to map output
+        def update_map(change):
+            self.map_output.clear_output()
+            country = change["new"].lower()
+            config_map = DataMapConfig()
+            data_map = StaticDataMap(config_map)
+            if country not in self._hashed_data_layers:
+                self._hashed_data_layers[country] = self._make_map_layer(country)
+            map_layers = self._hashed_data_layers[country]
+            if country == "brazil":
+                # handle brazil as a one off for now
+                config_map = DataMapConfig(zoom=3)
+                data_map = StaticDataMap(config_map)
+                data_map.add_layers(
+                    [map_layers.school_layer, map_layers.fiber_layer]
+                )  # ignore cell tower layer for now
+                m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+            else:
+                config_map = DataMapConfig()
+                data_map = StaticDataMap(config_map)
+                data_map.add_layers(map_layers.layers)
+                m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+            with self.map_output:
+                display(m)
+
+        self.data_parameter_manager.interactive_country_parameter.observe(
+            update_map, names="value"
         )
 
     @property
@@ -379,23 +423,58 @@ class CostEstimationParameterInput:
             },
         )
 
+    def _make_map_layer(self, country):
+        config_client = ConfigClient(self.defaults[country])
+        data_space = ModelDataSpace(config_client.local_workspace_data_space_config)
+        config_layers = MapLayersConfig()
+        return MapDataLayers(data_space, config_layers)
+
+    def data_map(self):
+        # TODO (max): this is a placeholder for a static map in the notebook that will be refactored out once the UI implementation is complete
+        country = self.data_parameters().school_data_conf.country_id
+        if country not in self._hashed_data_layers:
+            self._hashed_data_layers[country] = self._make_map_layer(country)
+        map_layers = self._hashed_data_layers[country]
+        if country == "brazil":
+            # handle brazil as a one off for now
+            config_map = DataMapConfig(zoom=3)
+            data_map = StaticDataMap(config_map)
+            data_map.add_layers(
+                [map_layers.school_layer, map_layers.fiber_layer]
+            )  # ignore cell tower layer for now
+            m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+        else:
+            config_map = DataMapConfig()
+            data_map = StaticDataMap(config_map)
+            data_map.add_layers(map_layers.layers)
+            m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+        with self.map_output:
+            display(m)
+        return self.map_output
+
     def parameter_input(self):
         # main method that exposes the parameter input interface to users in a notebook
-        return VBox([
-        HTML(value="<hr><b>Scenario Configuration</b>"),
-        self.data_parameters_input(),
-        self.scenario_parameter_input(),
-        HTML(value="<hr><b>Fiber Model Configuration</b>"),
-        self.fiber_parameter_manager.input_parameters(),
-        HTML(value="<hr><b>Satellite - LEO Model Configuration</b>"),
-        self.satellite_parameters_input(),
-        HTML(value="<hr><b>Cellular Model Configuration</b>"),
-        self.cellular_parameters_input(),
-        HTML(value="<hr><b>P2P Model Configuration</b>"),
-        self.p2p_parameters_input(),
-        HTML(value="<hr><b>Electricity Model Configuration</b>"),
-        self.electricity_parameters_input(),
-        HTML(value="<hr><b>Dashboard Configuration</b>"),
-        self.dashboard_parameters_input(),
-        HTML(value="<hr>")
-        ])
+        # TODO (max): remove this once the UI implementation is complete
+        data_map = self.data_map() if self.show_map else HTML()
+        return VBox(
+            [
+                HTML(value="<hr><b>Country Selection</b>"),
+                self.data_parameters_input(),
+                data_map,
+                HTML(value="<hr><b>Scenario Selection</b>"),
+                self.scenario_parameter_input(),
+                HTML(value="<hr><b>Fiber Model Configuration</b>"),
+                self.fiber_parameter_manager.input_parameters(),
+                HTML(value="<hr><b>Satellite - LEO Model Configuration</b>"),
+                self.satellite_parameters_input(),
+                HTML(value="<hr><b>Cellular Model Configuration</b>"),
+                self.cellular_parameters_input(),
+                HTML(value="<hr><b>P2P Model Configuration</b>"),
+                self.p2p_parameters_input(),
+                HTML(value="<hr><b>Electricity Model Configuration</b>"),
+                self.electricity_parameters_input(),
+                HTML(value="<hr><b>Dashboard Configuration</b>"),
+                self.dashboard_parameters_input(),
+                HTML(value="<hr>"),
+            ]
+        )
