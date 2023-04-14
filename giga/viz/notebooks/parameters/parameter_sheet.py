@@ -50,6 +50,8 @@ class ParameterSheet:
         return None
 
     def get_parameter_value(self, parameter_name):
+        if self.sheet is None:
+            self.sheet = self._create_sheet()
         return self._sheet_lookup[parameter_name].value
 
     def _create_sheet(self):

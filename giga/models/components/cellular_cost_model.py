@@ -81,7 +81,7 @@ class CellularCostModel:
         Computes a cost table for schools present in the data_space input
         """
         LOGGER.info(f"Starting Cellular Cost Model")
-        conection_model = GreedyDistanceConnector(
+        connection_model = GreedyDistanceConnector(
             data_space.cell_tower_coordinates,
             dynamic_connect=False,  # this will create closest distance pairs
             progress_bar=progress_bar,
@@ -89,7 +89,7 @@ class CellularCostModel:
             distance_cache=data_space.cellular_cache,
         )
         # determine which schools are in range of cell towers
-        distances = conection_model.run(data_space.school_coordinates)
+        distances = connection_model.run(data_space.school_coordinates)
         costs = self.compute_costs(distances, data_space)
         return CostResultSpace(
             technology_results={"distances": distances}, cost_results=costs

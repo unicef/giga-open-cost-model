@@ -19,6 +19,7 @@ class ModelDataSpace:
         self._schools = None
         self._fiber_map = None
         self._cell_tower_map = None
+        self._cell_tower_coordinates = None
         self._fiber_cache = None
         self._cellular_cache = None
         self._p2p_cache = None
@@ -83,7 +84,10 @@ class ModelDataSpace:
         """
         Accessor to cell tower coordinates - a list of id, lat, lon
         """
-        return self.cell_tower_map.to_coordinates()
+        if self._cell_tower_coordinates is None:
+            # make coordinates
+            self._cell_tower_coordinates = self.cell_tower_map.to_coordinates()
+        return self._cell_tower_coordinates
 
     @property
     def fiber_cache(self):
