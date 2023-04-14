@@ -185,6 +185,10 @@ class CostEstimationParameterInput:
                 defaults.electricity.dict()
             )
 
+        # update defaults on load
+        update_country_defaults(
+            {"new": self.data_parameter_manager.interactive_country_parameter.value}
+        )
         self.data_parameter_manager.interactive_country_parameter.observe(
             update_country_defaults, names="value"
         )
