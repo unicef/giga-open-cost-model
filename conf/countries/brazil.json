@@ -20,13 +20,13 @@
         },
         "fiber": {
             "capex": {
-                "cost_per_km": 8900.0,
+                "cost_per_km": 13500.0,
                 "fixed_costs": 0.0,
                 "economies_of_scale": true
             },
             "opex": {
                 "cost_per_km": 100.0,
-                "annual_bandwidth_cost_per_mbps": 10.0
+                "annual_bandwidth_cost_per_mbps": 1.64
             },
             "constraints": {
                 "maximum_connection_length": 20000.0,
@@ -37,11 +37,11 @@
         },
         "satellite": {
             "capex": {
-                "fixed_costs": 600.0
+                "fixed_costs": 400.0
             },
             "opex": {
                 "fixed_costs": 0.0,
-                "annual_bandwidth_cost_per_mbps": 15.0
+                "annual_bandwidth_cost_per_mbps": 24.0
             },
             "constraints": {
                 "maximum_bandwithd": 150.0,
@@ -51,11 +51,11 @@
         },
         "cellular": {
             "capex": {
-                "fixed_costs": 500.0
+                "fixed_costs": 11.0
             },
             "opex": {
                 "fixed_costs": 0.0,
-                "annual_bandwidth_cost_per_mbps": 10.0
+                "annual_bandwidth_cost_per_mbps": 12.0
             },
             "constraints": {
                 "maximum_range": 8000.0,
@@ -86,7 +86,7 @@
                 "battery_costs": 0.0
             },
             "opex": {
-                "cost_per_kwh": 0.1
+                "cost_per_kwh": 0.146
             }
         }
     }
