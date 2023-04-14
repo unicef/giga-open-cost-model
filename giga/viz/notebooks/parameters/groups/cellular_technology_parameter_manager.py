@@ -10,21 +10,21 @@ CELLULAR_MODEL_PARAMETERS = [
         "parameter_input_name": "Installation Cost (USD)",
         "parameter_interactive": {
             "parameter_type": "int_slider",
-            "value": 500,
+            "value": 50,
             "min": 0,
-            "max": 2_500,
-            "step": 10,
+            "max": 500,
+            "step": 1,
         },
     },
     {
         "parameter_name": "annual_bandwidth_cost_per_mbps",
         "parameter_input_name": "Annual cost per Mbps (USD)",
         "parameter_interactive": {
-            "parameter_type": "int_slider",
+            "parameter_type": "float_slider",
             "value": 10,
             "min": 0,
-            "max": 100,
-            "step": 1,
+            "max": 50,
+            "step": 0.01,
         },
     },
     {

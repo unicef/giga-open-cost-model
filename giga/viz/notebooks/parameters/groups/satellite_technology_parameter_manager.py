@@ -12,8 +12,8 @@ SATELLITE_MODEL_PARAMETERS = [
             "parameter_type": "int_slider",
             "value": 600,
             "min": 0,
-            "max": 4_000,
-            "step": 10,
+            "max": 2_000,
+            "step": 1,
         },
     },
     {
