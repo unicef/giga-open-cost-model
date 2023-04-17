@@ -420,7 +420,7 @@ singleuser:
     # Actual config: single user image for notebook containers
     name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/notebooks
     tag: "0.3.0"
-    pullPolicy:
+    pullPolicy: Always
     pullSecrets: []
   startTimeout: 300
   cpu:
