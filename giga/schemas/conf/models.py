@@ -68,6 +68,8 @@ class CellularConstraints(BaseModel):
     maximum_range: float = math.inf  # meters
     maximum_bandwithd: float = 2_000  # Mbps
     required_power: float = 500  # annual kWh
+    valid_cellular_technologies: List[str] = ["4G", "LTE"]
+
 
 class P2PConstraints(BaseModel):
 

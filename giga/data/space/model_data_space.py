@@ -1,5 +1,6 @@
 from shapely.geometry import Point
 import geopandas as gpd
+from typing import List
 
 from giga.schemas.conf.data import DataSpaceConf
 
@@ -138,6 +139,17 @@ class ModelDataSpace:
         _ = self.schools
         self._schools = self._schools.filter_schools_by_id(school_ids)
         return self
+
+    def get_cell_tower_coordinates_with_technologies(self, technologies: List[str]):
+        """
+        Filter and return cell tower coordinates with the specified technologies.
+
+        :param technologies: The technology types to filter cell towers by (e.g., '4G', 'LTE').
+        :return: A list of cell tower coordinates with the specified technology.
+        """
+        techs = set(technologies)
+        filtered = [t.to_coordinates() for t in self.cell_tower_map.towers if t.technologies.intersection(techs)]
+        return filtered
 
     def school_outputs_to_frame(self, outputs):
         lookup = {
