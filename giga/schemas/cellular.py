@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Set
 from pydantic import BaseModel, Field
 import pandas as pd
 
@@ -28,7 +28,7 @@ class CellularTower(BaseModel):
     lat: float
     lon: float
     height: float
-    technologies: List[CellTechnology]
+    technologies: Set[CellTechnology]
 
     class Config:
         use_enum_values = True
