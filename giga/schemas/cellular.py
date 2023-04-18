@@ -43,13 +43,18 @@ class CellularTower(BaseModel):
 class CellTowerTable(BaseModel):
     """A table or collection of cell towers"""
 
-    towers: List[CellularTower] = Field(..., min_items=1)
+    towers: List[CellularTower]
 
     @staticmethod
     def from_csv(
         file_name: str, giga_format: bool = True, tech_column: str = "technologies"
     ):
-        frame = pd.read_csv(file_name, keep_default_na=False)
+        try:
+            # try to read in dataset
+            frame = pd.read_csv(file_name, keep_default_na=False)
+        except pd.errors.EmptyDataError:
+            # if empty, return empty table
+            return CellTowerTable(towers=[])
         if giga_format:
             # reformat from giga format into internal model format
             frame = cell_towers_to_standard_format(frame)
@@ -60,3 +65,16 @@ class CellTowerTable(BaseModel):
     def to_coordinates(self):
         """Transforms the cell tower table into a table of simplified coordinate"""
         return [s.to_coordinates() for s in self.towers]
+
+    def to_data_frame(self):
+        """Transforms the cell tower table into a pandas data frame"""
+        df = pd.DataFrame(
+            [cc.dict() for cc in self.to_coordinates()]
+        )
+        if len(df) == 0:
+            # create empty data frame if no data with valid columns
+            df = pd.DataFrame(columns = ["lat", "lon", "coordinate", "coordinate_id"])
+        else:
+            df["lat"] = df["coordinate"].apply(lambda x: x[0])
+            df["lon"] = df["coordinate"].apply(lambda x: x[1])
+        return df

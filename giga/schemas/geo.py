@@ -18,11 +18,14 @@ class UniqueCoordinate(BaseModel):
 class UniqueCoordinateTable(BaseModel):
     """A table of uniquely identifiable lat/lon coordinates"""
 
-    coordinates: List[UniqueCoordinate] = Field(..., min_items=1)
+    coordinates: List[UniqueCoordinate]
 
     @staticmethod
     def from_csv(file_name):
-        table = pd.read_csv(file_name).to_dict("records")
+        try:
+            table = pd.read_csv(file_name).to_dict("records")
+        except pd.errors.EmptyDataError:
+            return UniqueCoordinateTable(coordinates=[])
         coords = list(
             map(
                 lambda x: UniqueCoordinate(
@@ -49,6 +52,18 @@ class UniqueCoordinateTable(BaseModel):
     def to_coordinate_vector(self):
         """Transforms the coordinate table into a numpy vector of coordinates"""
         return np.array([[c.coordinate[0], c.coordinate[1]] for c in self.coordinates])
+
+    def to_data_frame(self):
+        """Transforms the coordinate table into a pandas data frame"""
+        df = pd.DataFrame(
+            [fc.dict() for fc in self.coordinates]
+        )
+        if len(df) == 0:
+            df = pd.DataFrame(columns = ["lat", "lon", "coordinate", "coordinate_id"])
+        else:
+            df["lat"] = df["coordinate"].apply(lambda x: x[0])
+            df["lon"] = df["coordinate"].apply(lambda x: x[1])
+        return df
 
 
 class PairwiseDistance(BaseModel):
@@ -77,6 +92,33 @@ class PairwiseDistanceTable(BaseModel):
     """
 
     distances: List[PairwiseDistance] = Field(..., min_items=0)
+
+    @staticmethod
+    def from_single_lookup(lookup):
+        """Transforms a lookup table of distances into a pairwise distance table"""
+        distances = [PairwiseDistance(**v) for k, v in lookup.items()]
+        return PairwiseDistanceTable(distances=distances)
+
+    @staticmethod
+    def from_multi_lookup(lookup):
+        """Transforms a lookup table of distances into a pairwise distance table"""
+        distances = [
+            PairwiseDistance(**e) for k, nearby in lookup.items() for e in nearby
+        ]
+        return PairwiseDistanceTable(distances=distances)
+
+    def to_edge_table(self):
+        """Transforms the pairwise distance table into an edge table"""
+        edges = []
+        for d in self.distances:
+            edges.append(
+                {
+                    "source": d.coordinate2.coordinate_id,
+                    "target": d.coordinate1.coordinate_id,
+                    "distance": d.distance,
+                }
+            )
+        return pd.DataFrame(edges)
 
     def group_by_source(self):
         """Group distances by source coordinate node"""

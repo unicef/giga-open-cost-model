@@ -68,6 +68,13 @@ def main():
     )
     args = parser.parse_args()
 
+    if not os.path.isfile(os.path.join(args.workspace_directory, "fiber.csv")):
+        LOGGER.warning(
+            f"Fiber file not found in {args.workspace_directory}, creating empty file."
+        )
+        open(os.path.join(args.workspace_directory, "fiber.csv"), 'a').close()
+        return
+
     fiber_coordinates = UniqueCoordinateTable.from_csv(
         os.path.join(args.workspace_directory, "fiber.csv")
     )
