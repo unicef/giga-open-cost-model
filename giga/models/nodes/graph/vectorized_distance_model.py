@@ -58,6 +58,9 @@ class VectorizedDistanceModel:
         """
         progress_bar = kwargs.get("progress_bar", self.progress_bar)
         set1, set2 = data
+        # return empty list if either set is empty
+        if len(set1) == 0 or len(set2) == 0:
+            return []
         # convert to vectors
         vecs1, vecs2 = self._to_radian_vector(set1), self._to_radian_vector(set2)
         distances = haversine_distances(vecs1, vecs2) * RADIUS_EARTH_M

@@ -27,7 +27,9 @@ def main():
     LOGGER.info(f"Registering country: {country_name} from {args.country_parameters}")
 
     existing_countries = get_registered_countries(COUNTRY_DEFAULT_WORKSPACE)
-    assert country_name not in existing_countries, f"Country {country_name} already exists"
+    if country_name in existing_countries:
+        LOGGER.warning(f"Country {country_name} already exists")
+        return
 
     # write the country defaults and complete registration
     with open(os.path.join(COUNTRY_DEFAULT_WORKSPACE, f"{country_name}.json"), "w") as f:

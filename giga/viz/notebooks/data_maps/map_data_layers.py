@@ -85,12 +85,7 @@ class MapDataLayers:
         Returns a scattermapbox object for the cell towers in the data space
         """
         if self._cell_towers is None:
-            cell = pd.DataFrame(
-                [cc.dict() for cc in self.data_space.cell_tower_coordinates]
-            )
-            cell["lat"] = cell["coordinate"].apply(lambda x: x[0])
-            cell["lon"] = cell["coordinate"].apply(lambda x: x[1])
-            self._cell_towers = cell
+            self._cell_towers = self.data_space.cell_tower_map.to_data_frame()
         return go.Scattermapbox(
             name=self.config.cell_tower_layer.layer_name,
             lon=self._cell_towers["lon"],
@@ -110,12 +105,7 @@ class MapDataLayers:
         Returns a scattermapbox object for the fiber nodes in the data space
         """
         if self._fiber_nodes is None:
-            fiber = pd.DataFrame(
-                [fc.dict() for fc in self.data_space.fiber_coordinates]
-            )
-            fiber["lat"] = fiber["coordinate"].apply(lambda x: x[0])
-            fiber["lon"] = fiber["coordinate"].apply(lambda x: x[1])
-            self._fiber_nodes = fiber
+            self._fiber_nodes = self.data_space.fiber_map.to_data_frame()
         return go.Scattermapbox(
             name=self.config.fiber_layer.layer_name,
             lon=self._fiber_nodes["lon"],
