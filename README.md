@@ -209,6 +209,16 @@ You can stop the jupyterhub cluster by running `./stack stop`.
 If you need to update the single user image, you can rebuild it using the CLI above.
 You can interact with the single user container locally by running `./stack start-container <local-workspace>`.
 
+### GCP and Auth0 Configurations
+
+Configuring the deployment is done in two places, the `stack` CLI and the deployment manifest of helm values.
+Most of the GCP specific deployment parameters are defined in the stack CLI, the ones of interest are the following:
+
+* The container registry, which is where all the built docker containers are pushed to and pulled from, see [here](stack#L6)
+* The cluster name, which points to the k8s cluster running the deployment, see [here](stack#L12)
+* The auth configuration is managed entirely inside of our deployment manifest, see [here](deployment/helm/prod.yaml#L31)
+
+Migrating to a different cloud provider or a different auth system would require updating these parameters.
 
 ## CLI
 

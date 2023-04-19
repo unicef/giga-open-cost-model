@@ -104,6 +104,7 @@ reset_user_password() {
 stack_up() {
   create_image
   push_model_image
+  jupyterhub_down
   jupyterhub_up
 }
 
@@ -113,7 +114,7 @@ stack_down() {
 
 # Shows usage
 usage() {
-  printf "  up \t\t\t\t\t\tDeploys the notebook stack to a k8s cluster\n"
+  printf "  up \t\t\t\t\t\tRebuild the modeling environment and deploys the notebook stack to a k8s cluster\n"
   printf "  down \t\t\t\t\t\tTears down the notebook stack\n"
   printf "  install \t\t\t\t\tInstall minikube, helm, etc.\n"
   printf "  auth \t\t\t\t\t\tAuthenticate with GCP\n"
