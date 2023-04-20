@@ -15,6 +15,13 @@ METERS_IN_KM = 1000.0
 
 
 class CellularCostModel:
+    """
+        Cost model for estimating the cost of cellular connectivity.
+        CapEx considers modem installation at school and solar installation if needed.
+        No other infrastructure costs are considered.
+        OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+    """
+
     def __init__(self, config: CellularTechnologyCostConf):
         self.config = config
 
@@ -29,7 +36,13 @@ class CellularCostModel:
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
-    ):
+    ) -> List[SchoolConnectionCosts]:
+        """
+        Compute the cost of cellular connectivity for each school in the data space.
+        :param distances: List of distances between schools and cell towers
+        :param data_space: ModelDataSpace, that contains school entities
+        :return: List of SchoolConnectionCosts, that contains the cost of cellular connectivity for each school
+        """
         electricity_model = ElectricityCostModel(self.config)
         connected_set = set([x.coordinate1.coordinate_id for x in distances])
         capex_costs = self._cost_of_setup()
@@ -79,6 +92,9 @@ class CellularCostModel:
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
+        :param data_space: ModelDataSpace, that contains school entities, and cell tower coordinates
+        :param progress_bar: bool, whether to show a progress bar
+        :return: CostResultSpace, that contains the cost of cellular connectivity for all schools in the data space
         """
         tower_coordinates = data_space.get_cell_tower_coordinates_with_technologies(self.config.constraints.valid_cellular_technologies)
         LOGGER.info(f"Starting Cellular Cost Model")

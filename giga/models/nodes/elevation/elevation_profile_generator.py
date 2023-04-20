@@ -23,7 +23,6 @@ class ElevationProfileGenerator:
     """
     Generates an elevation profile for lat/lon points using
     open source data sets.
-
     """
 
     def format_data(self, data: List) -> Text:
@@ -33,18 +32,13 @@ class ElevationProfileGenerator:
 
     def query_elevation_dataset(self, data: List, dataset: Text, samples: int) -> List:
         """
-        class method that manages the request format
-        for interacting with the OpenTopoData
-        open dataset
+        Queries the opentopodata API to create an elevation profile
+        A profile is a collection of ordered 3D points including lat/lon and elevation values
 
-        Input: values: An array of geomteric points (start and endpoints) in the
-                       format of e.g. lat1, lon1| lat2,lon2
-
-            dataset: The name of the OpenTopoData daatset
-            you are interested in e.g. aster30m, nzdem8m for more information
-            regarding available datasets visit - https://www.opentopodata.org/
-        Output: Response Object containing json reults
-
+        :param data, list of lat/lon points between which elevation profiles are created
+        :param dataset, the type of elevation dataset to query, generally aster30m
+        :param samples, the number of elevation samples to include in the profile in addition to the two root points
+        :returns List of elevation profiles (e.g. a list of lists of 3D points)
         """
         elevation_profile_list = list()
         for points in data:
@@ -85,9 +79,12 @@ class ElevationProfileGenerator:
         samples: int = NUMBER_OF_SAMPLES,
     ) -> List[ElevationProfile]:
         """
-        Input: ordered list of lists of lat/lon coordinates
-               e.g: [[1,2], [3,4]]
-        Output: ordered list of elevation profiles for the input coordinates
+        Runs the elevation profile generator model.
+        :param data, ordered list of lists of lat/lon coordinates e.g: [[1,2], [3,4]]
+        :param dataset, the type of elevation dataset to query, defaults to aster30m
+        :param samples, the number of elevation samples to include in the profile in addition to the two root points
+               defaults to 10
+        :return a list of elevation profiles (e.g. a list of lists of 3D points)
         """
         results = self.query_elevation_dataset(data, dataset, samples)
         return results

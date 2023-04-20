@@ -16,8 +16,14 @@ METERS_IN_KM = 1000.0
 
 
 class FiberCostModel:
-    """Estimates the cost of connecting a collection of schools to the internet
-    using fiber technology
+    """
+    Estimates the cost of connecting a collection of schools to the internet using fiber technology.
+    Can optionally consider economies of scale,
+    which allows schools that already connected with fiber during modeling to be used as fiber nodes.
+    CapEx considers infrastructure costs of laying fiber,
+    modem/terminal installation costs at school and solar installation if needed.
+    OpEx considers maintenance of fiber infrastructure, maintenance of equipment at school,
+    costs of internet at the school, and electricity costs.
     """
 
     def __init__(self, config: FiberTechnologyCostConf):
@@ -56,7 +62,13 @@ class FiberCostModel:
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
-    ):
+    ) -> List[SchoolConnectionCosts]:
+        """
+        Computes the cost of connecting a school to the internet using fiber technology.
+        :param distances: a list of distances between schools and fiber nodes OR other fiber connected schools
+        :param data_space: a data space containing school entities and fiber infrastructure
+        :return: a list of school connection costs for fiber technology
+        """
         electricity_model = ElectricityCostModel(self.config)
         capex_costs = self._distance_to_capex(distances)
         opex_costs_provider = self._distance_to_opex(distances)
@@ -110,6 +122,10 @@ class FiberCostModel:
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
+        :param data_space: a data space containing school entities and fiber infrastructure
+        :param progress_bar: whether to show a progress bar
+        :param distance_model: a customizable distance model to use for computing pairwise distances
+        :return CostResultSpace, that contains the cost of fiber connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting Fiber Cost Model")
         conection_model = GreedyDistanceConnector(

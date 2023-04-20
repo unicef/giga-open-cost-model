@@ -6,6 +6,13 @@ from giga.data.space.connected_cost_graph import ConnectedCostGraph
 
 
 class CostTreePruner:
+    """
+    Used to prune a cost tree represented by a directed graph.
+    The pruning is done in an iterative manner by removing largest
+    leaf nodes of the graph.
+    A set of custom step, evaluate, constraint, and terminal functions can be defined.
+    """
+
     def __init__(
         self,
         project_years: int,
@@ -27,6 +34,7 @@ class CostTreePruner:
         evaluate: used to evaluate the cost of a graph
         terminal: used to determine if a graph is in a terminal state
         constraint: used to evaluate the baseline cost of a graph or the constraint value that a minimum cost graph must be below
+        :return callback functions
         """
 
         def step(x):
@@ -69,6 +77,8 @@ class CostTreePruner:
                 a. Remove the largest cost leaf node until the cost of the graph is less than the baseline cost of the graph OR
                         the graph has only one node left.
                 b. Assign the costs of the minimized connected cost graph to the fiber technology
+        :param cost_graph, connected cost graph that represents costs on the graph edges between nodes
+        :return a pruned cost graph
         """
         step, evaluate, constraint, terminal = self.get_optimization_callbacks()
         while (evaluate(cost_graph) > constraint(cost_graph)) and (

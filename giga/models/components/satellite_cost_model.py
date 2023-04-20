@@ -9,6 +9,12 @@ from giga.utils.logging import LOGGER
 
 
 class SatelliteCostModel:
+    """
+    Estimates the cost of connectivity using LEO satellite.
+    CapEx considers terminal installation at school and solar installation if needed.
+    OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+    """
+
     def __init__(self, config: SatelliteTechnologyCostConf):
         self.config = config
 
@@ -21,7 +27,12 @@ class SatelliteCostModel:
     def _cost_of_operation(self, school):
         return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
 
-    def compute_costs(self, data_space: ModelDataSpace):
+    def compute_costs(self, data_space: ModelDataSpace) -> List[SchoolConnectionCosts]:
+        """
+        Computes the cost of connecting a school to the internet using satellite technology.
+        :param data_space: a data space containing school entities
+        :return: a list of school connection costs for satellite technology
+        """
         electricity_model = ElectricityCostModel(self.config)
         capex_costs = self._cost_of_setup()
         opex_provider = self._cost_of_maintenance()
@@ -55,10 +66,12 @@ class SatelliteCostModel:
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def run(
-        self, data_space: ModelDataSpace, progress_bar: bool = False
+        self, data_space: ModelDataSpace,
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
+        :param data_space: a data space containing school entities
+        :return CostResultSpace, that contains the cost of satellite connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting Satellite Cost Model")
         costs = self.compute_costs(data_space)

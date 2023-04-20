@@ -31,6 +31,8 @@ class GreedyDistanceConnector:
     """
     Uses a greedy approach to iteratively connect the closest unconnected nodes to
     a subset of connected nodes.
+    When configured with the dynamic_connect parameter to True
+    this runs Prim's algorithm: https://en.wikipedia.org/wiki/Prim%27s_algorithm
     """
 
     def __init__(
@@ -57,7 +59,11 @@ class GreedyDistanceConnector:
     def _queue_non_cached(self, q, set1, set2):
         distances = self.distance_model.run((set1, set2))
         distances = list(
-            filter(lambda x: x is not None and x.distance < self.maximum_connection_length_m, distances)
+            filter(
+                lambda x: x is not None
+                and x.distance < self.maximum_connection_length_m,
+                distances,
+            )
         )
         return add_distances(q, distances)
 
@@ -74,7 +80,11 @@ class GreedyDistanceConnector:
         else:
             raise Exception("Trying to use a cache of unsupported type")
         distances = list(
-            filter(lambda x: x is not None and x.distance < self.maximum_connection_length_m, distances)
+            filter(
+                lambda x: x is not None
+                and x.distance < self.maximum_connection_length_m,
+                distances,
+            )
         )
         return add_distances(q, distances)
 
@@ -89,19 +99,10 @@ class GreedyDistanceConnector:
         Connects a list of unconnected unique coordinates in the input to
         a set of connected unique coordinates until no more connections are possible
 
-        Inputs
-        ----------
-        data : List[UniqueCoordinate]
-            A collection of UniqueCoordinates that contain a unique identifier
-            and a location (usually lat/lon)
-
-        Returns
-        -------
-        greedy_connected: List[PairwieDistance]
-            A collection of ordered and connected coordinate pairs that have been
-            added to the set of connected coordinates in this model.
-            The pair wise distances in this collection are ordered based on
-            when they were added to the connected set.
+        param: data, a List[UniqueCoordinate] representing a collection of
+               UniqueCoordinates that contain a unique identifier and a location (usually lat/lon)
+        :return list of PairwiseDistance objects which represent an ordered an connected coordinate pairs
+                added to the set of connected coordinates in this model.
         """
         greedy_connected = []
         queue = (

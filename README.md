@@ -53,6 +53,15 @@ All modeling capabilities are defined within `giga/models`. The models are furth
 * Components: stacks nodes together with a clear and specific purpose (e.g. use case driven - compute cost of fiber connection) prepares the models to join into the entities that solve a specific problem
 * Scenarios: drives the computation by piecing together multiple components and solving a specific problem by deriving a key result. Allows same components to serve multiple purposes: e.g. answer the questions of what is the cost of connecting all schools in Rwanda to the internet? VS If there is a budget of $10M which schools should be connected to maximize the number of students with internet access?
 
+Each of the connectivity models is briefly described below.
+For more details please see [here](docs/models.md).
+The cost models are the following:
+
+* **Fiber Model**: asses the costs of connectivity using fiber. Can optionally consider economies of scale, which allows schools that already connected with fiber during modeling to be used as fiber nodes. CapEx considers infrastructure costs of laying fiber, modem/terminal installation costs at school and solar installation if needed. OpEx considers maintenance of fiber infrastructure, maintenance of equipment at school, costs of internet at the school, and electricity costs.
+* **Cellular Model**: asses the costs of connectivity using cellular. CapEx considers modem installation at school and solar installation if needed. No other infrastructure costs are considered. OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+* **P2P Model**: asses the cost of connectivity using point to point wireless technology. CapEx considers infrastructure costs of installing a transmitted at a cell tower, modem/terminal installation costs at school and solar installation if needed. OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+* **Satellite Model**: asses the cost of connectivity using LEO satellite. CapEx considers terminal installation at school and solar installation if needed. OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+
 ### Architectural Overview
 
 The architecture of the modeling library can be found [here](docs/arch.md).

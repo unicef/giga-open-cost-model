@@ -11,6 +11,10 @@ def DEFAULT_DISTANCE_FN(x, y) -> float:
 
 
 class PairwiseDistanceModel:
+    """
+    Computes pairwise distances between two coordinate sets.
+    Allows a custom distance function to be passed into the model, defaulted to haversine
+    """
     def __init__(self, **kwargs):
         self.distance_fn = kwargs.get("distance_fn", DEFAULT_DISTANCE_FN)
         self.progress_bar = kwargs.get("progress_bar", False)
@@ -39,6 +43,11 @@ class PairwiseDistanceModel:
     def run(
         self, data: Tuple[List[UniqueCoordinate], List[UniqueCoordinate]], **kwargs
     ) -> List[PairwiseDistance]:
+        """
+        Runs the model that computes the pairwise distances between the coordinate sets passed into the method
+        :param data, a tuple with two coordinate sets in it
+        :return a list of pairwise distance objects
+        """
         set1, set2 = data
         pairs = []
         iterable = progress_bar(set1) if self.progress_bar else set1
