@@ -21,7 +21,7 @@ class BaselineMinimizer:
         Finds the minimum costs for a single school
 
         :param school_id: the identifier of the school in question
-        :costs: a list of costs for each technology
+        :param costs, a list of costs for each technology
         :return: the minimum costs for the school
 
         """
