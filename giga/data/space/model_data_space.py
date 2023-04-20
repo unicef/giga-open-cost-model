@@ -134,8 +134,15 @@ class ModelDataSpace:
                 self._p2p_cache = self.config.p2p_distance_cache_conf.load()
         return self._p2p_cache
 
-    def filter_schools(self, school_ids):
-        # load schools if not already loaded
+    def filter_schools(self, school_ids: List[str]):
+        """
+        Filters and returns the school entities with the specified ids
+        This will update the full data space and any downstream dependencies on school entities
+        Such as caches and coordinates
+
+        :param school_ids: The school ids to keep in the data space, all others will be removed
+        :return: The updated ModelDataSpace with the filtered schools
+        """
         _ = self.schools
         self._schools = self._schools.filter_schools_by_id(school_ids)
         return self

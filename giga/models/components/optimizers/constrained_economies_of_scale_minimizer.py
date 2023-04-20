@@ -1,9 +1,10 @@
 import numpy as np
+from typing import List, Set, Dict
 
 from giga.schemas.output import OutputSpace
 from giga.schemas.conf.models import CostMinimizerConf
 from giga.data.space.connected_cost_graph import ConnectedCostGraph
-from giga.schemas.geo import PairwiseDistanceTable
+from giga.schemas.geo import PairwiseDistanceTable, PairwiseDistance
 from giga.schemas.output import SchoolConnectionCosts
 from giga.models.nodes.graph.cost_tree_pruner import CostTreePruner
 from giga.utils.logging import LOGGER
@@ -87,11 +88,24 @@ class ConstrainedEconomiesOfScaleMinimizer:
         return budget_remaining, constrained_schools, connections
 
     def minimize_economies_of_scale(
-        self, output, clusters, root_nodes, baseline_cost_lookup
+        self, output: OutputSpace,
+        clusters: List[List[PairwiseDistance]],
+        root_nodes: Set[str],
+        baseline_cost_lookup: Dict[str, SchoolConnectionCosts]
     ):
         """
         This method computes the minimum cost of a connected cost graph
         for each cluster of schools, while respecting a budget constraint.
+
+        :param output: the output space containing all technology costs prior to economies of scale optimization
+        :param clusters: a list of economies of scale clusters
+        :param root_nodes: the root nodes of the economies of scale clusters
+        :param baseline_cost_lookup: a lookup table of baseline costs
+        :return a tuple of
+                minimum costs,
+                economies of scale connections that are optimal,
+                school IDs that are optimal with economies of scale,
+                remaining budget
         """
         pruner = CostTreePruner(
             self.config.years_opex,
@@ -145,8 +159,25 @@ class ConstrainedEconomiesOfScaleMinimizer:
         return minimums, connections, school_ids, budget_remaining
 
     def minimize_baseline_costs(
-        self, budget_remaining, output, baseline_cost_lookup, baseline_cost_ids
+        self, budget_remaining: float,
+        output: OutputSpace,
+        baseline_cost_lookup: Dict[str, SchoolConnectionCosts],
+        baseline_cost_ids: List[str]
     ):
+        """
+        This method computes the minimum cost of for the baseline technologies (non-economies of scale) given a budget.
+
+        :param budget_remaining: the budget remaining for the project
+        :param output: the output space containing all technology costs prior to economies of scale optimization
+        :param clusters: a list of economies of scale clusters
+        :param root_nodes: the root nodes of the economies of scale clusters
+        :param baseline_cost_lookup: a lookup table of baseline costs
+        :return a tuple of
+                minimum costs,
+                economies of scale connections that are optimal,
+                school IDs that are optimal with economies of scale,
+                remaining budget
+        """
         baseline_costs = [baseline_cost_lookup[sid] for sid in baseline_cost_ids]
         sorted_baseline_costs = sorted(
             baseline_costs,
@@ -170,13 +201,16 @@ class ConstrainedEconomiesOfScaleMinimizer:
             budget_remaining,
         )
 
-    def run(self, output: OutputSpace):
+    def run(self, output: OutputSpace) -> List[SchoolConnectionCosts]:
         """
         The constrained minimization follows the approach below:
             1. Because all economies of scale costs are optimal with respect to the baseline costs, they are considered first
             3. Each school cluster that has been selected under economies of scale is added to the connected schools collection until the budget runs out
             3. If there is remaining budget, it will be used to connect the cheapest schools using baseline technologies until the budget runs out.
             4. All other schools are considered not possible to connect and have no cost attribution assigned to them.
+
+        :param output: the output space containing all technology costs prior to economies of scale optimization
+        :return: a list of school connection costs optimized under the budget constraint with economies of scale
         """
         LOGGER.info("Starting budget constrained minimizer")
         # generate lookups and graph object needed for minimization

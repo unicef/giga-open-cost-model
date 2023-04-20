@@ -46,15 +46,8 @@ class VectorizedDistanceModel:
         This method computes pairwise distances between two sets of coordinates
         using sklearn's haversine_distances function. It returns a list of PairwiseDistance objects.
 
-        Inputs
-        ----------
-        data : Tuple[List[UniqueCoordinate]], List[UniqueCoordinate]]
-            A tuple of two lists of UniqueCoordinate objects
-
-        Returns
-        ----------
-        pairs: List[PairwiseDistance]
-            A list of PairwiseDistance objects
+        :param data, a tuple of two lists of UniqueCoordinate objects
+        :return a list of PairwiseDistance objects representing the distances between the two coordinate datasets
         """
         progress_bar = kwargs.get("progress_bar", self.progress_bar)
         set1, set2 = data
@@ -91,6 +84,9 @@ class VectorizedDistanceModel:
         """
         This method computes pairwise distances between two sets of coordinates
         by slicing up the first set into smaller chunks. It returns a list of PairwiseDistance objects.
+
+        :param data, a tuple of two lists of UniqueCoordinate objects
+        :return a list of PairwiseDistance objects representing the distances between the two coordinate datasets
         """
         set1, set2 = data
         n_chunks = kwargs.get("n_chunks", DEFAULT_N_CHUNKS)

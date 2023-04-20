@@ -10,6 +10,10 @@ from giga.utils.logging import LOGGER
 
 
 class SingleTechnologyScenario:
+    """
+    Computes the connectivity cost for a single specified technology
+    """
+
     def __init__(
         self,
         config: SingleTechnologyScenarioConf,
@@ -50,6 +54,10 @@ class SingleTechnologyScenario:
         self.data_space.schools.update_bw_demand_all(self.config.bandwidth_demand)
 
     def run(self, progress_bar: bool = False):
+        """
+        :param progress_bar, wether or not to show the progress bar when running the scenario
+        :return output space that contains costs of each technology considered as well as the minimum costs for each school
+        """
         LOGGER.info(f"Starting Single Technology Scenario {self.config.technology}")
         self._prep()
         cost_model = self._make_model()

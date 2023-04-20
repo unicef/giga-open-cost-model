@@ -31,6 +31,14 @@ class EconomiesOfScaleMinimizer:
         """
         This method computes the minimum cost of a connected cost graph
         for each cluster of schools.
+        :param output: OutputSpace, that contains cost results for individual technologies
+        :param clusters: List[List[PairwiseDistance]], a list of clusters of schools
+        :param pruner: CostTreePruner, a pruner that can be used to remove the largest cost leaf nodes iteratively
+        :return: tuple of minimums, economies_of_scale_ids, new_connections which represent
+                 the minimum costs for each school in all the clusters that are cost optimal with economies of scale,
+                 the school IDs for economies of scale schools,
+                 the new connections (e.g. pariwise distances) that are cost optimal with economies of scale
+
         """
         economies_of_scale_ids = []
         new_connections = []
@@ -68,6 +76,8 @@ class EconomiesOfScaleMinimizer:
             3. Assign the costs of the baseline costs to any schools that are not in the minimized connected cost graph
             4. Assign the costs of the infeasible connections to any schools that are not in the minimized connected cost graph
 
+        :param output: OutputSpace, that contains a distance collection that can be turned into a connected cost graph
+        :return a list of minimum costs for each school that are economies of scale optimal
         """
         LOGGER.info("Starting economies of scale minimizer")
         # generate lookups and graph object needed for minimization

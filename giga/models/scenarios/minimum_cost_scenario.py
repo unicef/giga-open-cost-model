@@ -97,6 +97,8 @@ class MinimumCostScenario:
         """
         Runs the minimum cost scenario by computing the cost of each technology
         and then applying a minimizer to find the minimum cost solution.
+
+        :return output space that contains costs of each technology considered as well as the minimum costs for each school
         """
         LOGGER.info(f"Starting Minimum Cost Scenario")
         self._prep()

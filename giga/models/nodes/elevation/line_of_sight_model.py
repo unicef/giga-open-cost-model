@@ -9,23 +9,20 @@ DEFAULT_BUFFER = 0.0
 
 class LineofSightModel:
     """
-    Classs that determines the current line of sight for a given set of coordinates
-    based on the elevation profile
+    Used to determine the current line of sight between two points.
+    Line of sight can be obstructed with terrain, which is defined by elevation profiles.
     """
 
     def create_buffered_profile(
         self, elevation_array: List, elevation_buffer_meters: float
     ) -> List:
         """
-        class method that accepts an elevation array of float values
-        and returns an adjusted array of float values based on buffer
-        set by user
-
-            Input:
-                elevation_array: An array of elevation values
-                elevation_buffer_meters: Integer value controlling upper boundary of elevation values
-                between starting and end points
-            Output: Updated array of elevation values
+        Creates an elevation profile with errors buffers.
+        The buffer magnitude can be used to account for uncertainty in the elevation data
+        used to generate the elevation profile.
+        :param elevation_array, a list of numbers representing elevation data in meters
+        :param elevation_buffer_meters, the desired buffer value
+        :return a list of buffered elevation values
         """
         updated_elevations = [x + elevation_buffer_meters for x in elevation_array]
         # remove buffer val from beginning and end points
@@ -66,14 +63,13 @@ class LineofSightModel:
 
     def determine_obstructions(
         self, elevation_profile: ElevationProfile, elevation_buffer_meters: float
-    ) -> List:
+    ) -> bool:
         """
-        class method that generates an array of boolean values based on line of sight availability
-
-            Input:
-                elevation_profile: singluar elevation profile
-                elevation_buffer_meters: Integer value to increase or decrease upper bound of elevation values
-            Output: Boolean value
+        Determines if the start/end points of an elevation profile are obstructed by the terrain
+        represented in the elevation profile
+        :param elevation_profile, the elevation profile represented by a list of 3D points (lat, lon, elevation)
+        :param elevation_buffer_meters, the desired buffer value, can be used to represent uncertainty in the elevation dataset
+        :return a boolean indicating if the line of sight between start/end points of the profile is obstructed
         """
         elevations_array = self.create_buffered_profile(
             self.get_elevations(elevation_profile),
@@ -100,15 +96,12 @@ class LineofSightModel:
         elevation_buffer_meters: float = DEFAULT_BUFFER,
     ) -> List[bool]:
         """
-        Class method that determines whether the line of sight is obstructed,
-        given a collection of elevation profiles. Each elevation profile in the collection
-        is iterated through and generates a singular profile which recieves a True of False flag
-        if line of sight is obscured.
-
-            Input:
-                elevation_profiles: a collection of elevation profiles
-                elevation_buffer_meters: Integer value to increase or decrease upper bound of elevation values
-            Output: Orderd array of boolean values
+        Determines whether the line of sight is obstructed, given a collection of elevation profiles.
+        Each elevation profile in the collection is iterated through,
+        and generates a singular profile which receives a boolean indicator on obstruction
+        :param elevation_profiles, a list of elevation profiles (which themselves are represented by a list of 3D points)
+        :param elevation_buffer_meters, the desired buffer value, can be used to represent uncertainty in the elevation dataset, defaults to 0
+        :return a list of ordered boolean indicators that represent line of sight between start and end point for each elevation profile
         """
         line_of_sight_array = []
         for profiles in elevation_profiles:

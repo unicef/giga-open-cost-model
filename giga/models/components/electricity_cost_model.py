@@ -31,6 +31,11 @@ class ElectricityCostModel:
         return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
 
     def compute_solar_cost(self, school: GigaSchool):
+        """
+        Compute the cost of solar connectivity for a school.
+        :param school: GigaSchool, contains the school entity
+        :return: PowerConnectionCosts, contains the cost of solar connectivity for the school
+        """
         capex = (
             self.config.electricity_config.capex.solar_panel_costs
             + self.config.electricity_config.capex.battery_costs
@@ -38,6 +43,12 @@ class ElectricityCostModel:
         return PowerConnectionCosts(electricity_capex=capex, cost_type="Solar")
 
     def compute_grid_cost(self, school: GigaSchool):
+        """
+        Compute the cost of electricity for a school.
+        Currently considers only electricity opex.
+        :param school: GigaSchool, contains the school entity
+        :return: PowerConnectionCosts, contains the cost of electricity for the school
+        """
         opex = (
             self.config.electricity_config.opex.cost_per_kwh
             * self.config.constraints.required_power
@@ -45,6 +56,12 @@ class ElectricityCostModel:
         return PowerConnectionCosts(electricity_opex=opex, cost_type="Grid")
 
     def compute_cost(self, school: GigaSchool):
+        """
+        Compute the cost of electricity for a school.
+        Includes either solar (CapEx) or grid electricity costs (OpEx).
+        :param school: GigaSchool, contains the school entity
+        :return: PowerConnectionCosts, contains the cost of electricity for the school
+        """
         if self.config is None and self.config.electricity_config is None:
             return PowerConnectionCosts()
         if school.has_electricity:

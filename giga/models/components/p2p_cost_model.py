@@ -15,6 +15,13 @@ METERS_IN_KM = 1000.0
 
 
 class P2PCostModel:
+    """
+    Estimates the cost of connectivity using point to point wireless technology.
+    CapEx considers infrastructure costs of installing a transmitted at a cell tower,
+    modem/terminal installation costs at school and solar installation if needed.
+    OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+    """
+
     def __init__(self, config: P2PTechnologyCostConf):
         self.config = config
 
@@ -29,7 +36,13 @@ class P2PCostModel:
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
-    ):
+    ) -> List[SchoolConnectionCosts]:
+        """
+        Computes the cost of connecting a school to the internet using P2P technology.
+        :param distances: a list of distances between schools and locations where p2p transmitters can be installed (e.g. cell towers)
+        :param data_space: a data space containing school entities and tower infrastructure
+        :return: a list of school connection costs for p2p technology
+        """
         electricity_model = ElectricityCostModel(self.config)
         connected_set = set([x.coordinate1.coordinate_id for x in distances])
         capex_costs = self._cost_of_setup()
@@ -79,6 +92,9 @@ class P2PCostModel:
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
+        :param data_space: a data space containing school entities and tower infrastructure
+        :param progress_bar: whether to show a progress bar
+        :return CostResultSpace, that contains the cost of p2p connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting P2P Cost Model")
         connect_model = GreedyDistanceConnector(
