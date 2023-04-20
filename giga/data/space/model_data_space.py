@@ -152,7 +152,7 @@ class ModelDataSpace:
         Filter and return cell tower coordinates with the specified technologies.
 
         :param technologies: The technology types to filter cell towers by (e.g., '4G', 'LTE').
-        :return: A list of cell tower coordinates with the specified technology.
+        :return a list of cell tower coordinates with the specified technology.
         """
         techs = set(technologies)
         filtered = [t.to_coordinates() for t in self.cell_tower_map.towers if t.technologies.intersection(techs)]
