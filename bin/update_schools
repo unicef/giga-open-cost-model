@@ -18,6 +18,7 @@ from giga.utils.logging import LOGGER
 
 REGISTERED_COUNTRIES = get_registered_countries(COUNTRY_DEFAULT_WORKSPACE)
 
+
 def main():
     parser = argparse.ArgumentParser()
     required = parser.add_argument_group("required arguments")
@@ -37,30 +38,55 @@ def main():
     client = GigaAPIClient(args.api_token)
     raw_schools = client.get_schools(args.country)
 
-    # export electricity data and create a lookup
+    # export supplemental data
     try:
-        el = pd.read_csv(os.path.join(args.workspace_directory, "electricity.csv"))
-        electricity_lookup = {
-            str(row.giga_id_school): bool(row.has_electricity) for i, row in el.iterrows()
-        }
+        sup = pd.read_csv(
+            os.path.join(args.workspace_directory, "schools_supplemental.csv")
+        )
+        assert all(
+            k in sup.keys()
+            for k in [
+                "giga_id_school",
+                "electricity",
+                "fiber",
+                "num_students",
+                "coverage_type",
+            ]
+        ), "Supplemental data is missing required columns"
+        sup = sup[
+            ["giga_id_school", "electricity", "fiber", "num_students", "coverage_type"]
+        ]
+        sup = sup.rename(
+            columns={
+                "giga_id_school": "giga_id",
+                "electricity": "has_electricity",
+                "fiber": "has_fiber",
+                "coverage_type": "cell_coverage_type",
+            }
+        )
     except FileNotFoundError:
-        electricity_lookup = {}
-
-    def get_electricity_status(row):
-        gid = str(row.giga_id)
-        if gid in electricity_lookup:
-            return electricity_lookup[gid]
-        else:
-            return False
+        sup = pd.DataFrame(columns=["giga_id"])
 
     # transform raw school data
-    assert len(raw_schools) > 0, "No schools found for country, perhaps there is an issue with the project connect API"
+    assert (
+        len(raw_schools) > 0
+    ), "No schools found for country, perhaps there is an issue with the project connect API"
     table = GigaSchoolTable(schools=raw_schools)
     frame = table.to_data_frame()
+
+    # update the values in base frame with supplemental data
+    sup = sup.set_index("giga_id")
+    frame = frame.set_index("giga_id")
+    frame.update(sup)
+    frame = frame.reset_index()
+    frame["num_students"] = frame["num_students"].apply(
+        lambda x: int(0 if x is None else x)
+    )
+    # make connectivity boolean
     frame["connected"] = frame["connectivity_status"].apply(
         lambda x: True if (x == "Good" or x == "Moderate") else False
     )
-    frame["has_electricity"] = frame.apply(get_electricity_status, axis=1)
+    # update names to match base schema
     frame = frame.rename(
         columns={
             "giga_id": "giga_id_school",

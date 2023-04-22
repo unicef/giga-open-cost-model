@@ -46,6 +46,9 @@ class GigaSchool(BaseModel):
     )  # 'Good', 'Moderate', 'No connection', 'Unknown'
     has_electricity: bool = False
     bandwidth_demand: float = 20.0  # Mbps
+    has_fiber: bool = False  # True if the school is connected to a fiber network
+    num_students: int = None
+    cell_coverage_type: str = None
 
     class Config:
         use_enum_values = True

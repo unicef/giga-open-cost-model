@@ -16,7 +16,9 @@ class BaselineMinimizer:
     def __init__(self, config: CostMinimizerConf):
         self.config = config
 
-    def single_school_minimum_cost(self, school_id: str, costs: List[SchoolConnectionCosts])-> SchoolConnectionCosts:
+    def single_school_minimum_cost(
+        self, school_id: str, costs: List[SchoolConnectionCosts]
+    ) -> SchoolConnectionCosts:
         """
         Finds the minimum costs for a single school
 
