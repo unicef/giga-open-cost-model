@@ -1,5 +1,6 @@
 import math
 from pydantic import validate_arguments
+from typing import List
 
 from giga.schemas.conf.models import SatelliteTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
@@ -66,7 +67,9 @@ class SatelliteCostModel:
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def run(
-        self, data_space: ModelDataSpace,
+        self,
+        data_space: ModelDataSpace,
+        **kwargs
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input

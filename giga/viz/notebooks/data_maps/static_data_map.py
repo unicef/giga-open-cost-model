@@ -14,9 +14,9 @@ class DataMapConfig(BaseModel):
     style: str = "carto-darkmatter"
     legend_x: float = 0.05
     legend_y: float = 0.95
-    legend_bgcolor: str = "#070808"
+    legend_bgcolor: str = "#262624"
     legend_font_color: str = "white"
-    legend_border_color: str = "#282b29"
+    legend_border_color: str = "#070807"
     legend_border_width: int = 1
 
 
@@ -32,7 +32,7 @@ class StaticDataMap:
         for l in layers:
             self.add_layer(l)
 
-    def get_map(self, center: List[float]):
+    def get_map(self, center: List[float], **kwargs):
         self.fig.update_layout(
             autosize=False,
             width=self.config.width,  # Adjust the width of the map
@@ -42,6 +42,7 @@ class StaticDataMap:
                 center=dict(lat=center[0], lon=center[1]),
                 zoom=self.config.zoom,
                 style=self.config.style,
+                uirevision=False,
             ),
             margin=dict(l=0, r=0, t=0, b=0),
             showlegend=True,
@@ -53,5 +54,6 @@ class StaticDataMap:
                 bordercolor=self.config.legend_border_color,
                 borderwidth=self.config.legend_border_width,
             ),
+            **kwargs,
         )
         return self.fig

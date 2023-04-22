@@ -46,6 +46,13 @@ def main():
         default=False,
     )
     optional.add_argument(
+        "--n-chunks",
+        "-nc",
+        type=int,
+        default=1000,
+        help="Specifies the number of chunks to split the distance matrix into",
+    )
+    optional.add_argument(
         "--n-nearest-neighbors",
         "-nn",
         type=int,
@@ -103,7 +110,8 @@ def main():
         maximum_distance=args.maximum_distance_meters,
     )
     dists_schools = model.run_chunks(
-        (school_coords.to_coordinates(), school_coords.to_coordinates())
+        (school_coords.to_coordinates(), school_coords.to_coordinates()),
+        n_chunks=args.n_chunks
     )
     school_cache = MultiLookupDistanceCache.from_distances(
         dists_schools, n_neighbors=args.n_nearest_neighbors

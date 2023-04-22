@@ -28,7 +28,7 @@ def main():
         "--n-chunks",
         "-nc",
         type=int,
-        default=100,
+        default=1000,
         help="Specifies the number of chunks to split the distance matrix into",
     )
     optional.add_argument(

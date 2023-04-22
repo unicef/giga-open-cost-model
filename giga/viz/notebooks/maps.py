@@ -8,9 +8,9 @@ import branca.colormap as cm
 from giga.viz.notebooks.helpers import output_to_table
 
 
-def show_electricity_map(data_space):
+def show_electricity_map(data_space, location=[-1.9, 30.1], zoom_start=7):
 
-    m = folium.Map(tiles="cartodbpositron", zoom_start=8, location=[-1.9, 30.1])
+    m = folium.Map(tiles="cartodbpositron", zoom_start=zoom_start, location=location)
 
     for s in data_space.school_entities:
         popup = f"School ID: {s.giga_id}"
@@ -47,14 +47,14 @@ def show_electricity_map(data_space):
     return m
 
 
-def show_cost_map(data_space, output_space):
+def show_cost_map(data_space, output_space, location=[-1.9, 30.1], zoom_start=7):
     table = output_to_table(output_space)
     table = table[table["total_cost"].notna()]
     cost_lookup = {
         str(row["school_id"]): float(row["total_cost"]) for i, row in table.iterrows()
     }
 
-    m = folium.Map(tiles="cartodbpositron", zoom_start=8, location=[-1.9, 30.1])
+    m = folium.Map(tiles="cartodbpositron", zoom_start=zoom_start, location=location)
     linear = cm.LinearColormap(
         ["green", "yellow", "red"],
         vmin=table["total_cost"].min(),

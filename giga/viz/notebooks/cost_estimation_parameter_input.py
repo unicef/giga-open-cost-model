@@ -91,6 +91,9 @@ UPLOADED_DATA_SPACE_PARAMETERS = [
 UPLOAD_SUFFIX = "_upload"
 SHOW_MAP = False  # temporary flag to show/hide map
 
+def country_name_to_key(country_name):
+    return country_name.lower().replace(" ", "_")
+
 
 class CostEstimationParameterInput:
     """
@@ -171,7 +174,7 @@ class CostEstimationParameterInput:
         }
         # link country selection to default parameters for that country
         def update_country_defaults(change):
-            country = change["new"].lower()
+            country = country_name_to_key(change["new"])
             defaults = self.defaults[country].model_defaults
             self.scenario_parameter_manager.update_country_parameters(
                 defaults.scenario.dict()
@@ -196,7 +199,7 @@ class CostEstimationParameterInput:
         # link country selection to map output
         def update_map(change):
             self.map_output.clear_output()
-            country = change["new"].lower()
+            country = country_name_to_key(change["new"])
             config_map = DataMapConfig()
             data_map = StaticDataMap(config_map)
             if country not in self._hashed_data_layers:
@@ -428,7 +431,8 @@ class CostEstimationParameterInput:
         )
 
     def _make_map_layer(self, country):
-        config_client = ConfigClient(self.defaults[country])
+        country_key = country_name_to_key(country)
+        config_client = ConfigClient(self.defaults[country_key])
         data_space = ModelDataSpace(config_client.local_workspace_data_space_config)
         config_layers = MapLayersConfig()
         return MapDataLayers(data_space, config_layers)

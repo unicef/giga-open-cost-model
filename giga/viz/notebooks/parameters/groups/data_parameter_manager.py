@@ -20,6 +20,9 @@ BASELINE_DATA_SPACE_PARAMETERS = [
     }
 ]
 
+def country_name_to_key(country_name):
+    return country_name.lower().replace(" ", "_")
+
 
 class DataParameterManager:
     def __init__(
@@ -48,8 +51,8 @@ class DataParameterManager:
         return VBox(list(self._hash.values()))
 
     def get_model_parameters(self):
-        country_id = self._hash["country_name"].value
+        country_id = country_name_to_key(self._hash["country_name"].value)
         config = ConfigClient.from_registered_country(
-            country_id.lower(), self.workspace
+            country_id, self.workspace
         )
         return config.local_workspace_data_space_config
