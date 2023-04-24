@@ -3,6 +3,7 @@ import geopandas as gpd
 from typing import List
 
 from giga.schemas.conf.data import DataSpaceConf
+from giga.schemas.school import GigaSchoolTable
 
 
 class ModelDataSpace:
@@ -18,6 +19,7 @@ class ModelDataSpace:
     def __init__(self, config: DataSpaceConf):
         self.config = config
         self._schools = None
+        self._all_schools = None
         self._fiber_map = None
         self._cell_tower_map = None
         self._cell_tower_coordinates = None
@@ -33,8 +35,20 @@ class ModelDataSpace:
         """
         if self._schools is None:
             # make schools
-            self._schools = self.config.school_data_conf.load()
+            self._all_schools = self.config.school_data_conf.load()
+            unconnected = [s for s in self._all_schools.schools if not s.connected]
+            self._schools = GigaSchoolTable(schools=unconnected)
         return self._schools
+
+    @property
+    def all_schools(self):
+        """
+        Accessor for unconnected schools - a subset of the schools that are not connected to
+        any internet infrastructure
+        """
+        if self._all_schools is None:
+            _ = self.schools
+        return self._all_schools
 
     @property
     def school_coordinates(self):
@@ -155,7 +169,11 @@ class ModelDataSpace:
         :return a list of cell tower coordinates with the specified technology.
         """
         techs = set(technologies)
-        filtered = [t.to_coordinates() for t in self.cell_tower_map.towers if t.technologies.intersection(techs)]
+        filtered = [
+            t.to_coordinates()
+            for t in self.cell_tower_map.towers
+            if t.technologies.intersection(techs)
+        ]
         return filtered
 
     def school_outputs_to_frame(self, outputs):

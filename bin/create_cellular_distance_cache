@@ -25,6 +25,13 @@ def main():
     required.add_argument("--workspace-directory", "-w", required=True)
     optional = parser.add_argument_group("optional arguments")
     optional.add_argument(
+        "--include-connected",
+        "-ic",
+        action="store_true",
+        help="Specifies whether to include already connected schools in the cache",
+        default=False,
+    )
+    optional.add_argument(
         "--n-chunks",
         "-nc",
         type=int,
@@ -58,7 +65,7 @@ def main():
         LOGGER.warning(
             f"Cell tower file not found in {args.workspace_directory}, creating empty file."
         )
-        open(os.path.join(args.workspace_directory, "cellular.csv"), 'a').close()
+        open(os.path.join(args.workspace_directory, "cellular.csv"), "a").close()
         return
 
     cellular_coordinates = CellTowerTable.from_csv(
@@ -67,6 +74,14 @@ def main():
     school_coords = GigaSchoolTable.from_csv(
         os.path.join(args.workspace_directory, "schools.csv")
     )
+
+    # consider only schools that are not already connected if boolean configured
+    if not args.include_connected:
+        # Remove schools that are already connected
+        LOGGER.info("Removing schools that are already connected from school set")
+        school_coords = GigaSchoolTable(
+            schools=[s for s in school_coords.schools if not s.connected]
+        )
 
     model = VectorizedDistanceModel(
         progress_bar=True,

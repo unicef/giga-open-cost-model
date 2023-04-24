@@ -1,8 +1,12 @@
 import os
-import json
 from pydantic import BaseModel
 from typing import List, Dict
 import pandas as pd
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 from giga.schemas.geo import PairwiseDistance, UniqueCoordinate
 
