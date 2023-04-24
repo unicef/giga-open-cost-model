@@ -20,19 +20,6 @@ from giga.schemas.distance_cache import (
 from giga.utils.logging import LOGGER
 
 
-def get_uncached_schools(schools, args, cache_file):
-    if args.replace:
-        return schools
-    try:
-        with open(os.path.join(args.workspace_directory, f"{cache_file}")) as f:
-            cache = json.load(f)
-        return schools.filter_schools_by_id(
-            [sid for sid in table.school_ids if sid not in cache["lookup"]]
-        )
-    except FileNotFoundError:
-        return schools
-
-
 def main():
     parser = argparse.ArgumentParser()
     required = parser.add_argument_group("required arguments")
@@ -46,10 +33,17 @@ def main():
         default=False,
     )
     optional.add_argument(
+        "--include-connected",
+        "-ic",
+        action="store_true",
+        help="Specifies whether to include already connected schools in the cache",
+        default=False,
+    )
+    optional.add_argument(
         "--n-chunks",
         "-nc",
         type=int,
-        default=1000,
+        default=500,
         help="Specifies the number of chunks to split the distance matrix into",
     )
     optional.add_argument(
@@ -79,7 +73,7 @@ def main():
         LOGGER.warning(
             f"Fiber file not found in {args.workspace_directory}, creating empty file."
         )
-        open(os.path.join(args.workspace_directory, "fiber.csv"), 'a').close()
+        open(os.path.join(args.workspace_directory, "fiber.csv"), "a").close()
         return
 
     fiber_coordinates = UniqueCoordinateTable.from_csv(
@@ -88,6 +82,26 @@ def main():
     school_coords = GigaSchoolTable.from_csv(
         os.path.join(args.workspace_directory, "schools.csv")
     )
+
+    # if schools already have fiber, move them to fiber set
+    fiber_schools = [s for s in school_coords.schools if s.has_fiber]
+    if len(fiber_schools) > 0:
+        LOGGER.info(f"Moving {len(fiber_schools)} schools with fiber to fiber set")
+        fiber_schools = GigaSchoolTable(schools=fiber_schools).to_coordinates()
+        fiber_coordinates = UniqueCoordinateTable(
+            coordinates=fiber_coordinates.coordinates + fiber_schools
+        )
+        school_coords = GigaSchoolTable(
+            schools=[s for s in school_coords.schools if not s.has_fiber]
+        )
+
+    # consider only schools that are not already connected if boolean configured
+    if not args.include_connected:
+        # Remove schools that are already connected
+        LOGGER.info("Removing schools that are already connected from school set")
+        school_coords = GigaSchoolTable(
+            schools=[s for s in school_coords.schools if not s.connected]
+        )
 
     LOGGER.info(f"Creating fiber distance cache in {args.workspace_directory}")
     model = VectorizedDistanceModel(
@@ -111,7 +125,7 @@ def main():
     )
     dists_schools = model.run_chunks(
         (school_coords.to_coordinates(), school_coords.to_coordinates()),
-        n_chunks=args.n_chunks
+        n_chunks=args.n_chunks,
     )
     school_cache = MultiLookupDistanceCache.from_distances(
         dists_schools, n_neighbors=args.n_nearest_neighbors

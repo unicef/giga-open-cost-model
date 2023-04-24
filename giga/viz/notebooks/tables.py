@@ -13,11 +13,14 @@ from giga.viz.notebooks.helpers import output_to_table
 mpl.rcParams["figure.dpi"] = 250
 
 
-def output_to_school_stats(output_table):
+def output_to_school_stats(output_table, data_space):
     dfs = pd.DataFrame(
         [
             {
-                "Number of Schools": len(output_table),
+                "Total Number of Schools": len(data_space.all_schools.schools),
+                "Total Number of Connected Schools": len(data_space.all_schools.schools)
+                - len(data_space.schools.schools),
+                "Total Number of Unconnected Schools": len(output_table),
                 "Schools that can be connected": sum(output_table["feasible"]),
                 "Schools requiring electricity": len(
                     output_table[output_table["capex_electricity"] > 0.0]
@@ -123,7 +126,7 @@ def format_dollars(df, columns):
     return df
 
 
-def display_summary_table(output_space):
+def display_summary_table(output_space, data_space):
     def get_space(t, num):
         s = ""
         for _ in range(num):
@@ -131,7 +134,7 @@ def display_summary_table(output_space):
         return s
 
     output_table = output_to_table(output_space)
-    dfs = output_to_school_stats(output_table)
+    dfs = output_to_school_stats(output_table, data_space)
     dft = output_to_technology_stats(output_table)
     dfcap = output_to_capex_details(output_table)
     df_solar = output_to_electricity_capex(output_table)
