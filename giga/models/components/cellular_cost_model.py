@@ -16,10 +16,10 @@ METERS_IN_KM = 1000.0
 
 class CellularCostModel:
     """
-        Cost model for estimating the cost of cellular connectivity.
-        CapEx considers modem installation at school and solar installation if needed.
-        No other infrastructure costs are considered.
-        OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
+    Cost model for estimating the cost of cellular connectivity.
+    CapEx considers modem installation at school and solar installation if needed.
+    No other infrastructure costs are considered.
+    OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
     """
 
     def __init__(self, config: CellularTechnologyCostConf):
@@ -33,6 +33,9 @@ class CellularCostModel:
 
     def _cost_of_operation(self, school):
         return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+
+    def _existing_cell_coverage(self, school):
+        return school.cell_coverage_type in self.config.constraints.valid_cellular_technologies
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
@@ -61,7 +64,8 @@ class CellularCostModel:
                     feasible=False,
                     reason="CELLULAR_BW_THRESHOLD",
                 )
-            elif sid in connected_set:
+            elif sid in connected_set or self._existing_cell_coverage(school):
+                # either school is in range of a cell tower or school has coverage information from supplemental data
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
                     school_id=sid,
@@ -96,7 +100,9 @@ class CellularCostModel:
         :param progress_bar: bool, whether to show a progress bar
         :return: CostResultSpace, that contains the cost of cellular connectivity for all schools in the data space
         """
-        tower_coordinates = data_space.get_cell_tower_coordinates_with_technologies(self.config.constraints.valid_cellular_technologies)
+        tower_coordinates = data_space.get_cell_tower_coordinates_with_technologies(
+            self.config.constraints.valid_cellular_technologies
+        )
         LOGGER.info(f"Starting Cellular Cost Model")
         connection_model = GreedyDistanceConnector(
             tower_coordinates,

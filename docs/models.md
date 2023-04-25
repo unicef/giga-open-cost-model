@@ -86,6 +86,29 @@ outputs = model.run(schools,
 ```
 
 
+## Cellular Cost Model
+
+Documentation of the cellular cost model can be found below.
+
+* **Description**: estimates the CapEx and annual OpEx costs of connecting a school to the internet using cellular technology.
+* **Sub-models**:
+	* Distance model: computes distances between point pairs (default is Haversine distance)
+* **Parameters**: the full configuration set for the fiber models can be found [here](#fiber-model-configuration), the parameters exposed to users can be found below:
+    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
+    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
+    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
+    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
+    * `Maximum Cell Tower Range (km)` is the maximum distance from a cell tower that a school can receive internet service
+* **Data Inputs**: the typically external data needed to drive the models are outlined below. Please note that data inputs are accessible to model components through the `DataSpace` client.
+	* School entities, which includes coordinates and other properties, definition can be found [here](#school-entity)
+	* OPTIONAL: Cell tower locations, as lat/lon coordinates, definition can be found [here](#cell-tower)
+    * OPTIONAL: Existing coverage at the school of interest
+* **Outputs**: the cellular model generates a collection of connection costs for each school considered. The connection costs contain both CapEx and OpEx estimates. The definition for a single school cost can be found [here](#school-connection-cost)
+
+**Description**: there are two steps to the cellular mode: 1. assessment of cellular coverage at a school, 2. cost calculations.
+The assessment of cellular coverage can take on two forms - schools is considered to have coverage if it is within a given range of existing cell tower infrastructure OR if the cellular coverage has been included as a property in the school definition as part of supplemental school data.
+
+
 ## Implementing a Model
 
 You can implement a new technology by adding a new model component.
@@ -253,6 +276,78 @@ The definitions are roughly broken down into three categories: model configurati
     }
 }
 ```
+
+### Cell Tower
+
+```json
+{
+  "info": {
+    "title": "Cellular Tower API"
+  },
+  "components": {
+    "schemas": {
+      "CellularTower": {
+        "title": "CellularTower",
+        "type": "object",
+        "properties": {
+          "tower_id": {
+            "title": "Tower Id",
+            "type": "string"
+          },
+          "operator": {
+            "title": "Operator",
+            "type": "string"
+          },
+          "outdoor": {
+            "title": "Outdoor",
+            "type": "boolean"
+          },
+          "lat": {
+            "title": "Latitude",
+            "type": "number",
+            "format": "float"
+          },
+          "lon": {
+            "title": "Longitude",
+            "type": "number",
+            "format": "float"
+          },
+          "height": {
+            "title": "Height",
+            "type": "number",
+            "format": "float"
+          },
+          "technologies": {
+            "title": "Technologies",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "2G",
+                "3G",
+                "4G",
+                "LTE"
+              ]
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "tower_id",
+          "operator",
+          "outdoor",
+          "lat",
+          "lon",
+          "height",
+          "technologies"
+        ]
+      }
+    }
+  }
+}
+
+```
+
 
 ### Fiber Model Configuration
 
