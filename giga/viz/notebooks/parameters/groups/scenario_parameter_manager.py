@@ -1,4 +1,5 @@
 from copy import deepcopy
+import math
 from ipywidgets import VBox
 from pydantic import parse_obj_as
 from traitlets import directional_link
@@ -85,10 +86,7 @@ def get_scenario_type(config):
         and config["technology"] == "Cellular"
     ):
         return "Cellular Only"
-    elif (
-        config["scenario_id"] == "single_tech_cost"
-        and config["technology"] == "P2P"
-    ):
+    elif config["scenario_id"] == "single_tech_cost" and config["technology"] == "P2P":
         return "P2P Only"
     else:
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
@@ -133,10 +131,16 @@ class ScenarioParameterManager:
         self._hash["scenario_tpye"].value = get_scenario_type(config)
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
-        self.sheet.update_parameter(
-            "budget_constraint",
-            config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
-        )
+        try:
+            self.sheet.update_parameter(
+                "budget_constraint",
+                config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
+            )
+        except KeyError:
+            self.sheet.update_parameter(
+                "budget_constraint",
+                math.inf,
+            )
 
     def update_country_parameters(self, config):
         self.sheet.update_parameter("years_opex", config["years_opex"])
