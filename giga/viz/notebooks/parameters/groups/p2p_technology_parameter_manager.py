@@ -14,6 +14,7 @@ P2P_MODEL_PARAMETERS = [
             "min": 0,
             "max": 2_500,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -25,6 +26,7 @@ P2P_MODEL_PARAMETERS = [
             "min": 0,
             "max": 2_500,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -36,6 +38,7 @@ P2P_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -47,6 +50,7 @@ P2P_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1_000,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -58,6 +62,7 @@ P2P_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -69,6 +74,7 @@ P2P_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 1,
+            "show_default": True,
         },
     },
 ]
@@ -92,7 +98,8 @@ class P2PTechnologyParameterManager:
             config["opex"]["annual_bandwidth_cost_per_mbps"],
         )
         self.sheet.update_parameter(
-            "tower_install_costs", config["capex"]["tower_fixed_costs"])
+            "tower_install_costs", config["capex"]["tower_fixed_costs"]
+        )
         self.sheet.update_parameter(
             "required_power", config["constraints"]["required_power"]
         )
@@ -119,7 +126,7 @@ class P2PTechnologyParameterManager:
         )
         return P2PTechnologyCostConf(
             capex={
-            	"fixed_costs": install_cost,
+                "fixed_costs": install_cost,
                 "tower_fixed_costs": tower_install_cost,
             },
             opex={

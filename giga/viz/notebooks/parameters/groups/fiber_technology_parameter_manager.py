@@ -16,6 +16,7 @@ FIBER_MODEL_PARAMETERS = [
             "min": 0,
             "max": 20,
             "step": 0.01,
+            "show_default": True,
         },
     },
     {
@@ -27,6 +28,7 @@ FIBER_MODEL_PARAMETERS = [
             "min": 0,
             "max": 50_000,
             "step": 100,
+            "show_default": True,
         },
     },
     {
@@ -38,6 +40,7 @@ FIBER_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1_000,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -49,6 +52,7 @@ FIBER_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -60,6 +64,7 @@ FIBER_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1_000,
             "step": 10,
+            "show_default": True,
         },
     },
     {

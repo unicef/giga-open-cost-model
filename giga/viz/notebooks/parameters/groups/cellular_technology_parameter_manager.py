@@ -14,6 +14,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "min": 0,
             "max": 500,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -25,6 +26,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "min": 0,
             "max": 50,
             "step": 0.01,
+            "show_default": True,
         },
     },
     {
@@ -36,6 +38,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1_000,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -47,6 +50,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -58,6 +62,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "min": 0,
             "max": 25,
             "step": 1,
+            "show_default": True,
         },
     },
 ]
