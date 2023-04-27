@@ -13,6 +13,7 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1,
             "step": 0.01,
+            "show_default": True,
         },
     },
     {
@@ -24,6 +25,7 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "min": 0,
             "max": 30_000,
             "step": 100,
+            "show_default": True,
         },
     },
 ]

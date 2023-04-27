@@ -14,6 +14,7 @@ SATELLITE_MODEL_PARAMETERS = [
             "min": 0,
             "max": 2_000,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -25,6 +26,7 @@ SATELLITE_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -36,6 +38,7 @@ SATELLITE_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1_000,
             "step": 10,
+            "show_default": True,
         },
     },
     {
@@ -47,6 +50,7 @@ SATELLITE_MODEL_PARAMETERS = [
             "min": 0,
             "max": 1_000,
             "step": 10,
+            "show_default": True,
         },
     },
 ]

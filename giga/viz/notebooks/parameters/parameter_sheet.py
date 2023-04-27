@@ -1,8 +1,19 @@
 import ipywidgets as widgets
+from IPython.display import display
 from typing import Dict, List
 from pydantic import parse_obj_as
 
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
+
+
+CELL_STYLE_UPDATED_DEFAULT = """
+.off-default-cell-background-color {
+    background-color: rgba(222, 67, 95, 0.25);
+    margin: 0px;
+}
+"""
+
+display(widgets.HTML(f"<style>{CELL_STYLE_UPDATED_DEFAULT}</style>"))
 
 
 class ParameterSheet:
@@ -25,7 +36,7 @@ class ParameterSheet:
         self.width = width
         self.parameters = parameters
         self.interactive_parameters = [
-            parse_obj_as(InputParameter, p["parameter_interactive"]).parameter
+            parse_obj_as(InputParameter, p["parameter_interactive"])
             for p in self.parameters
         ]
         self.sheet = None
@@ -37,7 +48,7 @@ class ParameterSheet:
         """
         for i, p in enumerate(self.parameters):
             if p["parameter_name"] == name:
-                self.interactive_parameters[i].value = value
+                self.interactive_parameters[i].update(value)
                 break
 
     def get_interactive_parameter(self, name):
@@ -46,7 +57,7 @@ class ParameterSheet:
         """
         for i, p in enumerate(self.parameters):
             if p["parameter_name"] == name:
-                return self.interactive_parameters[i]
+                return self.interactive_parameters[i].parameter
         return None
 
     def get_parameter_value(self, parameter_name):
@@ -65,9 +76,17 @@ class ParameterSheet:
         for i, p in enumerate(self.parameters):
             row = i
             grid[row, 0] = widgets.HTML(value=p["parameter_input_name"])
-            grid[row, 1] = self.interactive_parameters[i]
-            self._sheet_lookup[p["parameter_name"]] = self.interactive_parameters[i]
-
+            if self.interactive_parameters[i].show_default:
+                grid[row, 1] = self.interactive_parameters[i].parameter_with_default
+            else:
+                grid[row, 1] = self.interactive_parameters[i].parameter
+            self._sheet_lookup[p["parameter_name"]] = self.interactive_parameters[
+                i
+            ].parameter
+            # add a callback to update the background color of the cell
+            self.interactive_parameters[i].set_off_default_css_style(
+                "off-default-cell-background-color"
+            )
         return grid
 
     def input_parameters(self):
