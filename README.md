@@ -1,57 +1,116 @@
-# Giga Models
+# Giga Model Notebooks
 
-You can find a reference glossary that provides in-depth explanations below.
+This document provides an overview of the Giga model notebooks and provides details on running each notebook. 
 
-## Glossary
+### [Cost Estimation Notebook](notebooks/cost-scenario.ipynb)
 
-* [Local Environment Setup](#setup)
-* [Library Architecture](docs/arch.md)
-* [Model Documentation](docs/models.md)
-* [Notebooks Overview](notebooks/README.md)
-* [Application Deployment](#deployment)
-* [Command Line Interfaces](#cli)
+<br/>
 
-## Setup
+**Jump to section:**
+* [Cost estimation notebook](#cost-estimation)
+* [Results drilldown notebook](#results-drilldown)
+* [Driver notebooks](#driver-notebooks)
+* [Model details](#model-details)
 
-Note: this repositroy uses git lfs for some of the larger files.
-Please install [git lfs](https://git-lfs.com/), and then run `git lfs pull` to fetch copies of the larger files locally.
-Use [poetry](https://python-poetry.org/) to create a local development environment.
-Poetry is a tool for dependency management in Python.
-You can use the helper `dev` CLI to build the environment locally:
+> Also see the following additional documentation:
+> 
+> * [Model Details](docs/models.md)
+> * [Model Data Management](docs/data.md)
+> * [Developer documentation](docs/dev.md)
 
-```bash
-./dev build
-```
+The notebooks are used for two primary purposes:
 
-To start a local notebook server simply run:
+1. Serve as interactive dashboard through which models can be configured, executed, and their outputs analyzed.
+2. Serve as tutorials or example "drivers" of how a particular model can be used.
+---
 
-```bash
-./dev start-notebook
-```
+## Cost Estimation
 
-You can use the `dev` CLI to also run pytest tests:
+The [cost estimation notebook](notebooks/cost-scenario.ipynb) provides an modeling interface for estimating the total cost of connecting a group of schools. It estimates the CapEx, OpEx, and NPV connectivity costs by technology and using the cheapest technologies.
 
-```bash
-./dev test
-```
+This notebook provides an modeling interface for estimating the total cost of connecting a group of schools. The process is broken down into three steps:
+* **I. Configuration**: where you can configure a variety of model parameters
+* **II. Run the Model**: where you can start the model execution
+* **III. Results**: where you can examine the results in tables and plots and download them locally
 
-## Repository Structure
+Note that the notebook is interactive.
+Namely, you can update the configurations, run the models again, and generate a new set of outputs.
+You will need to explicitly re-run the models again after a re-configuration (by clicking the `Run Model` button), and you will need to explicitly re-generate the outputs (by clicking the various `Generate ...` buttons) to see the ouputs updated.
 
-The python library in this repository is organized into the following key categories to help manage the models and their parameters:
+If you would like to upload a configuration from a local machine, use the `Import Config` button to populate the configuration sets from a local file.
 
-1. Models: the key building blocks of all computations performed by this library
-2. Schemas: the definitions of all the model inputs and outputs, data requirements, and configurations
-3. Data: the tooling to pull in and transform any external data into formats usable by the library
-4. Utilities: helpers for connecting to APIs, visualizing outputs, and constructing inspect able and interactive interfaces
-5. App: the application runner for configuring and starting the modeling application
+Once you have finalized or updated the configuration above, click **Run Model** to generate new results and display summary tables that show aggregated cost statistics across the schools of interest. 
 
-### Models
+The final section below show electricity avaibility and costs. For additional visualizations, download your results and see the [drilldown notebook](notebooks/results-drilldown.ipynb).
+Click **Download Results** to save model results locally on your computer.
 
-All modeling capabilities are defined within `giga/models`. The models are further broken down into the following categories:
+### Scenarios
 
-* Nodes: atomic, modular building blocks that contain a computation, transformation, or external data
-* Components: stacks nodes together with a clear and specific purpose (e.g. use case driven - compute cost of fiber connection) prepares the models to join into the entities that solve a specific problem
-* Scenarios: drives the computation by piecing together multiple components and solving a specific problem by deriving a key result. Allows same components to serve multiple purposes: e.g. answer the questions of what is the cost of connecting all schools in Rwanda to the internet? VS If there is a budget of $10M which schools should be connected to maximize the number of students with internet access?
+The following scenarios are available in the model:
+
+- `Lowest Cost`: determines the lowest cost of connectivity for the schools in question by selecting across the available and feasible technologies
+- `Budget Constrained`: computes the minimum cost under a constrained budget. When this scenario is selected, the models will attempt to connect the maximum number of schools within the given budget. The budget constraint is set with respect to the total NPV of the schools in question
+- `Fiber Only`: computes the total cost of connecting all the unconnected schools with fiber technology
+- `Satellite Only`: computes the total cost of connecting all the unconnected schools with satellite technology
+- `Cellular Only`: computes the total cost of connecting all the unconnected schools with cellular technology
+- `P2P Only`: computes the total cost of connecting all the unconnected schools with P2P technology
+
+### Parameters
+
+The following parameters can be configured in the model:
+
+* **Scenario**
+    * `Cost Scenario` determines which scenario to estimate costs for; either `Minimum Cost` which finds the cheapest technology can be selected, or an individual technology can be selected which will find the costs for just that technology
+    * `OpEx Years` determines the number of years that will be considered in the total cost estimates, where total cost is CapEx + OpEx * `OpEx Years`
+    * `Bandwidth Demand (Mbps)` determines the expected demand at each school being considered
+    * `Project Budget (Millions USD)` sets the maximum budget for the connectivity project being analyzed, this budget is for the NPV of the project
+* **Fiber Model**
+    * `Annual cost per Mbps (USD)`: the annual cost of connectivity per Mbps in US Dollars
+    * `Cost Per km (USD)` is the average cost of laying fiber lines per km in US Dollars
+    * `Maintenance Cost per km (USD)` is the expected annual maintenace cost of new fiber lines in US Dollars
+    * `Maximum Connection Length (km)` is the maximum length of an individual fiber connection, if a single fiber connection exceeds this length, it will not be considered feasible
+    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
+    * `Economies of Scale` indicates if an economies of scale approach should be used when estimating the needed length of fiber lines
+* **Satellite Model**
+    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
+    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
+    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
+    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
+* **Cellular Model**
+    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
+    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
+    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
+    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
+    * `Maximum Cell Tower Range (km)` is the maximum distance from a cell tower that a school can receive internet service
+* **P2P Model**
+    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
+    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
+    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
+    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
+    * `Maximum  Range (km)` is the maximum distance from a cell tower that a school can receive internet service
+* **Electricity Model**
+    * `Cost per kWh (USD)` is the expected average cost of electricity for the schools considered in US Dollars
+    * `Solar Panel Install Cost (USD)` is the average cost of installing solar panels for the schools considered in US Dollars
+
+---
+
+## Results Drilldown
+
+The [results drilldown notebook](notebooks/results-drilldown.ipynb) allows you to upload the result of a previous model run and visualize/down-select results.
+
+---
+
+## Driver Notebooks
+
+In addition to the [cost estimation](notebooks/cost-scenario.ipynb), [model validation](notebooks/model-validation.ipynb), and [results drilldown](notebooks/results-drilldown.ipynb) notebooks, the following "driver" notebooks can also be accessed:
+
+* [Model Components](notebooks/drivers/component-drivers.ipynb): demonstrates how key model components can be initialized and run
+* [Fiber Model](notebooks/drivers/fiber-model.ipynb): demonstrates how to initialize and run the key nodes in the fiber model
+* [Line-of-Sight Model](notebooks/drivers/Line-of-Sight.ipynb): demonstrates how to calculate line-of-sight between entities
+
+---
+
+## Model Details
 
 Each of the connectivity models is briefly described below.
 For more details please see [here](docs/models.md).
@@ -62,216 +121,8 @@ The cost models are the following:
 * **P2P Model**: asses the cost of connectivity using point to point wireless technology. CapEx considers infrastructure costs of installing a transmitted at a cell tower, modem/terminal installation costs at school and solar installation if needed. OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
 * **Satellite Model**: asses the cost of connectivity using LEO satellite. CapEx considers terminal installation at school and solar installation if needed. OpEx considers maintenance of equipment at school, costs of internet at the school, and electricity costs.
 
-### Architectural Overview
+All modeling capabilities are defined within `giga/models`. The models are further broken down into the following categories:
 
-The architecture of the modeling library can be found [here](docs/arch.md).
-It describes the key parts of the library - namely those used for configuration, data aggregation, and modeling execution.
-
-### Data
-
-To generate a school dataset for a given country, we can use the API client in the library that can fetch school data from the project connect API - spec can be found [here](https://uni-connect-services-dev.azurewebsites.net/api/v1/#/School/get_api_v1_schools_country__country_id_).
-The client can fetch school data by specified country, currently `Brazil` and `Rwanda` are supported.
-The number of schools in a given country isn't available through the API and has be determined dynamically.
-The default request parameters should fetch all the schools for the two countries above in a single request.
-
-```python
-client = GigaAPIClient(token) # auth token provisioned by Giga
-
-country = 'Brazil'
-schools = client.get_schools(country) # ~141,000 schools available for Brazil
-```
-
-To create a table of the schools after they've been fetched from the project connect API:
-```python
-from giga.schemas.school import GigaSchoolTable
-
-table = GigaSchoolTable(schools=schools)
-
-# to reduce the data to a table of just lat/lon coordinates
-coordinate_table = table.to_coordinates()
-```
-
-## Lint
-
-To run a `flake8` lint check that checks against the PEP 8 standard you can:
-
-```bash
-./dev lint
-```
-
-To autoformat code that is non PEP 8 compliant run:
-
-```bash
-./dev format
-```
-
-## Adding a New Country
-
-The library provides a number of helpers to add new countries that can be supported in the models.
-There are a few steps that need to be completed in order to do this. 
-
-1. Determine the default cost drivers for the country, and the code for the country that can be used with Project Connect APIs. Create a json file that has these parameters, see [here](conf/countries/rwanda.json) for an example of how to structure this file.
-2. To drive the models, you need additional data for this country: electricity (optional), fiber node data, cellular tower data. You can find the format for these in the sub-sections below. Aggregate the data that you will need and place it in the workspace for this country.
-3. You can add a new country by using the CLI as follows:  `./run add-new-country <your-country-parameters.json> <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN>`. This will register the country and make it available to the library models, fetch the most up to date school data for that country, merge that data with any existing workspace data like electricity data, and create a cache for schools and infrastructure data
-4. Synchronize the new country data with remote storage, the current CLI is setup to work with an object store called Google Cloud Store, where all the workspace blobs/artifacts are persisted and updated using `./run upload-workspace <path-to-country-workspace>`
-5. You are all set! After the updated version of the application has been re-deployed, the new country will be available to run models against 
-
-Note that step 3 above combines multiple commands into a single executable for simplicity.
-If you want to run each of these commands separately see the [Appendix](#appendix) for more information.
-
-For more information on how you can use the `run` CLI, see the descriptions below (to generate the help text, execute `./run` from command line without any input arguments, see [here](run#L53) for the description):
-
-```
-  upload-workspace <workspace-dir> 				Copies the data workspace from the specified target directory to a storage bucket
-  fetch-workspace <workspace-dir> 				Copies the data workspace from a storage bucket to the specified target directory
-  register-country <parameter-file> 				Registers a new country in the modeling library
-  fetch-school-data <workspace> <api-key> <country> 		Pulls up to date school data from Project Connect APIs
-  create-cache <workspace> 					Creates a cache of pairwise distances that can be used by the models
-  add-new-country <parameter-file> <workspace> <api-key> 	Registers country, pulls school data, creates cache
-  remove-country <parameter-file> 				Removes a country from the modeling library
-```
-
-### Electricity Data
-
-Electricity data is currently not available through Project Connect APIs, and is thus managed independently.
-If you know the electricity status of the schools in your country of interest, you can populate the workspace with a .csv table that contains entries of the following form:
-
-| Field         | Type          | Description                   |
-| ------------- | ------------- | ----------------------------- |
-| giga_id_school | str           | Unique school identifier |
-| has_electricity    | bool   | Whether the school has electricity   |
-
-If no electricity data is provided all schools will be assumed to not have electricity.
-
----
-
-### Fiber Node Data
-
-Fiber nodes for a country can be specified as unique coordinates using the schema below in a csv table of the countries' workspace:
-
-
-| Field         | Type          | Description                   |
-| ------------- | ------------- | ----------------------------- |
-| coordinate_id | str           | Unique coordinate identifier |
-| coordinate    | LatLonPoint   | Latitude and longitude point  |
-| properties    | json (optional) | Additional properties         |
-
----
-
-### Cell Tower Data
-
-Cell tower data for a country can be specified using the schema below in a csv table of the countries' workspace:
-
-| Field        | Type                     | Description                      |
-| ------------ | ------------------------ | -------------------------------- |
-| tower_id     | str                      | Unique tower identifier          |
-| operator     | str                      | Cellular tower operator          |
-| outdoor      | bool                     | Whether the tower is outdoor     |
-| lat          | float                    | Latitude of the tower            |
-| lon          | float                    | Longitude of the tower           |
-| height       | float                    | Height of the tower              |
-| technologies | List[CellTechnology]     | List of supported technologies [2G, 3G, 4G, LTE] |
-
----
-
-
-## Deployment
-
-To build the model container and re-deploy the notebook cluster simply run:
-
-```bash
-./stack up
-```
-
-To stop the cluster and clear resources run:
-
-```bash
-./stack down
-```
-
-Please note, you will need to have authenticated with GCP CLI and have k8s context referencing the right GKE cluster. 
-For more details on this see below. 
-
-### Cluster Details
-
-Notebooks are deployed as a standalone application using [JupyterHub](https://jupyter.org/hub).
-These notebooks allow users to interact with the giga models through an interactive dashboard and to visualize/plot the model outputs through a streamlined interfaces.
-
-[Helm](https://helm.sh/) is used to manage the deployment - find the existing jupyterhub helm chart [here](https://artifacthub.io/packages/helm/jupyterhub/jupyterhub).
-The deployment configuration for this chart can be found in `deployment/values/prod.yaml`.
-The following configurations are managed with a custom configuration:
-1. The base notebook container used in the deployment that includes the models
-2. The authentication mechanism for users to access jupyterhub - auth0 is currently used
-
-
-### Deployment Workflow
-Please note that the workflow is currently manually managed with the CLI explained below.
-The full deployment workflow looks as follows, which can all be managed with the `stack` CLI: 
-1. Authenticate with GCP by running `./stack auth`. This will also configure the credentials for the GKE cluster to which jupyterhub is deployed
-2. Create a Docker image for the models, you can use the CLI in the root dir: `./stack create-image`
-3. Push the image to Actual's docker registry: `./stack push-image`
-4. Update or launch a new instance of the cluster with `./stack launch` 
-
-### Updating the Cluster + Local Testing
-
-You can stop the jupyterhub cluster by running `./stack stop`.
-If you need to update the single user image, you can rebuild it using the CLI above.
-You can interact with the single user container locally by running `./stack start-container <local-workspace>`.
-
-### GCP and Auth0 Configurations
-
-Configuring the deployment is done in two places, the `stack` CLI and the deployment manifest of helm values.
-Most of the GCP specific deployment parameters are defined in the stack CLI, the ones of interest are the following:
-
-* The container registry, which is where all the built docker containers are pushed to and pulled from, see [here](stack#L6)
-* The cluster name, which points to the k8s cluster running the deployment, see [here](stack#L12)
-* The auth configuration is managed entirely inside of our deployment manifest, see [here](deployment/helm/prod.yaml#L31)
-
-Migrating to a different cloud provider or a different auth system would require updating these parameters.
-
-## CLI
-
-The library exposes the following CLI, each with a different purpose.
-
-For local development, the `./dev` CLI can be used with the following sub-commands:
-
-```
-  build					Builds the modeling environment locally
-  start-notebook		        Start a jupyterlab notebook server locally
-  test					Runs the unit test suite
-  lint					Runs a flake8 lint check against PEP 8
-  format				Modifies non PEP 8 compliant code to be style compliant
-  clean-notebook <notebook-path> 	Removes rendered html from jupyter notebooks
-```
-
-For managing deployments, the `./stack` CLI can be used with the following sub-commands:
-
-```
-  up 						        Deploys the notebook stack to a k8s cluster
-  down 						        Tears down the notebook stack
-  install 					        Install minikube, helm, etc.
-  auth 						        Authenticate with GCP
-  create-image 					        Builds docker image for off-platform models
-  push-image 					        Pushes model docker image to a remote registry
-  start-container <workspace-dir> 	                Launches a Docker container and mounts a workspace directory to it
-  launch  					        Launches jupyterhub on a kubernetes cluster using helm
-  stop  					        Stops the jupyterhub deployment
-  reset-password  <user-email> 		                Sends a password reset email for notebook user
-```
-
-For running the models and relevant data pipelines, the `./run` CLI can be used with the following sub-commands:
-
-```
-  upload-workspace <workspace-dir> 			Copies the data workspace from the specified target directory to a storage bucket
-  fetch-workspace <workspace-dir> 			Copies the data workspace from a storage bucket to the specified target directory
-```
-
-## Appendix
-
-The individual steps for registering a new country can be found below.
-These steps are combined in the command: `./run add-new-country <your-country-parameters.json> <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN>`.
-
-1. Register the country using the CLI: `./run register-country <your-country-parameters.json>`
-2. Now the country is registered and will be available to the models. However, to drive the models, you need additional data for this country: electricity (optional), fiber node data, cellular tower data. You can find the format for these in the sub-sections below. Aggregate the data that you will need and place it in the workspace for this country.
-3. Generate the most up to date school dataset for this country by using the CLI: `./run fetch-school-data <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN> <country-name>`
-4. [OPTIONAL] If you would like, create a cache for the schools and infrastructure data that can be used to improve compute times in the models by using the CLI: `./run create-cache <path-to-country-workspace>`
+* Nodes: atomic, modular building blocks that contain a computation, transformation, or external data
+* Components: stacks nodes together with a clear and specific purpose (e.g. use case driven - compute cost of fiber connection) prepares the models to join into the entities that solve a specific problem
+* Scenarios: drives the computation by piecing together multiple components and solving a specific problem by deriving a key result. Allows same components to serve multiple purposes: e.g. answer the questions of what is the cost of connecting all schools in Rwanda to the internet? VS If there is a budget of $10M which schools should be connected to maximize the number of students with internet access?
