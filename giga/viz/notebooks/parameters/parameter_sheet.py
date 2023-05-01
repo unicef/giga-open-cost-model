@@ -8,7 +8,7 @@ from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
 CELL_STYLE_UPDATED_DEFAULT = """
 .off-default-cell-background-color {
-    background-color: rgba(222, 67, 95, 0.25);
+    background-color: rgba(242, 228, 102, 0.65);
     margin: 0px;
 }
 """

@@ -51,6 +51,17 @@ class ModelDataSpace:
         return self._all_schools
 
     @property
+    def schools_with_fiber_coordinates(self):
+        """
+        Accessor to fiber school coordinates - a subset of the schools that are connected to fiber infrastrucutre
+        """
+        fiber_schools = [s for s in self.all_schools.schools if s.has_fiber]
+        if len(fiber_schools) > 0:
+            return GigaSchoolTable(schools=fiber_schools).to_coordinates()
+        else:
+            return []
+
+    @property
     def school_coordinates(self):
         """
         Accessor for school coordinates - id, lat, lot information

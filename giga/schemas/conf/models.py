@@ -1,6 +1,8 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, FilePath
 from typing import List, Literal, Union
 import math
+
+METERS_IN_KM = 1_000.0
 
 
 class ElectricityCapexConf(BaseModel):
@@ -120,7 +122,7 @@ TechnologyConfiguration = Union[
     FiberTechnologyCostConf,
     SatelliteTechnologyCostConf,
     CellularTechnologyCostConf,
-    P2PTechnologyCostConf
+    P2PTechnologyCostConf,
 ]
 
 
@@ -171,3 +173,29 @@ class MinimumCostScenarioConf(BaseModel):
     @validator("cost_minimizer_config", always=True)
     def validate_minimizer_conf(cls, value, values):
         return CostMinimizerConf(years_opex=values["years_opex"])
+
+
+class SATSolverConf(BaseModel):
+    """
+    Configuration for the SAT solver
+    """
+
+    budget: int = 0  # $
+    cost_per_km: float = 0.0  # $/km
+    time_limit: int = 600  # seconds
+    do_hints: bool = False
+    num_workers: int = 16
+    search_log: bool = False
+    load_relational_graph_path: FilePath = None
+    write_relational_graph_path: FilePath = None
+
+    @property
+    def cost_per_m(self):
+        # convert cost per km to cost per m for SAT solver
+        # round up to ensure that we don't underestimate the cost
+        return math.ceil(self.cost_per_km / METERS_IN_KM)
+
+
+class SATMinimumCostScenarioConf(MinimumCostScenarioConf):
+
+    sat_solver_config: SATSolverConf
