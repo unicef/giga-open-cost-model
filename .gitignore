@@ -173,6 +173,7 @@ poetry.toml
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
+notebooks/workspace
 notebooks/sample_workspace
 # Ignore the entire parameter_workspace directory
 notebooks/parameter_workspace/*

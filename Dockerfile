@@ -14,14 +14,10 @@ WORKDIR /app
 
 RUN conda install -c conda-forge gxx jupyterlab ipywidgets gdal
 
-RUN mkdir /app/models
-RUN mkdir /app/notebooks
-COPY . /app/models
-COPY notebooks /app/notebooks
-# cleanup a duplicate of notebooks directory
-RUN rm -rf /app/models/notebooks
+# Create a duplicate in /app
+COPY . /app
 
-RUN pip install -e /app/models
+RUN pip install -e /app
 
 RUN chown -R ${NB_UID}:${NB_GID} /app
 USER ${NB_UID}
