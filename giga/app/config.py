@@ -6,6 +6,9 @@ from typing import List
 from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 
 
+SKIP_IN_DEPLOYMENT = ["sample"]
+
+
 def get_registered_countries(directory: str) -> None:
     countries = []
     for root, _, filenames in os.walk(directory):
@@ -14,9 +17,9 @@ def get_registered_countries(directory: str) -> None:
     return countries
 
 
-def get_registered_country_names(default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE):
+def get_registered_country_names(default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE, skip=SKIP_IN_DEPLOYMENT):
     countries = get_registered_countries(default_parameter_dir)
-    return [c.replace("_", " ").title() for c in countries]
+    return [c.replace("_", " ").title() for c in countries if c not in skip]
 
 
 def get_country_defaults(

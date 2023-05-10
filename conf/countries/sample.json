@@ -66,8 +66,8 @@
         },
         "p2p": {
             "capex": {
-                "fixed_costs": 500.0,
-                "tower_fixed_costs": 500.0
+                "fixed_costs": 2000.0,
+                "tower_fixed_costs": 2500.0
             },
             "opex": {
                 "fixed_costs": 0.0,

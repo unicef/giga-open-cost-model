@@ -12,7 +12,7 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "value": 0.10,
             "min": 0,
             "max": 1,
-            "step": 0.01,
+            "step": 0.001,
             "show_default": True,
         },
     },
@@ -24,7 +24,7 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "value": 10_000,
             "min": 0,
             "max": 30_000,
-            "step": 100,
+            "step": 1,
             "show_default": True,
         },
     },
@@ -56,6 +56,12 @@ class ElectricityParameterManager:
 
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
+
+    def freeze(self):
+        self.sheet.freeze()
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
 
     def get_model_parameters(self):
         cost_per_kwh = float(self.get_parameter_from_sheet("per_kwh_cost"))

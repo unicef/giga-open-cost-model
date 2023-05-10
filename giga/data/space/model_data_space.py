@@ -193,4 +193,7 @@ class ModelDataSpace:
             for c in self.school_coordinates
         }
         geometry = [Point(lookup[sid]) for sid in outputs["school_id"]]
-        return gpd.GeoDataFrame(outputs, crs="4326", geometry=geometry)
+        df = gpd.GeoDataFrame(outputs, crs="4326", geometry=geometry).reset_index()
+        df['lat'] = df['geometry'].apply(lambda x: x.coords[0][1])
+        df['lon'] = df['geometry'].apply(lambda x: x.coords[0][0])
+        return df

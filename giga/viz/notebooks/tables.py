@@ -177,7 +177,6 @@ def display_summary_table(output_space, data_space):
             f"<b><font color='#2a2d30'>Total Costs: {value_to_dollar_format(total_costs)}</b><hr><hr>"
         )
     )
-    display(HTML("<b><font color='#5b8ff0'>Cost Breakdown</b>"))
 
 
 def plot_cost_breakdown(output_space, data_space, border):

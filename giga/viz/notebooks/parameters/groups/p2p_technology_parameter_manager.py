@@ -10,10 +10,10 @@ P2P_MODEL_PARAMETERS = [
         "parameter_input_name": "School Endpoint Installation Cost (USD)",
         "parameter_interactive": {
             "parameter_type": "int_slider",
-            "value": 500,
+            "value": 2_000,
             "min": 0,
-            "max": 2_500,
-            "step": 10,
+            "max": 5_000,
+            "step": 1,
             "show_default": True,
         },
     },
@@ -22,10 +22,10 @@ P2P_MODEL_PARAMETERS = [
         "parameter_input_name": "Tower Endpoint Installation Cost (USD)",
         "parameter_interactive": {
             "parameter_type": "int_slider",
-            "value": 500,
+            "value": 2_500,
             "min": 0,
-            "max": 2_500,
-            "step": 10,
+            "max": 5_000,
+            "step": 1,
             "show_default": True,
         },
     },
@@ -112,6 +112,12 @@ class P2PTechnologyParameterManager:
 
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
+
+    def freeze(self):
+        self.sheet.freeze()
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
 
     def get_model_parameters(self):
         annual_cost_per_mbps = float(

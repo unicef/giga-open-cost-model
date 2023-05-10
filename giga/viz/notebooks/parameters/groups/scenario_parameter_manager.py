@@ -10,7 +10,7 @@ from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
 SCENARIO_BASE_PARAMETERS = [
     {
-        "parameter_name": "scenario_tpye",
+        "parameter_name": "scenario_type",
         "parameter_input_name": "Cost Scenario",
         "parameter_interactive": {
             "parameter_type": "categorical_dropdown",
@@ -119,7 +119,7 @@ class ScenarioParameterManager:
             for p in base_parameters
         }
         # link the scenario to the budget
-        scenario_type = self._hash["scenario_tpye"]
+        scenario_type = self._hash["scenario_type"]
         budget_constraint = self.sheet.get_interactive_parameter("budget_constraint")
         directional_link(
             (scenario_type, "value"),
@@ -128,7 +128,7 @@ class ScenarioParameterManager:
         )
 
     def update_parameters(self, config):
-        self._hash["scenario_tpye"].value = get_scenario_type(config)
+        self._hash["scenario_type"].value = get_scenario_type(config)
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
         try:
@@ -155,9 +155,17 @@ class ScenarioParameterManager:
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
 
+    def freeze(self):
+        self.sheet.freeze()
+        self._hash["scenario_type"].disabled = True
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
+        self._hash["scenario_type"].disabled = False
+
     def get_model_parameters(self):
         base_parameters = {
-            "scenario_type": self._hash["scenario_tpye"].value,
+            "scenario_type": self._hash["scenario_type"].value,
             "opex_responsible": "Consumer",  # s["opex_responsible"].value,
         }
         years_opex = float(self.get_parameter_from_sheet("years_opex"))
