@@ -1,3 +1,4 @@
+import os
 from typing import List
 from pydantic import BaseModel
 import plotly.graph_objs as go
@@ -6,12 +7,16 @@ import plotly.graph_objs as go
 from giga.data.space.model_data_space import ModelDataSpace
 
 
+MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
+
+
 class DataMapConfig(BaseModel):
 
     width: int = 1050
     height: int = 600
     zoom: int = 7
-    style: str = "carto-darkmatter"
+    style_default: str = "carto-darkmatter"
+    style_mapbox: str = "dark"
     legend_x: float = 0.05
     legend_y: float = 0.95
     legend_bgcolor: str = "#262624"
@@ -33,6 +38,12 @@ class StaticDataMap:
             self.add_layer(l)
 
     def get_map(self, center: List[float], **kwargs):
+        style = (
+            self.config.style_default
+            if MAP_BOX_ACCESS_TOKEN == ""
+            else self.config.style_mapbox
+        )
+        token = None if MAP_BOX_ACCESS_TOKEN == "" else MAP_BOX_ACCESS_TOKEN
         self.fig.update_layout(
             autosize=False,
             width=self.config.width,  # Adjust the width of the map
@@ -41,7 +52,8 @@ class StaticDataMap:
             mapbox=dict(
                 center=dict(lat=center[0], lon=center[1]),
                 zoom=self.config.zoom,
-                style=self.config.style,
+                style=style,
+                accesstoken=token,
                 uirevision=False,
             ),
             margin=dict(l=0, r=0, t=0, b=0),
@@ -54,6 +66,8 @@ class StaticDataMap:
                 bordercolor=self.config.legend_border_color,
                 borderwidth=self.config.legend_border_width,
             ),
+            xaxis=dict(showticklabels=False),
+            yaxis=dict(showticklabels=False),
             **kwargs,
         )
         return self.fig

@@ -82,6 +82,12 @@ class IntSliderParameter(BaseParameter):
 
         self.parameter.observe(update_background, names="value")
 
+    def freeze(self):
+        self.slider.disabled = True
+
+    def unfreeze(self):
+        self.slider.disabled = False
+
 
 class FloatSliderParameter(BaseParameter):
 
@@ -129,7 +135,7 @@ class FloatSliderParameter(BaseParameter):
 
     def set_off_default_css_style(self, style_class: str):
         def update_background(change):
-            if not np.isclose(self.value, self.slider.value, rtol=0.1):
+            if not np.isclose(self.value, self.slider.value, atol=self.step / 2):
                 # change background color
                 self.parameter.add_class(style_class)
                 self.default_label.add_class(style_class)
@@ -138,6 +144,12 @@ class FloatSliderParameter(BaseParameter):
                 self.default_label.remove_class(style_class)
 
         self.parameter.observe(update_background, names="value")
+
+    def freeze(self):
+        self.slider.disabled = True
+
+    def unfreeze(self):
+        self.slider.disabled = False
 
 
 class BoolCheckboxParameter(BaseParameter):
@@ -148,11 +160,23 @@ class BoolCheckboxParameter(BaseParameter):
 
     value: bool
     description: str
+    checkbox: Checkbox = None
     parameter_type: Literal["bool_checkbox"]
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def parameter(self):
-        return Checkbox(value=self.value, description=self.description)
+        if self.checkbox is None:
+            self.checkbox = Checkbox(value=self.value, description=self.description)
+        return self.checkbox
+
+    def freeze(self):
+        self.parameter.disabled = True
+
+    def unfreeze(self):
+        self.parameter.disabled = False
 
 
 class CategoricalDropdownParameter(BaseParameter):
@@ -164,19 +188,31 @@ class CategoricalDropdownParameter(BaseParameter):
     options: List[str]
     value: str
     description: str
+    dropdown: Dropdown = None
     parameter_type: Literal["categorical_dropdown"]
     layout: Dict = {"width": "400px"}
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @property
     def parameter(self):
-        return Dropdown(
-            options=self.options,
-            value=self.value,
-            disabled=False,
-            description=self.description,
-            layout=Layout(**self.layout),
-            style={"description_width": "initial"},
-        )
+        if self.dropdown is None:
+            self.dropdown = Dropdown(
+                options=self.options,
+                value=self.value,
+                disabled=False,
+                description=self.description,
+                layout=Layout(**self.layout),
+                style={"description_width": "initial"},
+            )
+        return self.dropdown
+
+    def freeze(self):
+        self.parameter.disabled = True
+
+    def unfreeze(self):
+        self.parameter.disabled = False
 
 
 InputParameter = Union[

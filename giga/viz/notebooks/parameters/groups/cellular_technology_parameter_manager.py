@@ -37,7 +37,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "value": 0,
             "min": 0,
             "max": 1_000,
-            "step": 10,
+            "step": 1,
             "show_default": True,
         },
     },
@@ -49,7 +49,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "value": 10,
             "min": 0,
             "max": 100,
-            "step": 10,
+            "step": 1,
             "show_default": True,
         },
     },
@@ -57,11 +57,11 @@ CELLULAR_MODEL_PARAMETERS = [
         "parameter_name": "maximum_range",
         "parameter_input_name": "Maximum Cell Tower Range (km)",
         "parameter_interactive": {
-            "parameter_type": "int_slider",
+            "parameter_type": "float_slider",
             "value": 8,
             "min": 0,
             "max": 25,
-            "step": 1,
+            "step": 0.1,
             "show_default": True,
         },
     },
@@ -97,6 +97,12 @@ class CellularTechnologyParameterManager:
 
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
+
+    def freeze(self):
+        self.sheet.freeze()
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
 
     def get_model_parameters(self):
         annual_cost_per_mbps = float(

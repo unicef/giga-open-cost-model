@@ -8,7 +8,7 @@ from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
 CELL_STYLE_UPDATED_DEFAULT = """
 .off-default-cell-background-color {
-    background-color: rgba(242, 228, 102, 0.65);
+    background-color: rgba(255, 227, 201, 0.95);
     margin: 0px;
 }
 """
@@ -98,3 +98,11 @@ class ParameterSheet:
             return self.sheet
         else:
             return self.sheet
+
+    def freeze(self):
+        for p in self.interactive_parameters:
+            p.freeze()
+
+    def unfreeze(self):
+        for p in self.interactive_parameters:
+            p.unfreeze()

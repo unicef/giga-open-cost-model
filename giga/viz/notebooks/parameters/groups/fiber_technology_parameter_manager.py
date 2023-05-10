@@ -111,6 +111,12 @@ class FiberTechnologyParameterManager:
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
 
+    def freeze(self):
+        self.sheet.freeze()
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
+
     def get_model_parameters(self):
         cost_per_km = float(self.get_parameter_from_sheet("cost_per_km"))
         annual_cost_per_mbps = float(

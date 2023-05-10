@@ -45,6 +45,7 @@ from giga.viz.notebooks.parameters.groups.p2p_technology_parameter_manager impor
 from giga.viz.notebooks.parameters.groups.electricity_parameter_manager import (
     ElectricityParameterManager,
 )
+import giga.viz.notebooks.components.html.pages as giga_html
 
 # TODO: these are for maps, separate them out into unique UI component
 from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
@@ -90,6 +91,7 @@ UPLOADED_DATA_SPACE_PARAMETERS = [
 
 UPLOAD_SUFFIX = "_upload"
 SHOW_MAP = False  # temporary flag to show/hide map
+
 
 def country_name_to_key(country_name):
     return country_name.lower().replace(" ", "_")
@@ -170,6 +172,7 @@ class CostEstimationParameterInput:
                 self.satellite_parameter_manager,
                 self.cellular_parameter_manager,
                 self.p2p_parameter_manager,
+                self.electricity_parameter_manager,
             ],
         }
         # link country selection to default parameters for that country
@@ -210,7 +213,7 @@ class CostEstimationParameterInput:
                 config_map = DataMapConfig(zoom=3)
                 data_map = StaticDataMap(config_map)
                 data_map.add_layers(
-                    [map_layers.school_layer, map_layers.fiber_layer]
+                    map_layers.layers_no_cell
                 )  # ignore cell tower layer for now
                 m = data_map.get_map(self.defaults[country].data.country_center_tuple)
             else:
@@ -292,10 +295,6 @@ class CostEstimationParameterInput:
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
             )
 
-    def get_update_country_cb(self):
-
-        return fn
-
     def data_parameters_input(self, sheet_name="data"):
         return self.data_parameter_manager.input_parameters()
 
@@ -341,6 +340,16 @@ class CostEstimationParameterInput:
     def dashboard_parameters(self, sheet_name="dashboard"):
         verbose = self.dashboard_parameter_manager.get_parameter_value("verbose")
         return {"verbose": verbose}
+
+    def freeze(self):
+        for manager_collection in self.managers.values():
+            for m in manager_collection:
+                m.freeze()
+
+    def unfreeze(self):
+        for manager_collection in self.managers.values():
+            for m in manager_collection:
+                m.unfreeze()
 
     def scenario_parameters(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()
@@ -448,7 +457,7 @@ class CostEstimationParameterInput:
             config_map = DataMapConfig(zoom=3)
             data_map = StaticDataMap(config_map)
             data_map.add_layers(
-                [map_layers.school_layer, map_layers.fiber_layer]
+                map_layers.layers_no_cell
             )  # ignore cell tower layer for now
             m = data_map.get_map(self.defaults[country].data.country_center_tuple)
         else:
@@ -466,23 +475,31 @@ class CostEstimationParameterInput:
         data_map = self.data_map() if self.show_map else HTML()
         return VBox(
             [
-                HTML(value="<hr><b>Country Selection</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Country Selection</b>"),
                 self.data_parameters_input(),
                 data_map,
-                HTML(value="<hr><b>Scenario Selection</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Scenario Selection</b>"),
                 self.scenario_parameter_input(),
-                HTML(value="<hr><b>Fiber Model Configuration</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Fiber Model Configuration</b>"),
                 self.fiber_parameter_manager.input_parameters(),
-                HTML(value="<hr><b>Satellite - LEO Model Configuration</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Satellite - LEO Model Configuration</b>"),
                 self.satellite_parameters_input(),
-                HTML(value="<hr><b>Cellular Model Configuration</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Cellular Model Configuration</b>"),
                 self.cellular_parameters_input(),
-                HTML(value="<hr><b>P2P Model Configuration</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>P2P Model Configuration</b>"),
                 self.p2p_parameters_input(),
-                HTML(value="<hr><b>Electricity Model Configuration</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Electricity Model Configuration</b>"),
                 self.electricity_parameters_input(),
-                HTML(value="<hr><b>Dashboard Configuration</b>"),
+                giga_html.section_separator,
+                HTML(value="<b>Dashboard Configuration</b>"),
                 self.dashboard_parameters_input(),
-                HTML(value="<hr>"),
+                giga_html.section_separator,
             ]
         )

@@ -20,6 +20,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
     }
 ]
 
+
 def country_name_to_key(country_name):
     return country_name.lower().replace(" ", "_")
 
@@ -50,9 +51,13 @@ class DataParameterManager:
         # specaial handling for scenario type in base parameters
         return VBox(list(self._hash.values()))
 
+    def freeze(self):
+        self.interactive_country_parameter.disabled = True
+
+    def unfreeze(self):
+        self.interactive_country_parameter.disabled = False
+
     def get_model_parameters(self):
         country_id = country_name_to_key(self._hash["country_name"].value)
-        config = ConfigClient.from_registered_country(
-            country_id, self.workspace
-        )
+        config = ConfigClient.from_registered_country(country_id, self.workspace)
         return config.local_workspace_data_space_config

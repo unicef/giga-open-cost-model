@@ -81,6 +81,12 @@ class SatelliteTechnologyParameterManager:
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
 
+    def freeze(self):
+        self.sheet.freeze()
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
+
     def get_model_parameters(self):
         annual_cost_per_mbps = float(
             self.get_parameter_from_sheet("annual_bandwidth_cost_per_mbps")

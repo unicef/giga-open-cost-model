@@ -82,6 +82,12 @@ class SATSolverParameterManager:
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)
 
+    def freeze(self):
+        self.sheet.freeze()
+
+    def unfreeze(self):
+        self.sheet.unfreeze()
+
     def get_model_parameters(self, budget: float = 0.0, cost_per_km: float = 0.0):
         time_limit = int(self.get_parameter_from_sheet("time_limit"))
         num_workers = int(self.get_parameter_from_sheet("num_workers"))

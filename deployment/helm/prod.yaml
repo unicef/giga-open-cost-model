@@ -385,7 +385,8 @@ singleuser:
   extraLabels:
     hub.jupyter.org/network-access-hub: "true"
   extraFiles: {}
-  extraEnv: {}
+  extraEnv:
+    MAP_BOX_ACCESS_TOKEN: ""
   lifecycleHooks: {}
   initContainers: []
   extraContainers: []
@@ -419,7 +420,7 @@ singleuser:
   image:
     # Actual config: single user image for notebook containers
     name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/notebooks
-    tag: "0.3.2"
+    tag: "0.3.3"
     pullPolicy: Always
     pullSecrets: []
   startTimeout: 300
