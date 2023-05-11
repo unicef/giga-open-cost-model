@@ -153,6 +153,21 @@ class MapDataLayers:
         )
 
     @property
+    def cell_tower_layer_mb_empty(self):
+        if self._cell_towers is None:
+            self._cell_towers = self.data_space.cell_tower_map.to_data_frame()
+        return go.Scattermapbox(
+            name="Cell Tower",
+            lon=[None],
+            lat=[None],
+            mode="markers",
+            showlegend=False,
+            marker=go.scattermapbox.Marker(
+                symbol="square", size=3, color="gray", opacity=1, allowoverlap=True
+            ),
+        )
+
+    @property
     def cell_tower_layer_mb_legend(self):
         return go.Scatter(
             x=[None],

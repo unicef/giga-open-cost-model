@@ -26,11 +26,12 @@ CUSTOM_TEMPLATE = custom_template = {
 
 
 def make_cost_map(results):
-    map_costs = px.scatter_mapbox(
+    map_costs = px.density_mapbox(
         results,
         lat="lat",
         lon="lon",
-        color="capex_total",
+        z="total_cost",
+        radius=8,
         color_continuous_scale=px.colors.diverging.RdYlGn[
             ::-1
         ],  # Invert the RdYlGn scale for green-to-red

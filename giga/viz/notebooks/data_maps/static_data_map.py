@@ -1,13 +1,38 @@
 import os
-from typing import List
+from typing import List, Dict
 from pydantic import BaseModel
 import plotly.graph_objs as go
+import plotly.io as pio
+from ipywidgets import Layout, VBox
 
 
 from giga.data.space.model_data_space import ModelDataSpace
+from giga.viz.notebooks.data_maps.selection_map_data_layers import (
+    SelectionMapDataLayers,
+)
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
+
+
+class ModeBarConfig(BaseModel):
+    image_button_config: dict = {
+        "format": "svg",  # one of png, svg, jpeg, webp
+        "filename": "custom_image",
+        "height": 500,
+        "width": 700,
+        "scale": 1,  # Multiply title/legend/axis/canvas sizes by this factor
+    }
+    displayModeBar: bool = True
+    displaylogo: bool = False
+
+    @property
+    def config(self):
+        return {"toImageButtonOptions": self.image_button_config}
+
+    def set_jupyterlab(self):
+        pio.renderers["jupyterlab"].config["displayModeBar"] = self.displayModeBar
+        pio.renderers["jupyterlab"].config["displaylogo"] = self.displaylogo
 
 
 class DataMapConfig(BaseModel):
@@ -23,12 +48,17 @@ class DataMapConfig(BaseModel):
     legend_font_color: str = "white"
     legend_border_color: str = "#070807"
     legend_border_width: int = 1
+    mode_bar_config: ModeBarConfig = ModeBarConfig()
+    jupyterlab: bool = True
+    no_cell: bool = False
 
 
 class StaticDataMap:
     def __init__(self, config: DataMapConfig):
         self.config = config
-        self.fig = go.Figure()
+        if self.config.jupyterlab:
+            self.config.mode_bar_config.set_jupyterlab()
+        self.fig = go.FigureWidget()
 
     def add_layer(self, layer: go.Scattermapbox):
         self.fig.add_trace(layer)
@@ -71,3 +101,13 @@ class StaticDataMap:
             **kwargs,
         )
         return self.fig
+
+    def get_selection_map(
+        self, center: List[float], layers: SelectionMapDataLayers, **kwargs
+    ):
+        l = layers.layers_selection_no_cell if self.config.no_cell else layers.layers_selection
+        self.add_layers(l)
+        m = self.get_map(center)
+        layers.connect_school_layer_selection(m)
+        layout = Layout()  # add centering and other formatting here
+        return VBox([m, layers.school_selection_table], layout=layout)

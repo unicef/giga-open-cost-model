@@ -50,6 +50,10 @@ import giga.viz.notebooks.components.html.pages as giga_html
 # TODO: these are for maps, separate them out into unique UI component
 from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
 from giga.viz.notebooks.data_maps.static_data_map import StaticDataMap, DataMapConfig
+from giga.viz.notebooks.data_maps.selection_map_data_layers import (
+    SelectionMapDataLayers,
+    SelectionMapLayersConfig,
+)
 
 
 # NOTE: Interface is a work in progress - this will be updated as UX use cases solidify
@@ -91,6 +95,7 @@ UPLOADED_DATA_SPACE_PARAMETERS = [
 
 UPLOAD_SUFFIX = "_upload"
 SHOW_MAP = False  # temporary flag to show/hide map
+SCHOOL_SELECTION = False
 
 
 def country_name_to_key(country_name):
@@ -114,11 +119,16 @@ class CostEstimationParameterInput:
         p2p_parameter_manager=None,
         electricity_parameter_manager=None,
         show_map=SHOW_MAP,
+        school_selection=SCHOOL_SELECTION,
     ):
         self._hashed_sheets = {}
         self._hashed_data_layers = {}
         self.show_map = show_map
+        self.school_selection = school_selection
         self.map_output = Output(
+            layout=Layout(display="flex", justify_content="center")
+        )
+        self.selection_map_output = Output(
             layout=Layout(display="flex", justify_content="center")
         )
         self.workspace = local_data_workspace
@@ -202,12 +212,13 @@ class CostEstimationParameterInput:
         # link country selection to map output
         def update_map(change):
             self.map_output.clear_output()
+            self.selection_map_output.clear_output()
             country = country_name_to_key(change["new"])
             config_map = DataMapConfig()
             data_map = StaticDataMap(config_map)
             if country not in self._hashed_data_layers:
                 self._hashed_data_layers[country] = self._make_map_layer(country)
-            map_layers = self._hashed_data_layers[country]
+            map_layers, _ = self._hashed_data_layers[country]
             if country == "brazil":
                 # handle brazil as a one off for now
                 config_map = DataMapConfig(zoom=3)
@@ -224,8 +235,37 @@ class CostEstimationParameterInput:
             with self.map_output:
                 display(m)
 
+        def update_selection_map(change):
+            self.selection_map_output.clear_output()
+            country = country_name_to_key(change["new"])
+            if country not in self._hashed_data_layers:
+                self._hashed_data_layers[country] = self._make_map_layer(country)
+            if country == "brazil":
+                config_map = DataMapConfig(zoom=3, no_cell=True)
+            else:
+                config_map = DataMapConfig()
+            _, selection_layers = self._hashed_data_layers[country]
+            data_map = StaticDataMap(config_map)
+            m = data_map.get_selection_map(
+                self.defaults[country].data.country_center_tuple, selection_layers
+            )
+            with self.selection_map_output:
+                display(
+                    VBox(
+                        [
+                            HTML(
+                                value="To add multiple selections, select <b>Shift</b> when making new selections. To clear a selection, double-click it"
+                            ),
+                            m,
+                        ]
+                    )
+                )
+
         self.data_parameter_manager.interactive_country_parameter.observe(
             update_map, names="value"
+        )
+        self.data_parameter_manager.interactive_country_parameter.observe(
+            update_selection_map, names="value"
         )
 
     @property
@@ -408,6 +448,11 @@ class CostEstimationParameterInput:
                 conf.scenario_id = "budget_constrained"
             return conf
 
+    def get_selected_schools(self):
+        country = self.data_parameters().school_data_conf.country_id
+        _, selection_layer = self._hashed_data_layers[country]
+        return selection_layer.selected_schools
+
     def data_parameters_upload_input(self, sheet_name="data"):
         self._hashed_sheets[sheet_name + UPLOAD_SUFFIX] = {
             p["parameter_name"]: p["parameter_interactive"]
@@ -444,14 +489,18 @@ class CostEstimationParameterInput:
         config_client = ConfigClient(self.defaults[country_key])
         data_space = ModelDataSpace(config_client.local_workspace_data_space_config)
         config_layers = MapLayersConfig()
-        return MapDataLayers(data_space, config_layers)
+        layer = MapDataLayers(data_space, config_layers)
+        selection_layer = SelectionMapDataLayers.from_loaded_data_layers(
+            SelectionMapLayersConfig(), layer
+        )
+        return layer, selection_layer
 
     def data_map(self):
         # TODO (max): this is a placeholder for a static map in the notebook that will be refactored out once the UI implementation is complete
         country = self.data_parameters().school_data_conf.country_id
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
-        map_layers = self._hashed_data_layers[country]
+        map_layers, _ = self._hashed_data_layers[country]
         if country == "brazil":
             # handle brazil as a one off for now
             config_map = DataMapConfig(zoom=3)
@@ -469,10 +518,37 @@ class CostEstimationParameterInput:
             display(m)
         return self.map_output
 
+    def selection_map(self):
+        country = self.data_parameters().school_data_conf.country_id
+        if country not in self._hashed_data_layers:
+            self._hashed_data_layers[country] = self._make_map_layer(country)
+        if country == "brazil":
+            config_map = DataMapConfig(zoom=3, no_cell=True)
+        else:
+            config_map = DataMapConfig()
+        _, selection_layers = self._hashed_data_layers[country]
+        data_map = StaticDataMap(config_map)
+        m = data_map.get_selection_map(
+            self.defaults[country].data.country_center_tuple, selection_layers
+        )
+        with self.selection_map_output:
+            display(
+                VBox(
+                    [
+                        HTML(
+                            value="To add multiple selections, select <b>Shift</b> when making new selections. To clear a selection, double-click it"
+                        ),
+                        m,
+                    ]
+                )
+            )
+        return self.selection_map_output
+
     def parameter_input(self):
         # main method that exposes the parameter input interface to users in a notebook
         # TODO (max): remove this once the UI implementation is complete
         data_map = self.data_map() if self.show_map else HTML()
+        selection_map = self.selection_map() if self.selection_map else HTML()
         return VBox(
             [
                 giga_html.section_separator,
@@ -501,5 +577,7 @@ class CostEstimationParameterInput:
                 HTML(value="<b>Dashboard Configuration</b>"),
                 self.dashboard_parameters_input(),
                 giga_html.section_separator,
+                HTML(value="<b>School Selection</b>"),
+                selection_map,
             ]
         )

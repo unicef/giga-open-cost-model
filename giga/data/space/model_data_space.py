@@ -162,15 +162,23 @@ class ModelDataSpace:
     def filter_schools(self, school_ids: List[str]):
         """
         Filters and returns the school entities with the specified ids
-        This will update the full data space and any downstream dependencies on school entities
+        This will return a new data space that includes any downstream dependencies on school entities
         Such as caches and coordinates
 
         :param school_ids: The school ids to keep in the data space, all others will be removed
         :return: The updated ModelDataSpace with the filtered schools
         """
         _ = self.schools
-        self._schools = self._schools.filter_schools_by_id(school_ids)
-        return self
+        new_space = ModelDataSpace(self.config)
+        new_space._schools = self._schools.filter_schools_by_id(school_ids)
+        new_space._all_schools = self._schools
+        new_space._fiber_map = self._fiber_map
+        new_space._cell_tower_map = self._cell_tower_map
+        new_space._cell_tower_coordinates = self._cell_tower_coordinates
+        new_space._fiber_cache = self._fiber_cache
+        new_space._cellular_cache = self._cellular_cache
+        new_space._p2p_cache = self._p2p_cache
+        return new_space
 
     def get_cell_tower_coordinates_with_technologies(self, technologies: List[str]):
         """
@@ -194,6 +202,6 @@ class ModelDataSpace:
         }
         geometry = [Point(lookup[sid]) for sid in outputs["school_id"]]
         df = gpd.GeoDataFrame(outputs, crs="4326", geometry=geometry).reset_index()
-        df['lat'] = df['geometry'].apply(lambda x: x.coords[0][1])
-        df['lon'] = df['geometry'].apply(lambda x: x.coords[0][0])
+        df["lat"] = df["geometry"].apply(lambda x: x.coords[0][1])
+        df["lon"] = df["geometry"].apply(lambda x: x.coords[0][0])
         return df
