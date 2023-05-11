@@ -9,7 +9,7 @@ from giga.utils.progress_bar import managed_progress_bar
 from giga.schemas.distance_cache import GreedyConnectCache
 
 
-EPS = 1e-5  # for tie-breakers in queue with equal distances
+EPS = 1e-4  # for tie-breakers in queue with equal distances
 
 
 # helpers below can be pulled into a distance queue class in a future refactor
@@ -68,21 +68,31 @@ class GreedyDistanceConnector:
         return add_distances(q, distances)
 
     def _queue_from_cache(self, q, set1, set2, cache):
+        coord_ids1 = set([c.coordinate_id for c in set1])
+        coord_ids2 = set([c.coordinate_id for c in set2])
         if cache.cache_type == "one-to-one":
-            coord_ids = [c.coordinate_id for c in set1]
-            distances = [cache.lookup.get(cid, None) for cid in coord_ids]
+            distances = [cache.lookup.get(cid, None) for cid in coord_ids1]
         elif cache.cache_type == "one-to-many":
             # single cache in set 2
-            coord_ids = [c.coordinate_id for c in set2]
             distances = []
-            for cid in coord_ids:
+            for cid in coord_ids2:
                 distances += cache.lookup[cid]
         else:
             raise Exception("Trying to use a cache of unsupported type")
         distances = list(
             filter(
                 lambda x: x is not None
-                and x.distance < self.maximum_connection_length_m,
+                and x.distance < self.maximum_connection_length_m
+                and (
+                    x.coordinate1.coordinate_id in coord_ids1
+                    or x.coordinate1.coordinate_id in coord_ids2
+                )
+                and (
+                    (
+                        x.coordinate2.coordinate_id in coord_ids1
+                        or x.coordinate2.coordinate_id in coord_ids2
+                    )
+                ),  # add check here to make sure coordinates in distance are in both sets
                 distances,
             )
         )
