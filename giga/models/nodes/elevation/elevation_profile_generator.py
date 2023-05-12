@@ -2,6 +2,7 @@ from pydantic import validate_arguments
 from typing import List, Text
 
 import requests
+import time
 from requests.adapters import HTTPAdapter, Retry
 
 from giga.models.nodes.elevation.elevation_utilities import (
@@ -13,7 +14,7 @@ from giga.schemas.geo import LatLonPoint, RawElevationPoint, ElevationProfile
 NUMBER_OF_SAMPLES = 10
 DEFAULT_DATASET = "aster30m"
 DEFAULT_RETRIES = 5
-DEFAULT_BACKOFF = 0.3
+DEFAULT_BACKOFF = 1.0
 
 # retry on all status codes that are 300+
 DEFAULT_FORCELIST = [x for x in requests.status_codes._codes if x >= 300]
@@ -61,6 +62,10 @@ class ElevationProfileGenerator:
                 session.mount("https://", HTTPAdapter(max_retries=retries))
                 session.mount("http://", HTTPAdapter(max_retries=retries))
                 response = session.post(url, params)
+                if "results" not in response.json():
+                    raise RuntimeError(
+                        f"Unexpected OpenTopoData API response: {response.json()}"
+                    )
                 result = response.json()["results"]
                 result_transformed = RawElevationPoint.elevation_point_transformer(
                     result
@@ -69,6 +74,9 @@ class ElevationProfileGenerator:
                     result_transformed
                 )
                 elevation_profile_list.append(ele_profile)
+                # TODO: This is added to avoid rate-limiting failures (1/sec).
+                #       We should batch the requests better (it supports <=100 locations/req).
+                time.sleep(0.9)
         return elevation_profile_list
 
     @validate_arguments

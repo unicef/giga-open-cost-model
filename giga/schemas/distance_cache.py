@@ -81,6 +81,9 @@ class SingleLookupDistanceCache(BaseModel):
             c["pair_ids"] = ",".join(c["pair_ids"])
         pd.DataFrame(flat).to_csv(file, index=False)
 
+    def __len__(self):
+        return len(self.lookup)
+
 
 class MultiLookupDistanceCache(BaseModel):
     """Cache for existing distance data with one to many mapping"""
@@ -124,6 +127,9 @@ class MultiLookupDistanceCache(BaseModel):
         with open(file, "w") as f:
             json.dump(self.dict(), f)
 
+    def __len__(self):
+        return len(self.lookup)
+
 
 class GreedyConnectCache(BaseModel):
     """Cache that can be used by the greedy connection model"""
@@ -153,3 +159,6 @@ class GreedyConnectCache(BaseModel):
         return GreedyConnectCache(
             connected_cache=connected_cache, unconnected_cache=unconnected_cache
         )
+
+    def __len__(self):
+        return len(self.connected_cache or []) + len(self.unconnected_cache or [])

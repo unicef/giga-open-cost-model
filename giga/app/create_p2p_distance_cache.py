@@ -38,6 +38,7 @@ class P2PCacheCreatorArgs:
     receiver_height_meters: float = 5
     progress_bar: bool = True
     file_suffix: str = "_cache"
+    export_to_file: bool = True
 
 
 class P2PCacheCreator:
@@ -109,7 +110,7 @@ class P2PCacheCreator:
         los_results: List[bool] = self._los.run(profiles)
         return [p for p, has_los in zip(pairs, los_results) if has_los]
 
-    def run(self) -> None:
+    def run(self) -> SingleLookupDistanceCache:
         # Temporary distance cache used to as input for LOS calculation.
         dists_towers: MultiLookupDistanceCache = (
             MultiLookupDistanceCache.from_distances(self.closest_towers())
@@ -130,14 +131,15 @@ class P2PCacheCreator:
                 school_coord, closest_pairs
             )
 
-        # Save the final cache.
+        # Build and return the final cache.
         dist_cache = [p.reversed() for p in closest_visible_towers]
         p2p_cache = SingleLookupDistanceCache.from_distances(dist_cache)
-        p2p_cache.to_json(
-            os.path.join(
-                self.args.workspace_directory, f"p2p{self.args.file_suffix}.json"
+        if self.args.export_to_file:
+            p2p_cache.to_json(
+                os.path.join(
+                    self.args.workspace_directory, f"p2p{self.args.file_suffix}.json"
+                )
             )
-        )
 
 
 def main():
@@ -196,8 +198,7 @@ def main():
     )
     args: P2PCacheCreatorArgs = parser.parse_args()
     args.progress_bar = True
-    cache_creator = P2PCacheCreator(args)
-    cache_creator.run()
+    P2PCacheCreator(args).run()
 
 
 if __name__ == "__main__":

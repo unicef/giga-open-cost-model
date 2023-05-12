@@ -3,6 +3,7 @@ from typing import List, Literal, Union
 
 from giga.schemas.tech import ConnectivityTechnology
 from giga.app.config import get_registered_countries
+from giga.app.create_p2p_distance_cache import P2PCacheCreator, P2PCacheCreatorArgs
 from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 from giga.data.pipes.data_tables import (
     LocalTablePipeline,
@@ -10,6 +11,10 @@ from giga.data.pipes.data_tables import (
     LocalJSONPipeline,
     LocalConnectCachePipeline,
 )
+from giga.schemas.distance_cache import (
+    GreedyConnectCache,
+)
+from giga.utils.logging import LOGGER
 
 REGISTERED_COUNTRIES = tuple(get_registered_countries(COUNTRY_DEFAULT_WORKSPACE))
 
@@ -98,10 +103,30 @@ class P2PDistanceCacheConf(BaseModel):
     p2p_cache_file: str
     data: LocalConnectCachePipeline
 
-    def load(self):
-        return self.data.load(
+    def load(self, hot_load: bool = True):
+        cache: GreedyConnectCache = self.data.load(
             connected_file=self.p2p_cache_file, unconnected_file=None
         )  # loads data from the configured pipeline
+        if len(cache) != 0 or not hot_load:
+            return cache
+        self.hot_load()
+        return self.load(False)
+
+    def hot_load(self):
+        """
+        Fully recompute the P2P cache and replace the existing
+        JSON output file.
+        """
+        LOGGER.info("> Computing initial P2P cache, as it does not exist locally.")
+        LOGGER.info(
+            "> This may take a while depending on the number of schools included."
+        )
+        LOGGER.info("> Future runs will be faster once this has completed.")
+        args = P2PCacheCreatorArgs()
+        args.workspace_directory = self.data.workspace
+        P2PCacheCreator(args).run()
+        LOGGER.info(f"> P2P cache saved locally. Future runs will now be faster.")
+
 
 
 class DataSpaceConf(BaseModel):
