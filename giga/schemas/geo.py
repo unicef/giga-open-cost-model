@@ -55,11 +55,9 @@ class UniqueCoordinateTable(BaseModel):
 
     def to_data_frame(self):
         """Transforms the coordinate table into a pandas data frame"""
-        df = pd.DataFrame(
-            [fc.dict() for fc in self.coordinates]
-        )
+        df = pd.DataFrame([fc.dict() for fc in self.coordinates])
         if len(df) == 0:
-            df = pd.DataFrame(columns = ["lat", "lon", "coordinate", "coordinate_id"])
+            df = pd.DataFrame(columns=["lat", "lon", "coordinate", "coordinate_id"])
         else:
             df["lat"] = df["coordinate"].apply(lambda x: x[0])
             df["lon"] = df["coordinate"].apply(lambda x: x[1])

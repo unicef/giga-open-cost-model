@@ -59,6 +59,10 @@ class SelectionMapDataLayers(MapDataLayers):
 
     @property
     def school_selection_table(self):
+        layout = go.Layout()
+        layout.paper_bgcolor = "#cde3e1"
+        layout.width = 900
+        layout.height = 550
         if self._school_table_selector is None:
             self._school_table_selector = go.FigureWidget(
                 [
@@ -76,9 +80,10 @@ class SelectionMapDataLayers(MapDataLayers):
                             ],
                             fill=dict(color="#f5f5f5"),
                             align=["left"] * 5,
-                        ),
+                        )
                     )
-                ]
+                ],
+                layout=layout
             )
         return self._school_table_selector
 
@@ -104,7 +109,7 @@ class SelectionMapDataLayers(MapDataLayers):
                     values.append(vc)
                 self.school_selection_table.data[0].cells.values = values
 
-        for scatter in fig.data[4:8]:
+        for scatter in fig.data[2:6]:
             scatter.on_selection(selection_fn)
 
     @property
@@ -113,8 +118,6 @@ class SelectionMapDataLayers(MapDataLayers):
             self._layers_selection = [
                 self.fiber_layer_mb,
                 self.cell_tower_layer_mb,
-                self.cell_tower_layer_mb_legend,
-                self.fiber_layer_mb_legend,
             ] + self.school_layers_mb
         return self._layers_selection
 
@@ -123,8 +126,6 @@ class SelectionMapDataLayers(MapDataLayers):
         if self._layers_selection is None:
             self._layers_selection = [
                 self.fiber_layer_mb,
-                self.cell_tower_layer_mb_empty,
-                self.cell_tower_layer_mb_legend,
                 self.fiber_layer_mb_legend,
             ] + self.school_layers_mb
         return self._layers_selection

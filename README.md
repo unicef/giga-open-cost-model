@@ -83,9 +83,9 @@ The following parameters can be configured in the model:
     * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
     * `Maximum Cell Tower Range (km)` is the maximum distance from a cell tower that a school can receive internet service
 * **P2P Model**
-    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
+    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) both at the school site and at the selected cellular tower
     * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
-    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
+    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the equipment at the school site and at the selected cellular tower
     * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
     * `Maximum  Range (km)` is the maximum distance from a cell tower that a school can receive internet service
 * **Electricity Model**

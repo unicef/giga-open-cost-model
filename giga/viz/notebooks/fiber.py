@@ -10,6 +10,7 @@ METERS_IN_KM = 1000.0
    Map Plots
 """
 
+
 def default_map(tiles="cartodbpositron", zoom_start=8, location=[-1.9, 30.1]):
     return folium.Map(location=location, tiles=tiles, zoom_start=zoom_start)
 

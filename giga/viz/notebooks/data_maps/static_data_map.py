@@ -3,13 +3,14 @@ from typing import List, Dict
 from pydantic import BaseModel
 import plotly.graph_objs as go
 import plotly.io as pio
-from ipywidgets import Layout, VBox
+from ipywidgets import Layout, VBox, HTML
 
 
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.viz.notebooks.data_maps.selection_map_data_layers import (
     SelectionMapDataLayers,
 )
+from giga.viz.notebooks.components.html.sections import section
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
@@ -37,7 +38,7 @@ class ModeBarConfig(BaseModel):
 
 class DataMapConfig(BaseModel):
 
-    width: int = 1050
+    width: int = 850
     height: int = 600
     zoom: int = 7
     style_default: str = "carto-darkmatter"
@@ -110,4 +111,7 @@ class StaticDataMap:
         m = self.get_map(center)
         layers.connect_school_layer_selection(m)
         layout = Layout()  # add centering and other formatting here
-        return VBox([m, layers.school_selection_table], layout=layout)
+        return VBox([
+            m, 
+            HTML("<br/>"),
+            section("Current Selections", layers.school_selection_table, "nopad")], layout=layout)

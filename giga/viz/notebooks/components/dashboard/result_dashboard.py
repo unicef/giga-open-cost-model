@@ -9,6 +9,7 @@ from giga.viz.notebooks.data_maps.result_maps import (
     make_technology_average_cost_barplot,
     make_technology_total_cost_barplot,
 )
+from giga.viz.notebooks.components.html.sections import section
 
 
 class ResultDashboard:
@@ -31,7 +32,7 @@ class ResultDashboard:
                 font-weight: bold;
                 font-size: 14px;
                 background-color: lightgrey;
-                border-radius: 10px;
+                border-radius: 10px 10px 0 0;
                 padding: 5px;
             }
         </style>
@@ -59,24 +60,10 @@ class ResultDashboard:
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         with tab:
             display(
-                widgets.HBox(
+                widgets.VBox(
                     [
-                        widgets.VBox(
-                            [
-                                widgets.HTML(
-                                    "<h1 style='font-family: Arial, sans-serif;'>Connectivity Costs Map</h1>"
-                                ),
-                                map_costs,
-                            ]
-                        ),
-                        widgets.VBox(
-                            [
-                                widgets.HTML(
-                                    "<h1 style='font-family: Arial, sans-serif;'>Connectivity Technology Map</h1>"
-                                ),
-                                map_technology,
-                            ]
-                        ),
+                        section("Connectivity Costs Map", map_costs, "dark"),
+                        section("Connectivity Technology Map", map_technology, "dark"),
                     ]
                 )
             )
@@ -94,25 +81,11 @@ class ResultDashboard:
             display(
                 widgets.VBox(
                     [
-                        widgets.VBox(
-                            [
-                                widgets.HTML(
-                                    "<h1 style='font-family: Arial, sans-serif;'>Average Cost</h1>"
-                                ),
-                                average_cost_output,
-                            ]
-                        ),
-                        widgets.VBox(
-                            [
-                                widgets.HTML(
-                                    "<h1 style='font-family: Arial, sans-serif;'>Total Cost</h1>"
-                                ),
-                                total_cost_output,
-                            ]
-                        ),
-                    ],
+                        section("Average Cost", average_cost_output),
+                        section("Total Cost", total_cost_output),
+                    ]
                 )
-            )  # Set the VBox width to '100%'
+            )
         return tab
 
     def technology_tab(self):
@@ -129,34 +102,9 @@ class ResultDashboard:
             display(
                 widgets.VBox(
                     [
-                        widgets.HBox(
-                            [
-                                widgets.VBox(
-                                    [
-                                        widgets.HTML(
-                                            "<h1 style='font-family: Arial, sans-serif;'>Percent Technology</h1>"
-                                        ),
-                                        technology_pie,
-                                    ]
-                                ),
-                                widgets.VBox(
-                                    [
-                                        widgets.HTML(
-                                            "<h1 style='font-family: Arial, sans-serif;'>Percent Cost</h1>"
-                                        ),
-                                        cost_pie,
-                                    ]
-                                ),
-                            ]
-                        ),
-                        widgets.VBox(
-                            [
-                                widgets.HTML(
-                                    "<h1 style='font-family: Arial, sans-serif;'>Technology Feasibility</h1>"
-                                ),
-                                feasibility_pie,
-                            ]
-                        ),
+                        section("Percent Technology", technology_pie),
+                        section("Percent Cost", cost_pie),
+                        section("Technology Feasibility", feasibility_pie),
                     ]
                 )
             )

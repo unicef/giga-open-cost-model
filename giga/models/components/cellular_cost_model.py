@@ -35,7 +35,10 @@ class CellularCostModel:
         return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
 
     def _existing_cell_coverage(self, school):
-        return school.cell_coverage_type in self.config.constraints.valid_cellular_technologies
+        return (
+            school.cell_coverage_type
+            in self.config.constraints.valid_cellular_technologies
+        )
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace

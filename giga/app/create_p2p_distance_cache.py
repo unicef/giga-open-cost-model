@@ -7,18 +7,28 @@ import math
 from giga.utils.logging import LOGGER
 from typing import List, Dict
 
-from giga.models.nodes.elevation.elevation_profile_generator import ElevationProfileGenerator
+from giga.models.nodes.elevation.elevation_profile_generator import (
+    ElevationProfileGenerator,
+)
 from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
 from giga.schemas.school import GigaSchoolTable
 from giga.schemas.cellular import CellTowerTable, CellularTower
-from giga.schemas.geo import UniqueCoordinate, ElevationProfile, LatLonPoint, PairwiseDistance
+from giga.schemas.geo import (
+    UniqueCoordinate,
+    ElevationProfile,
+    LatLonPoint,
+    PairwiseDistance,
+)
 from giga.models.nodes.elevation.line_of_sight_model import LineofSightModel
 from giga.models.nodes.graph.vectorized_distance_model import VectorizedDistanceModel
-from giga.schemas.distance_cache import SingleLookupDistanceCache, MultiLookupDistanceCache
+from giga.schemas.distance_cache import (
+    SingleLookupDistanceCache,
+    MultiLookupDistanceCache,
+)
 from giga.utils.progress_bar import progress_bar as pb
 
 
-class P2PCacheCreatorArgs():
+class P2PCacheCreatorArgs:
     workspace_directory: str = None
     n_chunks: int = 100
     n_nearest_neighbors: int = 20
@@ -30,7 +40,7 @@ class P2PCacheCreatorArgs():
     file_suffix: str = "_cache"
 
 
-class P2PCacheCreator():
+class P2PCacheCreator:
     args: P2PCacheCreatorArgs = None
 
     def __init__(self, args: P2PCacheCreatorArgs):
@@ -47,7 +57,9 @@ class P2PCacheCreator():
             cell_tower_table = CellTowerTable.from_csv(
                 os.path.join(self.args.workspace_directory, "cellular.csv")
             )
-            self._towers = {t.to_coordinates().coordinate_id: t for t in cell_tower_table.towers}
+            self._towers = {
+                t.to_coordinates().coordinate_id: t for t in cell_tower_table.towers
+            }
         return self._towers
 
     @property
@@ -74,10 +86,18 @@ class P2PCacheCreator():
             n_chunks=self.args.n_chunks,
         )
 
-    def prune_obstructed_towers(self, school_coord: UniqueCoordinate, pairs: List[PairwiseDistance]) -> List[PairwiseDistance]:
-        towers: List[CellularTower] = [self.towers[d.coordinate1.coordinate_id] for d in pairs]
-        coords = [[school_coord.coordinate, t.to_coordinates().coordinate] for t in towers]
-        profiles: List[ElevationProfile] = self._egp.run(coords, samples=self.args.n_elevation_profile_samples)
+    def prune_obstructed_towers(
+        self, school_coord: UniqueCoordinate, pairs: List[PairwiseDistance]
+    ) -> List[PairwiseDistance]:
+        towers: List[CellularTower] = [
+            self.towers[d.coordinate1.coordinate_id] for d in pairs
+        ]
+        coords = [
+            [school_coord.coordinate, t.to_coordinates().coordinate] for t in towers
+        ]
+        profiles: List[ElevationProfile] = self._egp.run(
+            coords, samples=self.args.n_elevation_profile_samples
+        )
 
         # Account for height buffer, school receiver height, and cell tower height.
         for ep, tower in zip(profiles, towers):
@@ -89,26 +109,34 @@ class P2PCacheCreator():
         los_results: List[bool] = self._los.run(profiles)
         return [p for p, has_los in zip(pairs, los_results) if has_los]
 
-
     def run(self) -> None:
         # Temporary distance cache used to as input for LOS calculation.
-        dists_towers: MultiLookupDistanceCache = MultiLookupDistanceCache.from_distances(
-            self.closest_towers())
+        dists_towers: MultiLookupDistanceCache = (
+            MultiLookupDistanceCache.from_distances(self.closest_towers())
+        )
 
         # Accumulate list of closest visible towers for each school.
         closest_visible_towers: List[PairwiseDistance] = []
-        iterable = pb(self.school_coords) if self.args.progress_bar else self.school_coords
+        iterable = (
+            pb(self.school_coords) if self.args.progress_bar else self.school_coords
+        )
         for school_coord in iterable:
             if school_coord.coordinate_id not in dists_towers.lookup:
                 continue
-            closest_pairs: List[PairwiseDistance] = dists_towers.lookup[school_coord.coordinate_id]
-            closest_visible_towers += self.prune_obstructed_towers(school_coord, closest_pairs)
+            closest_pairs: List[PairwiseDistance] = dists_towers.lookup[
+                school_coord.coordinate_id
+            ]
+            closest_visible_towers += self.prune_obstructed_towers(
+                school_coord, closest_pairs
+            )
 
         # Save the final cache.
         dist_cache = [p.reversed() for p in closest_visible_towers]
         p2p_cache = SingleLookupDistanceCache.from_distances(dist_cache)
         p2p_cache.to_json(
-            os.path.join(self.args.workspace_directory, f"p2p{self.args.file_suffix}.json")
+            os.path.join(
+                self.args.workspace_directory, f"p2p{self.args.file_suffix}.json"
+            )
         )
 
 

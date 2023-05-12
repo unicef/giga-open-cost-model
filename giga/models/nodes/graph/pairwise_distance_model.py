@@ -15,6 +15,7 @@ class PairwiseDistanceModel:
     Computes pairwise distances between two coordinate sets.
     Allows a custom distance function to be passed into the model, defaulted to haversine
     """
+
     def __init__(self, **kwargs):
         self.distance_fn = kwargs.get("distance_fn", DEFAULT_DISTANCE_FN)
         self.progress_bar = kwargs.get("progress_bar", False)

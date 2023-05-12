@@ -103,6 +103,7 @@ class P2PDistanceCacheConf(BaseModel):
             connected_file=self.p2p_cache_file, unconnected_file=None
         )  # loads data from the configured pipeline
 
+
 class DataSpaceConf(BaseModel):
 
     school_data_conf: SchoolCountryConf

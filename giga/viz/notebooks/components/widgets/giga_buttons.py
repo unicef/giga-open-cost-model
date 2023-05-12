@@ -29,23 +29,46 @@ def make_button(callback, description, **kwargs):
     return button
 
 
-def make_run_button(callback):
+def make_rounded_button(callback, description, **kwargs):
     return make_button(
-        callback, "Run Model", button_color="#f5f5f5", height="40px", width="300px"
+        callback,
+        description,
+        height="40px",
+        width="200px",
+        border_radius="2px",
+        margin="6px",
+        box_shadow="1px 1px 3px #ccc",
+        **kwargs
+    )
+
+
+def make_run_button(callback):
+    return make_rounded_button(
+        callback, "Run Model", button_color="#ffe3c9", border="1px solid #ff9f40"
     )
 
 
 def make_run_again_button(callback):
-    return make_button(callback, "Run Model Again", button_color="#d6e4fd")
+    return make_rounded_button(
+        callback, "Run Model Again", button_color="#ffe3c9", border="1px solid #ff9f40"
+    )
+
+
+def make_show_maps_button(callback):
+    return make_rounded_button(
+        callback, "Show All Maps", button_color="#ffe3c9", border="1px solid #ff9f40"
+    )
+
+
+def make_show_full_table_button(callback):
+    return make_rounded_button(
+        callback, "Show Full Table", button_color="#ffe3c9", border="1px solid #ff9f40"
+    )
 
 
 def create_event_button(callback, title="Click Me"):
-    # Create the button
-    button = Button(
-        description=title,
-        layout=Layout(width="216px"),
-        # button_style='info', # This gives the button a blue color
-        style={"button_color": "#d6e4fd", "font_size": "12px"},
+    button = make_rounded_button(
+        callback, title, button_color="#ffe3c9", border="1px solid #ff9f40"
     )
     # Set the border-radius to make the button edges rounded
     button.add_class("widget-button")

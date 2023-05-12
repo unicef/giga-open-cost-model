@@ -5,6 +5,8 @@ from ipywidgets import (
     Checkbox,
     Dropdown,
     FileUpload,
+    GridBox,
+    HBox,
     VBox,
     Layout,
     HTML,
@@ -46,6 +48,7 @@ from giga.viz.notebooks.parameters.groups.electricity_parameter_manager import (
     ElectricityParameterManager,
 )
 import giga.viz.notebooks.components.html.pages as giga_html
+import giga.viz.notebooks.components.html.sections as giga_sections
 
 # TODO: these are for maps, separate them out into unique UI component
 from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
@@ -254,7 +257,7 @@ class CostEstimationParameterInput:
                     VBox(
                         [
                             HTML(
-                                value="To add multiple selections, select <b>Shift</b> when making new selections. To clear a selection, double-click it"
+                                value="To add multiple selections, hold <b>Shift</b> when making a new selection. Double-click a selection to clear it."
                             ),
                             m,
                         ]
@@ -536,7 +539,7 @@ class CostEstimationParameterInput:
                 VBox(
                     [
                         HTML(
-                            value="To add multiple selections, select <b>Shift</b> when making new selections. To clear a selection, double-click it"
+                            value="To add multiple selections, hold <b>Shift</b> when making a new selection. Double-click a selection to clear it."
                         ),
                         m,
                     ]
@@ -546,38 +549,69 @@ class CostEstimationParameterInput:
 
     def parameter_input(self):
         # main method that exposes the parameter input interface to users in a notebook
-        # TODO (max): remove this once the UI implementation is complete
         data_map = self.data_map() if self.show_map else HTML()
         selection_map = self.selection_map() if self.selection_map else HTML()
+        # Create a grid with two columns, splitting space equally
+        layout = Layout(grid_template_columns="1fr 1fr")
         return VBox(
             [
-                giga_html.section_separator,
-                HTML(value="<b>Country Selection</b>"),
-                self.data_parameters_input(),
-                data_map,
-                giga_html.section_separator,
-                HTML(value="<b>Scenario Selection</b>"),
-                self.scenario_parameter_input(),
-                giga_html.section_separator,
-                HTML(value="<b>Fiber Model Configuration</b>"),
-                self.fiber_parameter_manager.input_parameters(),
-                giga_html.section_separator,
-                HTML(value="<b>Satellite - LEO Model Configuration</b>"),
-                self.satellite_parameters_input(),
-                giga_html.section_separator,
-                HTML(value="<b>Cellular Model Configuration</b>"),
-                self.cellular_parameters_input(),
-                giga_html.section_separator,
-                HTML(value="<b>P2P Model Configuration</b>"),
-                self.p2p_parameters_input(),
-                giga_html.section_separator,
-                HTML(value="<b>Electricity Model Configuration</b>"),
-                self.electricity_parameters_input(),
-                giga_html.section_separator,
-                HTML(value="<b>Dashboard Configuration</b>"),
-                self.dashboard_parameters_input(),
-                giga_html.section_separator,
-                HTML(value="<b>School Selection</b>"),
-                selection_map,
+                giga_sections.section(
+                    title="Country Selection",
+                    contents=VBox(
+                        [self.data_parameters_input(), HTML("<br/>"), data_map]
+                    ),
+                    extra_class="dark",
+                ).add_class("center"),
+                giga_sections.section(
+                    "Scenario Selection", self.scenario_parameter_input()
+                ),
+                giga_sections.section(
+                    title="Model Configuration",
+                    contents=VBox(
+                        [
+                            GridBox(
+                                [
+                                    giga_sections.section(
+                                        "Fiber Model",
+                                        self.fiber_parameter_manager.input_parameters(),
+                                    ),
+                                    giga_sections.section(
+                                        "Satellite - LEO Model",
+                                        self.satellite_parameters_input(),
+                                    ),
+                                ],
+                                layout=layout,
+                            ),
+                            GridBox(
+                                [
+                                    giga_sections.section(
+                                        "Cellular Model",
+                                        self.cellular_parameters_input(),
+                                    ),
+                                    giga_sections.section(
+                                        "P2P Model", self.p2p_parameters_input()
+                                    ),
+                                ],
+                                layout=layout,
+                            ),
+                        ]
+                    ),
+                    extra_class="center",
+                ),
+                GridBox(
+                    [
+                        giga_sections.section(
+                            "Electricity Parameters",
+                            self.electricity_parameters_input()
+                        ),
+                        giga_sections.section(
+                            "Dashboard Configuration",
+                            self.dashboard_parameters_input()
+                        ),
+                    ],
+                    layout=layout,
+                ),
+                giga_sections.section("School Selection <span style=\"color: #787; font-weight: normal\">(click to expand)</span>", selection_map, "dark"
+                                      ).add_class("center").add_class("expander").add_class("footer")
             ]
         )

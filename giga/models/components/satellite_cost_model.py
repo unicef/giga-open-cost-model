@@ -66,11 +66,7 @@ class SatelliteCostModel:
         return costs
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def run(
-        self,
-        data_space: ModelDataSpace,
-        **kwargs
-    ) -> CostResultSpace:
+    def run(self, data_space: ModelDataSpace, **kwargs) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
         :param data_space: a data space containing school entities

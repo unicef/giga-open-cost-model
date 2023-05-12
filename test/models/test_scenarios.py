@@ -4,7 +4,13 @@ from pathlib import Path
 
 from giga.app.config_client import ConfigClient
 from giga.models.components.fiber_cost_model import FiberCostModel
-from giga.schemas.conf.models import FiberTechnologyCostConf, SatelliteTechnologyCostConf, CellularTechnologyCostConf, SingleTechnologyScenarioConf, MinimumCostScenarioConf
+from giga.schemas.conf.models import (
+    FiberTechnologyCostConf,
+    SatelliteTechnologyCostConf,
+    CellularTechnologyCostConf,
+    SingleTechnologyScenarioConf,
+    MinimumCostScenarioConf,
+)
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
 from giga.data.space.model_data_space import ModelDataSpace
@@ -83,6 +89,7 @@ def cellular_config():
         },
     )
 
+
 @pytest.fixture()
 def single_tech_scenario_config_fiber(fiber_config):
     return SingleTechnologyScenarioConf(
@@ -91,8 +98,9 @@ def single_tech_scenario_config_fiber(fiber_config):
         years_opex=5,
         opex_responsible="Consumer",
         bandwidth_demand=40,
-        tech_config=fiber_config
+        tech_config=fiber_config,
     )
+
 
 @pytest.fixture()
 def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config):
@@ -102,39 +110,48 @@ def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config
         years_opex=5,
         opex_responsible="Consumer",
         bandwidth_demand=40,
-        technologies=[fiber_config, satellite_config, cellular_config]
+        technologies=[fiber_config, satellite_config, cellular_config],
     )
     c.technologies[2] = cellular_config
     return c
+
 
 @pytest.fixture()
 def data_space(global_config):
     return ModelDataSpace(global_config.local_workspace_data_space_config)
 
+
 @pytest.fixture()
 def output_space():
     return OutputSpace()
 
-def test_single_tech_scenario(single_tech_scenario_config_fiber, data_space, output_space):
-    scenario = SingleTechnologyScenario(single_tech_scenario_config_fiber, data_space, output_space)
+
+def test_single_tech_scenario(
+    single_tech_scenario_config_fiber, data_space, output_space
+):
+    scenario = SingleTechnologyScenario(
+        single_tech_scenario_config_fiber, data_space, output_space
+    )
     output_space = scenario.run()
     cost_table = output_space.table
-    cost_table['total_cost'] = cost_table['total_cost'].fillna(0)
+    cost_table["total_cost"] = cost_table["total_cost"].fillna(0)
     assert cost_table is not None
     assert len(cost_table[cost_table["technology"] == "Fiber"]) == 50
     assert len(cost_table[cost_table["technology"] == "Satellite"]) == 0
     assert len(cost_table[cost_table["technology"] == "Cellular"]) == 0
-    assert sum(cost_table['total_cost']) == pytest.approx(2_753_199, 0.1)
+    assert sum(cost_table["total_cost"]) == pytest.approx(2_753_199, 0.1)
 
 
 def test_minimum_cost_scenario(minimum_cost_scenario_config, data_space, output_space):
     # TODO (Nathan Eliason): cost results may be different after p2p models are included
-    scenario = MinimumCostScenario(minimum_cost_scenario_config, data_space, output_space)
+    scenario = MinimumCostScenario(
+        minimum_cost_scenario_config, data_space, output_space
+    )
     output_space = scenario.run()
     cost_table = output_space.table
-    cost_table['total_cost'] = cost_table['total_cost'].fillna(0)
+    cost_table["total_cost"] = cost_table["total_cost"].fillna(0)
     assert cost_table is not None
     assert len(cost_table[cost_table["technology"] == "Fiber"]) == 0
     assert len(cost_table[cost_table["technology"] == "Satellite"]) == 27
     assert len(cost_table[cost_table["technology"] == "Cellular"]) == 23
-    assert sum(cost_table['total_cost']) == pytest.approx(169_745, 0.1)
+    assert sum(cost_table["total_cost"]) == pytest.approx(169_745, 0.1)
