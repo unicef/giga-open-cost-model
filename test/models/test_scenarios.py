@@ -10,6 +10,7 @@ from giga.schemas.conf.models import (
     CellularTechnologyCostConf,
     SingleTechnologyScenarioConf,
     MinimumCostScenarioConf,
+    P2PTechnologyCostConf
 )
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
@@ -91,6 +92,26 @@ def cellular_config():
 
 
 @pytest.fixture()
+def p2p_config():
+    return P2PTechnologyCostConf(
+        capex={"tower_fixed_costs":100.0},
+        opex={
+            "fixed_costs": 0.0,
+            "annual_bandwidth_cost_per_mbps": 10.0
+        },
+        constraints={
+            "maximum_bandwithd": 300.0,
+            "required_power": 10.0,
+            "maximum_range": 8_000,
+        },
+        electricity_config={
+            "capex": {"solar_panel_costs": 500.0, "battery_costs": 0.0},
+            "opex": {"cost_per_kwh": 0.1},
+        },
+    )
+
+
+@pytest.fixture()
 def single_tech_scenario_config_fiber(fiber_config):
     return SingleTechnologyScenarioConf(
         scenario_id="single_tech_test_scenario",
@@ -103,16 +124,17 @@ def single_tech_scenario_config_fiber(fiber_config):
 
 
 @pytest.fixture()
-def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config):
+def minimum_cost_scenario_config(fiber_config, satellite_config, cellular_config, p2p_config):
     # TODO (Nathan Eliason): Add p2p config to this test
     c = MinimumCostScenarioConf(
         scenario_id="minimum_cost",
         years_opex=5,
         opex_responsible="Consumer",
         bandwidth_demand=40,
-        technologies=[fiber_config, satellite_config, cellular_config],
+        technologies=[fiber_config, satellite_config, cellular_config, p2p_config],
     )
     c.technologies[2] = cellular_config
+    c.technologies[3] = p2p_config
     return c
 
 
@@ -139,11 +161,11 @@ def test_single_tech_scenario(
     assert len(cost_table[cost_table["technology"] == "Fiber"]) == 50
     assert len(cost_table[cost_table["technology"] == "Satellite"]) == 0
     assert len(cost_table[cost_table["technology"] == "Cellular"]) == 0
+    assert len(cost_table[cost_table["technology"] == "P2P"]) == 0
     assert sum(cost_table["total_cost"]) == pytest.approx(2_753_199, 0.1)
 
 
 def test_minimum_cost_scenario(minimum_cost_scenario_config, data_space, output_space):
-    # TODO (Nathan Eliason): cost results may be different after p2p models are included
     scenario = MinimumCostScenario(
         minimum_cost_scenario_config, data_space, output_space
     )
@@ -153,5 +175,6 @@ def test_minimum_cost_scenario(minimum_cost_scenario_config, data_space, output_
     assert cost_table is not None
     assert len(cost_table[cost_table["technology"] == "Fiber"]) == 0
     assert len(cost_table[cost_table["technology"] == "Satellite"]) == 27
-    assert len(cost_table[cost_table["technology"] == "Cellular"]) == 23
+    assert len(cost_table[cost_table["technology"] == "Cellular"]) == 13
+    assert len(cost_table[cost_table["technology"] == "P2P"]) == 10
     assert sum(cost_table["total_cost"]) == pytest.approx(169_745, 0.1)
