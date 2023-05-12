@@ -39,7 +39,7 @@ def make_cost_map(results):
         hover_data=["technology"],
         zoom=6,
         height=500,
-        width=750,
+        width=850,
         opacity=0.85,
         mapbox_style="carto-darkmatter",
     )
@@ -72,7 +72,7 @@ def make_technology_map(results):
             "Fiber": "#ff9f40",
         },
         height=500,
-        width=750,
+        width=850,
         mapbox_style="carto-darkmatter",
     )
     map_technology.update_layout(

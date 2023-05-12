@@ -88,10 +88,11 @@ class ConstrainedEconomiesOfScaleMinimizer:
         return budget_remaining, constrained_schools, connections
 
     def minimize_economies_of_scale(
-        self, output: OutputSpace,
+        self,
+        output: OutputSpace,
         clusters: List[List[PairwiseDistance]],
         root_nodes: Set[str],
-        baseline_cost_lookup: Dict[str, SchoolConnectionCosts]
+        baseline_cost_lookup: Dict[str, SchoolConnectionCosts],
     ):
         """
         This method computes the minimum cost of a connected cost graph
@@ -159,10 +160,11 @@ class ConstrainedEconomiesOfScaleMinimizer:
         return minimums, connections, school_ids, budget_remaining
 
     def minimize_baseline_costs(
-        self, budget_remaining: float,
+        self,
+        budget_remaining: float,
         output: OutputSpace,
         baseline_cost_lookup: Dict[str, SchoolConnectionCosts],
-        baseline_cost_ids: List[str]
+        baseline_cost_ids: List[str],
     ):
         """
         This method computes the minimum cost of for the baseline technologies (non-economies of scale) given a budget.

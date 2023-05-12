@@ -88,9 +88,10 @@ class CellularModelResults(BaseModel):
 
     distances: List[PairwiseDistance]
 
+
 class P2PModelResults(BaseModel):
 
-	distances: List[PairwiseDistance]
+    distances: List[PairwiseDistance]
 
 
 class GenericModelResults(BaseModel):
@@ -117,7 +118,12 @@ class OutputSpace(BaseModel):
 
     @property
     def technology_outputs(self):
-        techs = [self.fiber_costs, self.satellite_costs, self.cellular_costs, self.p2p_costs]
+        techs = [
+            self.fiber_costs,
+            self.satellite_costs,
+            self.cellular_costs,
+            self.p2p_costs,
+        ]
         return list(filter(lambda x: x is not None, techs))
 
     @property

@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from ipywidgets import interactive, IntRangeSlider, Layout, HTML
+from ipywidgets import interactive, IntRangeSlider, Layout, HTML, VBox, HBox, GridBox
 from IPython.display import display
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -9,6 +9,7 @@ from babel.numbers import format_currency
 import seaborn as sns
 
 from giga.viz.notebooks.helpers import output_to_table
+from giga.viz.notebooks.components.html.sections import section
 
 mpl.rcParams["figure.dpi"] = 250
 
@@ -67,23 +68,19 @@ def output_to_electricity_capex(output_table):
     total_solar = sum(
         output_table[output_table["capex_electricity"] > 0]["capex_electricity"]
     )
-    return (
-        pd.DataFrame(
-            [
-                {
-                    "Number Schools Requiring Solar": len(
-                        output_table[output_table["capex_electricity"] > 0.0]
-                    ),
-                    "Per School Solar Panel Costs": value_to_dollar_format(
-                        per_school_solar
-                    ),
-                    "Total Solar Costs": value_to_dollar_format(total_solar),
-                }
-            ]
-        )
-        .transpose()
-        .style.hide_columns()
-    )
+    return pd.DataFrame(
+        [
+            {
+                "Number Schools Requiring Solar": len(
+                    output_table[output_table["capex_electricity"] > 0.0]
+                ),
+                "Per School Solar Panel Costs": value_to_dollar_format(
+                    per_school_solar
+                ),
+                "Total Solar Costs": value_to_dollar_format(total_solar),
+            }
+        ]
+    ).transpose()
 
 
 def output_to_opex_details(output_table):
@@ -151,30 +148,67 @@ def display_summary_table(output_space, data_space):
     dfcap = format_dollars(dfcap, ["Per School", "Total Costs"])
     dfop = format_dollars(dfop, ["School Per Month", "Total Annual Cost"])
 
+    # Create a grid with two columns, splitting space equally
+    layout = Layout(grid_template_columns="1fr 1fr")
+
+    # helper to display a pd DataFrame with custom formatting
+    def _pdHTML(df: pd.DataFrame):
+        return HTML(df.to_html(col_space=5, border=0))
+
     display(
-        HTML(value="<hr><hr><b><font color='#5b8ff0'>School Details</b><hr>"),
-        dfs.style.hide_columns(),
-    )
-    display(
-        HTML("<hr><b><font color='#5b8ff0'>Breakout by Technology</b><hr>"),
-        dft.style.hide_columns(),
-    )
-    display(HTML("<hr><hr><b><font color='#5b8ff0'>Technology CapEx</b><hr>"), dfcap)
-    display(
-        HTML(
-            f"<b><font color='#50ba83'>Total Technology CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b><hr><hr>"
-        )
-    )
-    display(HTML("<b><font color='#5b8ff0'>Electricity CapEx</b><hr>"), df_solar)
-    display(HTML("<hr><hr><b><font color='#5b8ff0'>OpEx Details</b><hr>"), dfop)
-    display(
-        HTML(
-            f"<b><font color='#50ba83'>Total OpEx Costs {get_space('&emsp;', 12)} {op_total}</b><hr><hr>"
-        )
-    )
-    display(
-        HTML(
-            f"<b><font color='#2a2d30'>Total Costs: {value_to_dollar_format(total_costs)}</b><hr><hr>"
+        VBox(
+            [
+                GridBox(
+                    [
+                        section(
+                            "Summary",
+                            VBox(
+                                [
+                                    _pdHTML(dfs),
+                                    HTML(
+                                        f"<b><font color='#07706d'>Total costs: {value_to_dollar_format(total_costs)}</b>"
+                                    ),
+                                ]
+                            ),
+                        ),
+                        section("Breakout by Technology", _pdHTML(dft)),
+                    ],
+                    layout=layout,
+                ),
+                GridBox(
+                    [
+                        section(
+                            "Technology CapEx",
+                            VBox(
+                                [
+                                    _pdHTML(dfcap),
+                                    HTML(
+                                        f"<b><font color='#07706d'>Total Technology CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b>"
+                                    ),
+                                ]
+                            ),
+                        ),
+                        section("Electricity CapEx", _pdHTML(df_solar)),
+                    ],
+                    layout=layout,
+                ),
+                GridBox(
+                    [
+                        section(
+                            "OpEx",
+                            VBox(
+                                [
+                                    _pdHTML(dfop),
+                                    HTML(
+                                        f"<b><font color='#07706d'>Total OpEx Costs {get_space('&emsp;', 12)} {op_total}</b>"
+                                    ),
+                                ]
+                            ),
+                        )
+                    ],
+                    layout=layout,
+                ),
+            ]
         )
     )
 

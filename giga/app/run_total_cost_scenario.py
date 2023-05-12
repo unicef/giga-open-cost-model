@@ -70,33 +70,35 @@ DEFAULT_SATELLITE_CONF = SatelliteTechnologyCostConf(
 )
 
 DEFAULT_CELLULAR_CONF = CellularTechnologyCostConf(
-            capex={"fixed_costs": 500.0},
-            opex={
-                "fixed_costs": 0.0,
-                "annual_bandwidth_cost_per_mbps": 10.0,
-            },
-            constraints={"maximum_bandwithd": 100.0,
-                         "required_power": 10.0,
-                         "maximum_range": 8_000  # in m
-            },
-            electricity_config=DEFAULT_ELECTRICITY_CONF
-        )
+    capex={"fixed_costs": 500.0},
+    opex={
+        "fixed_costs": 0.0,
+        "annual_bandwidth_cost_per_mbps": 10.0,
+    },
+    constraints={
+        "maximum_bandwithd": 100.0,
+        "required_power": 10.0,
+        "maximum_range": 8_000,  # in m
+    },
+    electricity_config=DEFAULT_ELECTRICITY_CONF,
+)
 
 DEFAULT_P2P_CONF = P2PTechnologyCostConf(
-            capex={
-                "fixed_costs": 500.0,
-                "tower_fixed_costs": 500.0,
-            },
-            opex={
-                "fixed_costs": 0.0,
-                "annual_bandwidth_cost_per_mbps": 10.0,
-            },
-            constraints={"maximum_bandwithd": 100.0,
-                         "required_power": 10.0,
-                         "maximum_range": 50_000  # in m
-            },
-            electricity_config=DEFAULT_ELECTRICITY_CONF
-        )
+    capex={
+        "fixed_costs": 500.0,
+        "tower_fixed_costs": 500.0,
+    },
+    opex={
+        "fixed_costs": 0.0,
+        "annual_bandwidth_cost_per_mbps": 10.0,
+    },
+    constraints={
+        "maximum_bandwithd": 100.0,
+        "required_power": 10.0,
+        "maximum_range": 50_000,  # in m
+    },
+    electricity_config=DEFAULT_ELECTRICITY_CONF,
+)
 
 """
 This script will run a total cost scenario using for a "Sample" country
@@ -109,16 +111,29 @@ the input data.
 def main():
     parser = argparse.ArgumentParser()
     # No required arguments for now
-    required = parser.add_argument_group('required arguments')
-    optional = parser.add_argument_group('optional arguments')
-    optional.add_argument('--workspace', '-w', default=DEFAULT_WORKPACE, help='Local workspace where required input data is stored')
-    optional.add_argument('--country', '-c',
-                          choices=['sample', 'rwanda', 'brazil'], default='sample',
-                          help='Specifies the country of interest, your workspace will need to contain the data for that country')
-    optional.add_argument('--output-file', '-o', default='costs.csv')
-    optional.add_argument('--scenario-type', '-s',
-                          choices=['minimum-cost', 'fiber', 'cellular', 'p2p', 'satellite'], default='minimum-cost',
-                          help='Defines the type of scenario to run')
+    required = parser.add_argument_group("required arguments")
+    optional = parser.add_argument_group("optional arguments")
+    optional.add_argument(
+        "--workspace",
+        "-w",
+        default=DEFAULT_WORKPACE,
+        help="Local workspace where required input data is stored",
+    )
+    optional.add_argument(
+        "--country",
+        "-c",
+        choices=["sample", "rwanda", "brazil"],
+        default="sample",
+        help="Specifies the country of interest, your workspace will need to contain the data for that country",
+    )
+    optional.add_argument("--output-file", "-o", default="costs.csv")
+    optional.add_argument(
+        "--scenario-type",
+        "-s",
+        choices=["minimum-cost", "fiber", "cellular", "p2p", "satellite"],
+        default="minimum-cost",
+        help="Defines the type of scenario to run",
+    )
     args = parser.parse_args()
 
     # Configure data space client - we'll use a helper here that will point to the local workspace
@@ -142,25 +157,25 @@ def main():
         scenario_config.tech_config = DEFAULT_CELLULAR_CONF
     elif args.scenario_type == "satellite":
         scenario_config = SingleTechnologyScenarioConf(
-                technology="Satellite",
-                tech_config=DEFAULT_SATELLITE_CONF,
-                **DEFAULT_SCENARIO_PARAMS
-            )
-    elif args.scenario_type == 'p2p':
+            technology="Satellite",
+            tech_config=DEFAULT_SATELLITE_CONF,
+            **DEFAULT_SCENARIO_PARAMS,
+        )
+    elif args.scenario_type == "p2p":
         scenario_config = SingleTechnologyScenarioConf(
-                technology="P2P",
-                tech_config=DEFAULT_P2P_CONF,
-                **DEFAULT_SCENARIO_PARAMS
-            )
+            technology="P2P", tech_config=DEFAULT_P2P_CONF, **DEFAULT_SCENARIO_PARAMS
+        )
         scenario_config.tech_config = DEFAULT_P2P_CONF
     else:
         # minimum cost
         scenario_config = MinimumCostScenarioConf(
-                            **DEFAULT_SCENARIO_PARAMS,
-                            technologies=[DEFAULT_FIBER_CONF,
-                                          DEFAULT_SATELLITE_CONF,
-                                          DEFAULT_CELLULAR_CONF,
-                                          DEFAULT_P2P_CONF]
+            **DEFAULT_SCENARIO_PARAMS,
+            technologies=[
+                DEFAULT_FIBER_CONF,
+                DEFAULT_SATELLITE_CONF,
+                DEFAULT_CELLULAR_CONF,
+                DEFAULT_P2P_CONF,
+            ],
         )
         scenario_config.technologies[2] = DEFAULT_CELLULAR_CONF
         scenario_config.technologies[3] = DEFAULT_P2P_CONF

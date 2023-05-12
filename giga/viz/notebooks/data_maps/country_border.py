@@ -13,11 +13,11 @@ class CountryBorder:
     @staticmethod
     def from_shapefile(shapefile):
         borders = gpd.read_file(shapefile)
-        borders['NAME'] = borders['NAME'].apply(lambda x: x.lower())
+        borders["NAME"] = borders["NAME"].apply(lambda x: x.lower())
         return CountryBorder(borders)
 
     def get_border(self, country):
         # sample country has rwanda border
-        country_id = 'rwanda' if country == 'sample' else country
+        country_id = "rwanda" if country == "sample" else country
         country_id = country_id.replace("_", " ")
         return self.borders[self.borders["NAME"] == country_id]

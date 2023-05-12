@@ -68,12 +68,10 @@ class CellTowerTable(BaseModel):
 
     def to_data_frame(self):
         """Transforms the cell tower table into a pandas data frame"""
-        df = pd.DataFrame(
-            [cc.dict() for cc in self.to_coordinates()]
-        )
+        df = pd.DataFrame([cc.dict() for cc in self.to_coordinates()])
         if len(df) == 0:
             # create empty data frame if no data with valid columns
-            df = pd.DataFrame(columns = ["lat", "lon", "coordinate", "coordinate_id"])
+            df = pd.DataFrame(columns=["lat", "lon", "coordinate", "coordinate_id"])
         else:
             df["lat"] = df["coordinate"].apply(lambda x: x[0])
             df["lon"] = df["coordinate"].apply(lambda x: x[1])

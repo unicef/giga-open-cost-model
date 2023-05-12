@@ -11,6 +11,13 @@ CELL_STYLE_UPDATED_DEFAULT = """
     background-color: rgba(255, 227, 201, 0.95);
     margin: 0px;
 }
+
+.param-text-box {
+    margin-bottom: -5px;
+    margin-top: 5px;
+}
+
+
 """
 
 display(widgets.HTML(f"<style>{CELL_STYLE_UPDATED_DEFAULT}</style>"))
@@ -69,17 +76,11 @@ class ParameterSheet:
         # Calculate the number of rows needed
         rows = len(self.parameters)
 
-        # Create a GridspecLayout with the calculated number of rows and columns
-        grid = widgets.GridspecLayout(rows, self.columns, width=self.width)
-
-        # Add parameter labels and interactive widgets to the grid
-        for i, p in enumerate(self.parameters):
-            row = i
-            grid[row, 0] = widgets.HTML(value=p["parameter_input_name"])
+        def _create_row(i, p):
             if self.interactive_parameters[i].show_default:
-                grid[row, 1] = self.interactive_parameters[i].parameter_with_default
+                param = self.interactive_parameters[i].parameter_with_default
             else:
-                grid[row, 1] = self.interactive_parameters[i].parameter
+                param = self.interactive_parameters[i].parameter
             self._sheet_lookup[p["parameter_name"]] = self.interactive_parameters[
                 i
             ].parameter
@@ -87,7 +88,16 @@ class ParameterSheet:
             self.interactive_parameters[i].set_off_default_css_style(
                 "off-default-cell-background-color"
             )
-        return grid
+            return widgets.VBox(
+                [
+                    widgets.HTML(value=p["parameter_input_name"]).add_class(
+                        "param-text-box"
+                    ),
+                    param,
+                ]
+            ).add_class("param-row")
+
+        return widgets.VBox([_create_row(i, p) for i, p in enumerate(self.parameters)])
 
     def input_parameters(self):
         """
