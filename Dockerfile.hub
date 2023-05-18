@@ -1,0 +1,9 @@
+FROM jupyterhub/k8s-hub:2.0.0 as base
+
+ARG CDSVERSION=0.4.0
+
+USER root
+
+RUN pip install --upgrade cdsdashboards>=$CDSVERSION
+
+USER ${NB_USER}
