@@ -86,14 +86,25 @@ hub:
   annotations: {}
   command: []
   args: []
-  extraConfig: {}
+  extraConfig:
+    cds-handlers: |
+      from cdsdashboards.hubextension import cds_extra_handlers
+      c.JupyterHub.extra_handlers = cds_extra_handlers
+      c.VariableMixin.proxy_force_alive = False
+      c.VariableMixin.proxy_last_activity_interval = 300
+    cds-templates: |
+      from cdsdashboards.app import CDS_TEMPLATE_PATHS
+      c.JupyterHub.template_paths = CDS_TEMPLATE_PATHS
+    cds-kube: |
+      c.JupyterHub.spawner_class = 'cdsdashboards.hubextension.spawners.variablekube.VariableKubeSpawner'
+      c.CDSDashboardsConfig.builder_class = 'cdsdashboards.builder.kubebuilder.KubeBuilder'
   extraFiles: {}
   extraEnv: {}
   extraContainers: []
   extraVolumes: []
   extraVolumeMounts: []
   image:
-    name: jupyterhub/k8s-hub
+    name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/k8s-hub-cds
     tag: "2.0.0"
     pullPolicy:
     pullSecrets: []
@@ -420,7 +431,7 @@ singleuser:
   image:
     # Actual config: single user image for notebook containers
     name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/notebooks
-    tag: "0.3.3"
+    tag: "0.3.4"
     pullPolicy: Always
     pullSecrets: []
   startTimeout: 300
@@ -428,8 +439,8 @@ singleuser:
     limit:
     guarantee:
   memory:
-    limit:
-    guarantee: 1G
+    limit: 5G
+    guarantee: 3G
   extraResource:
     limits: {}
     guarantees: {}

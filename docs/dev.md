@@ -131,16 +131,18 @@ For local development, the `./dev` CLI can be used with the following sub-comman
 For managing deployments, the `./stack` CLI can be used with the following sub-commands:
 
 ```
-  up 						        Deploys the notebook stack to a k8s cluster
-  down 						        Tears down the notebook stack
-  install 					        Install minikube, helm, etc.
-  auth 						        Authenticate with GCP
-  create-image 					        Builds docker image for off-platform models
-  push-image 					        Pushes model docker image to a remote registry
-  start-container <workspace-dir> 	                Launches a Docker container and mounts a workspace directory to it
-  launch  					        Launches jupyterhub on a kubernetes cluster using helm
-  stop  					        Stops the jupyterhub deployment
-  reset-password  <user-email> 		                Sends a password reset email for notebook user
+  up 						Rebuild the modeling environment and deploys the notebook stack to a k8s cluster
+  down 						Tears down the notebook stack
+  install 					Install minikube, helm, etc.
+  auth 						Authenticate with GCP
+  create-image 					Builds docker image for off-platform models
+  push-image 					Pushes model docker image to a remote registry
+  create-hub-image 				Builds docker image for base jupyterhub service
+  push-hub-image 				Push jupyterhub docker image to a remote registry
+  start-container <workspace-dir> 		Launches a Docker container and mounts a workspace directory to it
+  launch  					Launches jupyterhub on a kubernetes cluster using helm
+  stop  					Stops the jupyterhub deployment
+  reset-password  <user-email> 			Sends a password reset email for notebook user
 ```
 
 For running the models and relevant data pipelines, the `./run` CLI can be used with the following sub-commands:

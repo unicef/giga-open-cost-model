@@ -5,8 +5,11 @@
 VERSION_TAG=$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
 CONTAINER_REGISTRY="us-central1-docker.pkg.dev"
 IMAGE_NAME="actual-artifacts/giga-models/notebooks"
+IMAGE_NAME_HUB="actual-artifacts/giga-models/k8s-hub-cds"
+HUB_VERSION="2.0.0" # matches the version of the base jupyterhub image
 NOTEBOOK_CONTAINER_NAME="giga-models"
 NOTEBOOK_DOCKERFILE="Dockerfile"
+HUB_DOCKERFILE="Dockerfile.hub"
 
 # GCP Parameters
 GCP_ZONE="us-central1-c"
@@ -55,6 +58,13 @@ create_image() {
                --platform linux/amd64 .
 }
 
+# build the jupyterhub container with extra dependencies
+create_hub_image() {
+  docker build -t $CONTAINER_REGISTRY/$IMAGE_NAME_HUB:$HUB_VERSION \
+               -f $HUB_DOCKERFILE \
+               --platform linux/amd64 .
+}
+
 # launches container
 launch_model_container() {
   local WORKSPACE_DIR=$1
@@ -77,6 +87,10 @@ gcp_auth(){
 
 push_model_image() {
   docker image push $CONTAINER_REGISTRY/$IMAGE_NAME:$VERSION_TAG
+}
+
+push_hub_image() {
+  docker image push $CONTAINER_REGISTRY/$IMAGE_NAME_HUB:$HUB_VERSION
 }
 
 jupyterhub_up() {
@@ -120,6 +134,8 @@ usage() {
   printf "  auth \t\t\t\t\t\tAuthenticate with GCP\n"
   printf "  create-image \t\t\t\t\tBuilds docker image for off-platform models\n"
   printf "  push-image \t\t\t\t\tPushes model docker image to a remote registry\n"
+  printf "  create-hub-image \t\t\t\tBuilds docker image for base jupyterhub service\n"
+  printf "  push-hub-image \t\t\t\tPush jupyterhub docker image to a remote registry\n"
   printf "  start-container <workspace-dir> \t\tLaunches a Docker container and mounts a workspace directory to it\n"
   printf "  launch  \t\t\t\t\tLaunches jupyterhub on a kubernetes cluster using helm\n"
   printf "  stop  \t\t\t\t\tStops the jupyterhub deployment\n"
@@ -139,6 +155,12 @@ case $1 in
     ;;
   push-image)
     push_model_image
+    ;;
+  create-hub-image)
+    create_hub_image
+    ;;
+  push-hub-image)
+    push_hub_image
     ;;
   start-container)
     launch_model_container $2
