@@ -8,6 +8,34 @@ As a reminder a model component is differentiated from a model node in the follo
 * Components: stacks nodes together with a clear and specific purpose (e.g. use case driven - compute cost of fiber connection) prepares the models to join into the entities that solve a specific problem
 * Scenarios: drives the computation by piecing together multiple components and solving a specific problem by deriving a key result. Allows same components to serve multiple purposes: e.g. answer the questions of what is the cost of connecting all schools in Rwanda to the internet? VS If there is a budget of $10M which schools should be connected to maximize the number of students with internet access?
 
+## Cost Attribution
+
+The models compute the total cost of connecting a school to the internet.
+However, those costs have two types of attribution:
+1. The service provider: or the entity responsible for serving the internet connectivity
+2. The school: or the consumer of the internet connectivity
+
+Typically, the cost strucutres for these two entities of providing new connectivity are quite different.
+In these models the general breakdown of cost attribution is as follows for each technology:
+
+| Technology   | Cost Category                | Provider | School |
+| ------------ | ---------------------------- | -------- | ------ |
+| Fiber        | Laying Fiber Cable           |     ☑️    |        |
+| Fiber        | Maintaining Fiber Cable      |     ☑️    |        |
+| Fiber        | Cost per Mbps                |          |    ☑️   |
+| Fiber        | School Installation Cost     |          |    ☑️   |
+| Cellular     | Cost per Mbps                |          |    ☑️   |
+| Cellular     | School Installation Cost     |          |    ☑️   |
+| P2P          | Cost per Mbps                |          |    ☑️   |
+| P2P          | School Endpoint Installation |          |    ☑️   |
+| P2P          | Tower Endpoint Installation  |     ☑️    |        |
+| Satellite    | Cost per Mbps                |          |    ☑️   |
+| Satellite    | School Installation Cost     |          |    ☑️   |
+| Electricity  | Cost per kwh                 |          |    ☑️   |
+| Electricity  | Solar Panels                 |          |    ☑️   |
+
+Note that some of the technologies do not have an explicit provider cost associated with them, this is because it is assumed that the provider is able to deliver internet connectivity for that technology without additional investment (e.g. the technology is already ready avaible in the region of interest).
+
 ## Fiber Cost Model
 
 Documentation of the fiber cost model can be found below.

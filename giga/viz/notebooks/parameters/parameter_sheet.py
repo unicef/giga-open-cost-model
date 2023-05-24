@@ -79,15 +79,15 @@ class ParameterSheet:
         def _create_row(i, p):
             if self.interactive_parameters[i].show_default:
                 param = self.interactive_parameters[i].parameter_with_default
+                # add a callback to update the background color of the cell
+                self.interactive_parameters[i].set_off_default_css_style(
+                    "off-default-cell-background-color"
+                )
             else:
                 param = self.interactive_parameters[i].parameter
             self._sheet_lookup[p["parameter_name"]] = self.interactive_parameters[
                 i
             ].parameter
-            # add a callback to update the background color of the cell
-            self.interactive_parameters[i].set_off_default_css_style(
-                "off-default-cell-background-color"
-            )
             return widgets.VBox(
                 [
                     widgets.HTML(value=p["parameter_input_name"]).add_class(

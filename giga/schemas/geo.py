@@ -11,7 +11,7 @@ class UniqueCoordinate(BaseModel):
     """Uniquely identifiable lat/lon coordinate"""
 
     coordinate_id: str
-    coordinate: LatLonPoint  # [lat, lon]
+    coordinate: LatLonPoint = None  # [lat, lon]
     properties: Dict = {}
 
 

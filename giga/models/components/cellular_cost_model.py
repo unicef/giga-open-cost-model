@@ -28,11 +28,11 @@ class CellularCostModel:
     def _cost_of_setup(self):
         return self.config.capex.fixed_costs
 
-    def _cost_of_maintenance(self):
-        return self.config.opex.fixed_costs
-
     def _cost_of_operation(self, school):
-        return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+        return (
+            school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+            + self.config.opex.fixed_costs
+        )
 
     def _existing_cell_coverage(self, school):
         return (
@@ -51,45 +51,32 @@ class CellularCostModel:
         """
         electricity_model = ElectricityCostModel(self.config)
         connected_set = set([x.coordinate1.coordinate_id for x in distances])
-        capex_costs = self._cost_of_setup()
-        opex_provider = self._cost_of_maintenance()
+        capex_consumer = self._cost_of_setup()
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
-                c = SchoolConnectionCosts(
-                    school_id=sid,
-                    capex=math.nan,
-                    opex=math.nan,
-                    opex_provider=math.nan,
-                    opex_consumer=math.nan,
-                    technology="Cellular",
-                    feasible=False,
-                    reason="CELLULAR_BW_THRESHOLD",
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Cellular", "CELLULAR_BW_THRESHOLD"
                 )
             elif sid in connected_set or self._existing_cell_coverage(school):
                 # either school is in range of a cell tower or school has coverage information from supplemental data
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
                     school_id=sid,
-                    capex=capex_costs,
-                    opex=opex_consumer + opex_provider,
-                    opex_provider=opex_provider,
+                    capex=capex_consumer,
+                    capex_provider=0.0,
+                    capex_consumer=capex_consumer,
+                    opex=opex_consumer,
+                    opex_provider=0.0,
                     opex_consumer=opex_consumer,
                     technology="Cellular",
                 )
+                c.electricity = electricity_model.compute_cost(school)
             else:
-                c = SchoolConnectionCosts(
-                    school_id=sid,
-                    capex=math.nan,
-                    opex=math.nan,
-                    opex_provider=math.nan,
-                    opex_consumer=math.nan,
-                    technology="Cellular",
-                    feasible=False,
-                    reason="CELLULAR_RANGE_THRESHOLD",
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Cellular", "CELLULAR_RANGE_THRESHOLD"
                 )
-            c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs
 

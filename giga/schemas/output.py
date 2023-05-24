@@ -36,13 +36,15 @@ class SchoolConnectionCosts(BaseModel):
 
     school_id: str
     capex: float  # USD
+    capex_provider: float  # Provider capital costs
+    capex_consumer: float  # Consumer capital costs
     opex: float  # Total annual USD
     opex_provider: float  # Provider operating costs
     opex_consumer: float  # Consumer operating costs
     technology: ConnectivityTechnology
     feasible: bool = True
     reason: str = "Included"
-    electricity: PowerConnectionCosts = None
+    electricity: PowerConnectionCosts = PowerConnectionCosts()
 
     class Config:
         use_enum_values = True
@@ -52,6 +54,8 @@ class SchoolConnectionCosts(BaseModel):
         return SchoolConnectionCosts(
             school_id=school_id,
             capex=math.inf,
+            capex_provider=math.inf,
+            capex_consumer=math.inf,
             opex=math.inf,
             opex_provider=math.inf,
             opex_consumer=math.inf,
@@ -59,10 +63,30 @@ class SchoolConnectionCosts(BaseModel):
         )
 
     @staticmethod
+    def infeasible_cost(school_id: str, tech: str, reason: NonConnectionReason):
+        return SchoolConnectionCosts(
+            school_id=school_id,
+            capex=math.nan,
+            capex_provider=math.nan,
+            capex_consumer=math.nan,
+            opex=math.nan,
+            opex_provider=math.nan,
+            opex_consumer=math.nan,
+            technology=tech,
+            feasible=False,
+            reason=reason,
+            electricity=PowerConnectionCosts(
+                electricity_opex=math.nan, electricity_capex=math.nan
+            ),
+        )
+
+    @staticmethod
     def budget_exceeded_cost(school_id, tech):
         return SchoolConnectionCosts(
             school_id=school_id,
             capex=math.inf,
+            capex_provider=math.inf,
+            capex_consumer=math.inf,
             opex=math.inf,
             opex_provider=math.inf,
             opex_consumer=math.inf,

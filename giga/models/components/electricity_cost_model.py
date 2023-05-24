@@ -30,6 +30,12 @@ class ElectricityCostModel:
     def _cost_of_operation(self, school):
         return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
 
+    def zero_cost(self):
+        """
+        Returns a zero electricity cost object.
+        """
+        return PowerConnectionCosts()
+
     def compute_solar_cost(self, school: GigaSchool):
         """
         Compute the cost of solar connectivity for a school.
