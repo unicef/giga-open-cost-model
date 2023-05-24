@@ -26,8 +26,9 @@ CUSTOM_TEMPLATE = custom_template = {
 
 
 def make_cost_map(results):
+    to_show = results[results['feasible']]
     map_costs = px.density_mapbox(
-        results,
+        to_show,
         lat="lat",
         lon="lon",
         z="total_cost",
@@ -57,8 +58,9 @@ def make_cost_map(results):
 
 
 def make_technology_map(results):
+    to_show = results[results['feasible']]
     map_technology = px.scatter_mapbox(
-        results,
+        to_show,
         lat="lat",
         lon="lon",
         color="technology",

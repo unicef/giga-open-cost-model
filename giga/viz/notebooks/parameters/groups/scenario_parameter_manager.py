@@ -38,6 +38,7 @@ SCENARIO_SHEET_PARAMETERS = [
             "min": 0,
             "max": 10,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -49,6 +50,7 @@ SCENARIO_SHEET_PARAMETERS = [
             "min": 1,
             "max": 500,
             "step": 1,
+            "show_default": True,
         },
     },
     {
@@ -156,11 +158,16 @@ class ScenarioParameterManager:
         return self.sheet.get_parameter_value(parameter_name)
 
     def freeze(self):
+        # do not update budget constraint with this interface
+        budget_state = self.sheet.get_interactive_parameter("budget_constraint").disabled
         self.sheet.freeze()
+        self.sheet.get_interactive_parameter("budget_constraint").disabled = budget_state
         self._hash["scenario_type"].disabled = True
 
     def unfreeze(self):
+        budget_state = self.sheet.get_interactive_parameter("budget_constraint").disabled
         self.sheet.unfreeze()
+        self.sheet.get_interactive_parameter("budget_constraint").disabled = budget_state
         self._hash["scenario_type"].disabled = False
 
     def get_model_parameters(self):

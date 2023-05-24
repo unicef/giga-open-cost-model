@@ -58,7 +58,13 @@ class FiberCostModel:
         return by_school
 
     def _cost_of_operation(self, school):
-        return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+        return (
+            school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+            + self.config.opex.fixed_costs
+        )
+
+    def _cost_of_setup(self, schoold):
+        return self.config.capex.fixed_costs
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
@@ -70,46 +76,35 @@ class FiberCostModel:
         :return: a list of school connection costs for fiber technology
         """
         electricity_model = ElectricityCostModel(self.config)
-        capex_costs = self._distance_to_capex(distances)
+        capex_costs_provider = self._distance_to_capex(distances)
         opex_costs_provider = self._distance_to_opex(distances)
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
-                c = SchoolConnectionCosts(
-                    school_id=sid,
-                    capex=math.nan,
-                    opex=math.nan,
-                    opex_provider=math.nan,
-                    opex_consumer=math.nan,
-                    technology="Fiber",
-                    feasible=False,
-                    reason="FIBER_BW_THRESHOLD",
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Fiber", "FIBER_BW_THRESHOLD"
                 )
-            elif sid in capex_costs:
-                capex = capex_costs[sid]["capex"]
-                opex_consumer = self._cost_of_operation(school)
+            elif sid in capex_costs_provider:
+                capex_provider = capex_costs_provider[sid]["capex"]
                 opex_provider = opex_costs_provider[sid]["opex"]
+                capex_consumer = self._cost_of_setup(school)
+                opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
                     school_id=sid,
-                    capex=capex,
+                    capex=capex_provider + capex_consumer,
+                    capex_provider=capex_provider,
+                    capex_consumer=capex_consumer,
                     opex=opex_consumer + opex_provider,
                     opex_provider=opex_provider,
                     opex_consumer=opex_consumer,
                     technology="Fiber",
                 )
+                c.electricity = electricity_model.compute_cost(school)
             else:
-                c = SchoolConnectionCosts(
-                    school_id=sid,
-                    capex=math.nan,
-                    opex=math.nan,
-                    opex_provider=math.nan,
-                    opex_consumer=math.nan,
-                    technology="Fiber",
-                    feasible=False,
-                    reason="FIBER_DISTANCE_THRESHOLD",
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Fiber", "FIBER_DISTANCE_THRESHOLD"
                 )
-            c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs
 

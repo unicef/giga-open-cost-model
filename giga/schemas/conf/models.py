@@ -47,6 +47,7 @@ class GeneralizedInternetConstraints(BaseModel):
 
 class FiberOpex(BaseModel):
 
+    fixed_costs: float = 0.0  # USD
     cost_per_km: float
     annual_bandwidth_cost_per_mbps: float = 0.0
 

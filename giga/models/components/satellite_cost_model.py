@@ -22,11 +22,11 @@ class SatelliteCostModel:
     def _cost_of_setup(self):
         return self.config.capex.fixed_costs
 
-    def _cost_of_maintenance(self):
-        return self.config.opex.fixed_costs
-
     def _cost_of_operation(self, school):
-        return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+        return (
+            school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+            + self.config.opex.fixed_costs
+        )
 
     def compute_costs(self, data_space: ModelDataSpace) -> List[SchoolConnectionCosts]:
         """
@@ -35,15 +35,20 @@ class SatelliteCostModel:
         :return: a list of school connection costs for satellite technology
         """
         electricity_model = ElectricityCostModel(self.config)
-        capex_costs = self._cost_of_setup()
-        opex_provider = self._cost_of_maintenance()
+        capex_consumer = self._cost_of_setup()
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Satellite", "SATELLITE_BW_THRESHOLD"
+                )
+                """
                 c = SchoolConnectionCosts(
                     school_id=sid,
                     capex=math.nan,
+                    capex_provider=math.nan,
+                    capex_consumer=math.nan,
                     opex=math.nan,
                     opex_provider=math.nan,
                     opex_consumer=math.nan,
@@ -51,17 +56,20 @@ class SatelliteCostModel:
                     feasible=False,
                     reason="SATELLITE_BW_THRESHOLD",
                 )
+                """
             else:
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
                     school_id=sid,
-                    capex=capex_costs,
-                    opex=opex_consumer + opex_provider,
-                    opex_provider=opex_provider,
+                    capex=capex_consumer,
+                    capex_provider=0.0,
+                    capex_consumer=capex_consumer,
+                    opex=opex_consumer,
+                    opex_provider=0.0,
                     opex_consumer=opex_consumer,
                     technology="Satellite",
                 )
-            c.electricity = electricity_model.compute_cost(school)
+                c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs
 

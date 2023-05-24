@@ -89,11 +89,12 @@ class ResultDashboard:
         return tab
 
     def technology_tab(self):
+        to_show = self.results[self.results['feasible']]
         technology_pie = self._figure_to_output(
-            px.pie(self.results, names="technology")
+            px.pie(to_show, names="technology")
         )
         cost_pie = self._figure_to_output(
-            px.pie(self.results, values="total_cost", names="technology")
+            px.pie(to_show, values="total_cost", names="technology")
         )
         feasibility_pie = self._figure_to_output(px.pie(self.results, names="reason"))
 

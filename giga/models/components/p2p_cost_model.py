@@ -25,14 +25,17 @@ class P2PCostModel:
     def __init__(self, config: P2PTechnologyCostConf):
         self.config = config
 
-    def _cost_of_setup(self):
-        return self.config.capex.fixed_costs + self.config.capex.tower_fixed_costs
+    def _cost_of_setup_provider(self):
+        return self.config.capex.tower_fixed_costs
 
-    def _cost_of_maintenance(self):
-        return self.config.opex.fixed_costs
+    def _cost_of_setup_consumer(self):
+        return self.config.capex.fixed_costs
 
     def _cost_of_operation(self, school):
-        return school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+        return (
+            school.bandwidth_demand * self.config.opex.annual_bandwidth_cost_per_mbps
+            + self.config.opex.fixed_costs
+        )
 
     def compute_costs(
         self, distances: List[PairwiseDistance], data_space: ModelDataSpace
@@ -45,44 +48,32 @@ class P2PCostModel:
         """
         electricity_model = ElectricityCostModel(self.config)
         connected_set = set([x.coordinate1.coordinate_id for x in distances])
-        capex_costs = self._cost_of_setup()
-        opex_provider = self._cost_of_maintenance()
+        capex_provider = self._cost_of_setup_provider()
+        capex_consumer = self._cost_of_setup_consumer()
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
-                c = SchoolConnectionCosts(
-                    school_id=sid,
-                    capex=math.nan,
-                    opex=math.nan,
-                    opex_provider=math.nan,
-                    opex_consumer=math.nan,
-                    technology="P2P",
-                    feasible=False,
-                    reason="P2P_BW_THRESHOLD",
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "P2P", "P2P_BW_THRESHOLD"
                 )
             elif sid in connected_set:
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
                     school_id=sid,
-                    capex=capex_costs,
-                    opex=opex_consumer + opex_provider,
-                    opex_provider=opex_provider,
+                    capex=capex_provider + capex_consumer,
+                    capex_provider=capex_provider,
+                    capex_consumer=capex_consumer,
+                    opex=opex_consumer,
+                    opex_provider=0.0,
                     opex_consumer=opex_consumer,
                     technology="P2P",
                 )
+                c.electricity = electricity_model.compute_cost(school)
             else:
-                c = SchoolConnectionCosts(
-                    school_id=sid,
-                    capex=math.nan,
-                    opex=math.nan,
-                    opex_provider=math.nan,
-                    opex_consumer=math.nan,
-                    technology="P2P",
-                    feasible=False,
-                    reason="P2P_RANGE_THRESHOLD",
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "P2P", "P2P_RANGE_THRESHOLD"
                 )
-            c.electricity = electricity_model.compute_cost(school)
             costs.append(c)
         return costs
 

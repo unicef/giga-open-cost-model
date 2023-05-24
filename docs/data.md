@@ -71,19 +71,25 @@ These steps are combined in the command: `./run add-new-country <your-country-pa
 > 3. Generate the most up to date school dataset for this country by using the CLI: `./run fetch-school-data <path-to-country-workspace> <PROJECT_CONNECT_API_TOKEN> <country-name>`
 > 4. [OPTIONAL] If you would like, create a cache for the schools and infrastructure data that can be used to improve compute times in the models by using the CLI: `./run create-cache <path-to-country-workspace>`
 
-### Electricity Data
+### Supplemental Data
 
-Electricity data is currently not available through Project Connect APIs, and is thus managed independently.
-If you know the electricity status of the schools in your country of interest, you can populate the workspace with a .csv table that contains entries of the following form:
+Supplemental data is currently not available through Project Connect APIs, and is thus managed independently.
+If you have access to supplemental data of the schools in your country of interest, you can populate the workspace with a .csv table that contains entries of the following form:
 
 | Field         | Type          | Description                   |
 | ------------- | ------------- | ----------------------------- |
 | giga_id_school | str           | Unique school identifier |
 | has_electricity    | bool   | Whether the school has electricity   |
+| fiber    | bool   | Whether the school has existing fiber connectivity   |
+| coverage_type    | str   | The type of cellular coverage at the schools |
+| num_students    | int   | The number of students at the school  |
 
-If no electricity data is provided all schools will be assumed to not have electricity.
+If no supplemental data is provided all schools will be defaulted to the following:
+* `has_electricity`: False
+* `fiber`: False
+* `coverage_type`: None
+* `num_students`: None
 
----
 
 ### Fiber Node Data
 
