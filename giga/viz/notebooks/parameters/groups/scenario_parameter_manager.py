@@ -57,11 +57,11 @@ SCENARIO_SHEET_PARAMETERS = [
         "parameter_name": "budget_constraint",
         "parameter_input_name": "Project Budget (Millions USD)",
         "parameter_interactive": {
-            "parameter_type": "float_slider",
+            "parameter_type": "int_slider",
             "value": 1,
             "min": 0,
             "max": 500,
-            "step": 0.1,
+            "step": 1,
         },
     },
 ]

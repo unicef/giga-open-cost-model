@@ -394,6 +394,34 @@ class CostEstimationParameterInput:
             for m in manager_collection:
                 m.unfreeze()
 
+    def all_tech_config(self):
+        p = self.scenario_parameter_manager.get_model_parameters()
+        fiber_params = self.fiber_parameters()
+        satellite_params = self.satellite_parameters()
+        cellular_params = self.cellular_parameters()
+        p2p_params = self.p2p_parameters()
+        fiber_params.electricity_config = self.electricity_parameters()
+        satellite_params.electricity_config = self.electricity_parameters()
+        cellular_params.electricity_config = self.electricity_parameters()
+        p2p_params.electricity_config = self.electricity_parameters()
+        conf = MinimumCostScenarioConf(
+            **p,
+            technologies=[
+                fiber_params,
+                satellite_params,
+                cellular_params,
+                p2p_params,
+            ],
+        )
+        conf.technologies[2] = cellular_params
+        conf.technologies[3] = p2p_params
+        if p["scenario_type"] == "Budget Constrained":
+            conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"][
+                "budget_constraint"
+            ]
+            conf.scenario_id = "budget_constrained"
+        return conf
+
     def scenario_parameters(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()
         if p["scenario_type"] == "Fiber Only":
@@ -602,16 +630,21 @@ class CostEstimationParameterInput:
                     [
                         giga_sections.section(
                             "Electricity Parameters",
-                            self.electricity_parameters_input()
+                            self.electricity_parameters_input(),
                         ),
                         giga_sections.section(
-                            "Dashboard Configuration",
-                            self.dashboard_parameters_input()
+                            "Dashboard Configuration", self.dashboard_parameters_input()
                         ),
                     ],
                     layout=layout,
                 ),
-                giga_sections.section("School Selection <span style=\"color: #787; font-weight: normal\">(click to expand)</span>", selection_map, "dark"
-                                      ).add_class("center").add_class("expander").add_class("footer")
+                giga_sections.section(
+                    'School Selection <span style="color: #787; font-weight: normal">(click to expand)</span>',
+                    selection_map,
+                    "dark",
+                )
+                .add_class("center")
+                .add_class("expander")
+                .add_class("footer"),
             ]
         )

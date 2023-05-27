@@ -21,7 +21,7 @@ class BaseDataLayerConfig(BaseModel):
 
 class SchoolMapLayerConfig(BaseDataLayerConfig):
 
-    marker_size: int = 3
+    marker_size: int = 5
     marker_color: str = "#9f86c0"
     marker_opacity: float = 0.95
     layer_name: str = "School"
