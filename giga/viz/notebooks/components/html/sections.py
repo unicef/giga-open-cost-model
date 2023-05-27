@@ -149,6 +149,13 @@ display(
         left: 0 !important;
         margin: -10px;
     }
+    .giga-section .togg {
+        width: 100% !important;
+        height: 100% !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin: -10px;
+    }
 
     /* .expander: clicking header toggles contents */
     .giga-section.expander:not(.active) {

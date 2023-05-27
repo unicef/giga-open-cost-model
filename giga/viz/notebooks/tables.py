@@ -18,9 +18,7 @@ def output_to_school_stats(output_table, data_space):
     dfs = pd.DataFrame(
         [
             {
-                "Total Number of Schools": len(data_space.all_schools.schools),
-                "Total Number of Connected Schools": len(data_space.all_schools.schools)
-                - len(data_space.schools.schools),
+                "Total Number of Schools": len(data_space.schools.schools),
                 "Total Number of Unconnected Schools": len(output_table),
                 "Schools that can be connected": sum(output_table["feasible"]),
                 "Schools requiring electricity": len(
@@ -123,7 +121,7 @@ def format_dollars(df, columns):
     return df
 
 
-def display_summary_table(output_space, data_space):
+def create_summary_table(output_space, data_space):
     def get_space(t, num):
         s = ""
         for _ in range(num):
@@ -155,62 +153,64 @@ def display_summary_table(output_space, data_space):
     def _pdHTML(df: pd.DataFrame):
         return HTML(df.to_html(col_space=5, border=0))
 
-    display(
-        VBox(
-            [
-                GridBox(
-                    [
-                        section(
-                            "Summary",
-                            VBox(
-                                [
-                                    _pdHTML(dfs),
-                                    HTML(
-                                        f"<b><font color='#07706d'>Total costs: {value_to_dollar_format(total_costs)}</b>"
-                                    ),
-                                ]
-                            ),
+    return VBox(
+        [
+            GridBox(
+                [
+                    section(
+                        "Summary",
+                        VBox(
+                            [
+                                _pdHTML(dfs),
+                                HTML(
+                                    f"<b><font color='#07706d'>Total costs: {value_to_dollar_format(total_costs)}</b>"
+                                ),
+                            ]
                         ),
-                        section("Breakout by Technology", _pdHTML(dft)),
-                    ],
-                    layout=layout,
-                ),
-                GridBox(
-                    [
-                        section(
-                            "Technology CapEx",
-                            VBox(
-                                [
-                                    _pdHTML(dfcap),
-                                    HTML(
-                                        f"<b><font color='#07706d'>Total Technology CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b>"
-                                    ),
-                                ]
-                            ),
+                    ),
+                    section("Breakout by Technology", _pdHTML(dft)),
+                ],
+                layout=layout,
+            ),
+            GridBox(
+                [
+                    section(
+                        "Technology CapEx",
+                        VBox(
+                            [
+                                _pdHTML(dfcap),
+                                HTML(
+                                    f"<b><font color='#07706d'>Total Technology CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b>"
+                                ),
+                            ]
                         ),
-                        section("Electricity CapEx", _pdHTML(df_solar)),
-                    ],
-                    layout=layout,
-                ),
-                GridBox(
-                    [
-                        section(
-                            "OpEx",
-                            VBox(
-                                [
-                                    _pdHTML(dfop),
-                                    HTML(
-                                        f"<b><font color='#07706d'>Total OpEx Costs {get_space('&emsp;', 12)} {op_total}</b>"
-                                    ),
-                                ]
-                            ),
-                        )
-                    ],
-                    layout=layout,
-                ),
-            ]
-        )
+                    ),
+                    section("Electricity CapEx", _pdHTML(df_solar)),
+                ],
+                layout=layout,
+            ),
+            GridBox(
+                [
+                    section(
+                        "OpEx",
+                        VBox(
+                            [
+                                _pdHTML(dfop),
+                                HTML(
+                                    f"<b><font color='#07706d'>Total OpEx Costs {get_space('&emsp;', 12)} {op_total}</b>"
+                                ),
+                            ]
+                        ),
+                    )
+                ],
+                layout=layout,
+            ),
+        ]
     )
+
+
+def display_summary_table(output_space, data_space):
+    display(create_summary_table(output_space, data_space))
 
 
 def plot_cost_breakdown(output_space, data_space, border):

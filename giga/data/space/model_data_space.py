@@ -1,5 +1,6 @@
+import math
 from shapely.geometry import Point
-import geopandas as gpd
+import pandas as pd
 from typing import List
 
 from giga.schemas.conf.data import DataSpaceConf
@@ -197,11 +198,39 @@ class ModelDataSpace:
 
     def school_outputs_to_frame(self, outputs):
         lookup = {
-            c.coordinate_id: tuple(reversed(c.coordinate))
-            for c in self.school_coordinates
+            c.giga_id: {
+                "lat": c.lat,
+                "lon": c.lon,
+                "num_students": c.num_students,
+                "has_electricity": c.has_electricity,
+                "has_fiber": c.has_fiber,
+                "cell_coverage_type": c.cell_coverage_type,
+                "bandwidth_demand": c.bandwidth_demand,
+                "nearest_fiber": self.fiber_cache.connected_cache.lookup[
+                    c.giga_id
+                ].distance
+                if self.fiber_cache.connected_cache is not None
+                else math.inf,
+                "nearest_cell_tower": self.cellular_cache.connected_cache.lookup[
+                    c.giga_id
+                ].distance
+                if self.cellular_cache.connected_cache is not None
+                else math.inf,
+            }
+            for c in self.school_entities
         }
-        geometry = [Point(lookup[sid]) for sid in outputs["school_id"]]
-        df = gpd.GeoDataFrame(outputs, crs="4326", geometry=geometry).reset_index()
-        df["lat"] = df["geometry"].apply(lambda x: x.coords[0][1])
-        df["lon"] = df["geometry"].apply(lambda x: x.coords[0][0])
+        df = pd.DataFrame(outputs)
+        schools_ids = list(df["school_id"])
+        for k in [
+            "lat",
+            "lon",
+            "num_students",
+            "has_electricity",
+            "has_fiber",
+            "cell_coverage_type",
+            "bandwidth_demand",
+            "nearest_fiber",
+            "nearest_cell_tower",
+        ]:
+            df[k] = [lookup[sid][k] for sid in schools_ids]
         return df

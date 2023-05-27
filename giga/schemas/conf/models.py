@@ -152,6 +152,10 @@ class SingleTechnologyScenarioConf(BaseModel):
     class Config:
         case_sensitive = False
 
+    @property
+    def maximum_bandwidths(self):
+        return {self.technology: self.tech_config.constraints.maximum_bandwithd}
+
 
 class MinimumCostScenarioConf(BaseModel):
     """
@@ -174,6 +178,10 @@ class MinimumCostScenarioConf(BaseModel):
     @validator("cost_minimizer_config", always=True)
     def validate_minimizer_conf(cls, value, values):
         return CostMinimizerConf(years_opex=values["years_opex"])
+
+    @property
+    def maximum_bandwidths(self):
+        return {t.technology: t.constraints.maximum_bandwithd for t in self.technologies}
 
 
 class SATSolverConf(BaseModel):

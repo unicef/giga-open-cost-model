@@ -3,10 +3,41 @@ from enum import Enum
 from pydantic import BaseModel
 import math
 import numpy as np
+import pandas as pd
 
 from giga.schemas.geo import PairwiseDistance
 from giga.schemas.tech import ConnectivityTechnology
 from giga.viz.notebooks.helpers import output_to_table
+
+
+def results_to_complete_table(results: List, n_years: int, attribution):
+    df = pd.DataFrame([dict(x) for x in results])
+    electricity_capex = list(
+        map(
+            lambda x: x.electricity.electricity_capex if x.feasible else math.nan,
+            results,
+        )
+    )
+    electricity_opex = list(
+        map(
+            lambda x: x.electricity.electricity_opex if x.feasible else math.nan,
+            results,
+        )
+    )
+    electricity_type = list(
+        map(lambda x: x.electricity.cost_type if x.feasible else math.nan, results)
+    )
+    total_cost = [
+        r.technology_connectivity_cost(n_years, attribution=attribution)
+        for r in results
+    ]
+    df["electricity_capex"] = electricity_capex
+    df["electricity_opex"] = electricity_opex
+    df["electricity_type"] = electricity_type
+    df["recurring_costs"] = df["opex_consumer"] + df["electricity_opex"]
+    df["total_cost"] = total_cost
+    df = df.drop(columns=["electricity"])
+    return df
 
 
 class PowerConnectionCosts(BaseModel):
@@ -95,10 +126,17 @@ class SchoolConnectionCosts(BaseModel):
             reason=NonConnectionReason.budget_exceeded,
         )
 
-    def technology_connectivity_cost(self, num_years: int):
+    def technology_connectivity_cost(self, num_years: int, attribution="both"):
         # estimate of total cost of connectivity over the length of the project
-        total_capex = self.capex + self.electricity.electricity_capex
-        total_opex = self.opex + self.electricity.electricity_opex
+        if attribution == "provider":
+            total_capex = self.capex_provider
+            total_opex = self.opex_provider
+        elif attribution == "consumer":
+            total_capex = self.capex_consumer + self.electricity.electricity_capex
+            total_opex = self.opex_consumer + self.electricity.electricity_opex
+        else:
+            total_capex = self.capex + self.electricity.electricity_capex
+            total_opex = self.opex + self.electricity.electricity_opex
         return total_capex + total_opex * num_years
 
 
@@ -153,6 +191,13 @@ class OutputSpace(BaseModel):
     @property
     def table(self):
         return output_to_table(self)
+
+    def full_results_table(self, n_years: int, attribution="both"):
+        if self.minimum_cost_result:
+            results = self.minimum_cost_result
+        else:
+            results = self.technology_outputs[0].cost_results
+        return results_to_complete_table(results, n_years, attribution)
 
     def get_technology_cost_by_school(self, school_id: str, technology: str):
         assert (

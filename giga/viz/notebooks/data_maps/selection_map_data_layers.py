@@ -90,9 +90,9 @@ class SelectionMapDataLayers(MapDataLayers):
     def connect_school_layer_selection(self, fig):
         def selection_fn(trace, points, selector):
             point_inds = list(points.point_inds)
-            status = trace.name
+            status = trace.name.strip()
             filtered_schools = self._schools[
-                self._schools["connectivity_status"] == trace.name
+                self._schools["connectivity_status"] == status
             ].reset_index()
             if status == self.config.first_school_data_layer:
                 # first trace in selection
