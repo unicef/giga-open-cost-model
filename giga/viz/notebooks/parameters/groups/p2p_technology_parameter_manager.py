@@ -42,18 +42,6 @@ P2P_MODEL_PARAMETERS = [
         },
     },
     {
-        "parameter_name": "fixed_costs",
-        "parameter_input_name": "Annual Maintenance Cost (USD)",
-        "parameter_interactive": {
-            "parameter_type": "int_slider",
-            "value": 0,
-            "min": 0,
-            "max": 1_000,
-            "step": 10,
-            "show_default": True,
-        },
-    },
-    {
         "parameter_name": "required_power",
         "parameter_input_name": "Annual Power Required (kWh)",
         "parameter_interactive": {
@@ -92,7 +80,6 @@ class P2PTechnologyParameterManager:
         if len(config) == 0:
             return
         self.sheet.update_parameter("install_costs", config["capex"]["fixed_costs"])
-        self.sheet.update_parameter("fixed_costs", config["opex"]["fixed_costs"])
         self.sheet.update_parameter(
             "annual_bandwidth_cost_per_mbps",
             config["opex"]["annual_bandwidth_cost_per_mbps"],
@@ -125,7 +112,6 @@ class P2PTechnologyParameterManager:
         )
         install_cost = float(self.get_parameter_from_sheet("install_costs"))
         tower_install_cost = float(self.get_parameter_from_sheet("tower_install_costs"))
-        maintenance_cost = float(self.get_parameter_from_sheet("fixed_costs"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         maximum_range = (
             float(self.get_parameter_from_sheet("maximum_range")) * METERS_PER_KM
@@ -136,7 +122,7 @@ class P2PTechnologyParameterManager:
                 "tower_fixed_costs": tower_install_cost,
             },
             opex={
-                "fixed_costs": maintenance_cost,
+                "fixed_costs": 0.0,
                 "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
             },
             constraints={

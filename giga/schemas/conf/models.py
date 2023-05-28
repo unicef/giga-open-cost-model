@@ -163,13 +163,14 @@ class MinimumCostScenarioConf(BaseModel):
     necessary to connect schools with the cheapest technology when available
     """
 
-    scenario_id: Literal["minimum_cost", "budget_constrained"] = "minimum_cost"
+    scenario_id: Literal["minimum_cost", "single_tech_cost"] = "minimum_cost"
     technologies: List[TechnologyConfiguration]
     years_opex: int = 5  # the number of opex years to consider in the estimate
     opex_responsible: Literal[
         "Provider", "Consumer", "Both"
     ]  # type of opex costs to consider
     bandwidth_demand: float  # Mbps
+    single_tech: Literal["Fiber", "Cellular", "Satellite", "P2P"] = None  # if not None, only consider this technology
     cost_minimizer_config: CostMinimizerConf = None
 
     class Config:

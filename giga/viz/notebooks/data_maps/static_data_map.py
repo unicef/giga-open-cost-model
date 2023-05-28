@@ -3,7 +3,7 @@ from typing import List, Dict
 from pydantic import BaseModel
 import plotly.graph_objs as go
 import plotly.io as pio
-from ipywidgets import Layout, VBox, HTML
+from ipywidgets import Layout, VBox, HTML, Output, Label
 
 
 from giga.data.space.model_data_space import ModelDataSpace
@@ -17,47 +17,65 @@ MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
 
 
 STATIC_MAP_MODEBAR_CONFIG = {
-    'displayModeBar': "hover",
-    'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toggleSpikelines'],
-    'toImageButtonOptions': {
-        'format': 'jpeg', # one of png, svg, jpeg, webp
-        'filename': 'custom_image',
-        'height': 1200,
-        'width': 1200,
+    "displayModeBar": True,
+    "modeBarButtonsToRemove": [
+        "zoom2d",
+        "pan2d",
+        "zoomIn2d",
+        "zoomOut2d",
+        "autoScale2d",
+        "resetScale2d",
+        "hoverClosestCartesian",
+        "hoverCompareCartesian",
+        "toggleSpikelines",
+        "select",
+        "lasso",
+    ],
+    "toImageButtonOptions": {
+        "format": "jpeg",  # one of png, svg, jpeg, webp
+        "filename": "custom_image",
+        "height": 1600,
+        "width": 1600,
     },
-    'displaylogo': False
+    "displaylogo": False,
 }
 
 SELECTION_MAP_MODEBAR_CONFIG = {
-    'displayModeBar': True,
-    'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toggleSpikelines'],
-    'toImageButtonOptions': {
-        'format': 'jpeg', # one of png, svg, jpeg, webp
-        'filename': 'custom_image',
-        'height': 1200,
-        'width': 1200,
+    "displayModeBar": True,
+    "modeBarButtonsToRemove": [
+        "zoom2d",
+        "pan2d",
+        "zoomin",
+        "zoomout",
+        "autoScale2d",
+        "resetScale2d",
+        "hoverClosestCartesian",
+        "hoverCompareCartesian",
+        "toggleSpikelines",
+    ],
+    "toImageButtonOptions": {
+        "format": "jpeg",  # one of png, svg, jpeg, webp
+        "filename": "custom_image",
+        "height": 1600,
+        "width": 1600,
     },
-    'displaylogo': False
+    "displaylogo": False,
 }
 
-class ModeBarConfig(BaseModel):
-    image_button_config: dict = {
-        "format": "svg",  # one of png, svg, jpeg, webp
-        "filename": "custom_image",
-        "height": 500,
-        "width": 700,
-        "scale": 1,  # Multiply title/legend/axis/canvas sizes by this factor
-    }
-    displayModeBar: bool = True
-    displaylogo: bool = False
-
-    @property
-    def config(self):
-        return {"toImageButtonOptions": self.image_button_config}
-
-    def set_jupyterlab(self):
-        pio.renderers["jupyterlab"].config["displayModeBar"] = self.displayModeBar
-        pio.renderers["jupyterlab"].config["displaylogo"] = self.displaylogo
+SELECTION_MAP_MODEBAR_CONFIG = {
+    "activecolor": "#FFFFFF",
+    "remove": [
+        "zoom2d",
+        "pan2d",
+        "zoomin",
+        "zoomout",
+        "autoScale2d",
+        "resetScale2d",
+        "hoverClosestCartesian",
+        "hoverCompareCartesian",
+        "toggleSpikelines",
+    ],
+}
 
 
 class DataMapConfig(BaseModel):
@@ -70,11 +88,11 @@ class DataMapConfig(BaseModel):
     legend_x: float = 0.05
     legend_y: float = 0.95
     legend_bgcolor: str = "#262624"
-    legend_width: str =  75 # px
+    legend_width: str = 75  # px
     legend_font_color: str = "white"
     legend_border_color: str = "#070807"
     legend_border_width: int = 1
-    mode_bar_config: ModeBarConfig = ModeBarConfig()
+    mode_bar_config: Dict = STATIC_MAP_MODEBAR_CONFIG
     jupyterlab: bool = True
     no_cell: bool = False
 
@@ -82,9 +100,8 @@ class DataMapConfig(BaseModel):
 class StaticDataMap:
     def __init__(self, config: DataMapConfig):
         self.config = config
-        if self.config.jupyterlab:
-            self.config.mode_bar_config.set_jupyterlab()
         self.fig = go.FigureWidget()
+        self.selection_map_output = Output()
 
     def add_layer(self, layer: go.Scattermapbox):
         self.fig.add_trace(layer)
@@ -94,38 +111,56 @@ class StaticDataMap:
             l.name = l.name + "   "
             self.add_layer(l)
 
-    def get_map(self, center: List[float], infra_toggle=True, **kwargs):
+    def get_map(
+        self, center: List[float], infra_toggle=True, selection_map=False, **kwargs
+    ):
         style = (
             self.config.style_default
             if MAP_BOX_ACCESS_TOKEN == ""
             else self.config.style_mapbox
         )
         token = None if MAP_BOX_ACCESS_TOKEN == "" else MAP_BOX_ACCESS_TOKEN
+        modebar = SELECTION_MAP_MODEBAR_CONFIG if selection_map else {}
         update_menu = []
         if infra_toggle:
             update_menu = [
-                    go.layout.Updatemenu(
-                        bgcolor='#474747', # This changes the background color to a dark gray
-                        font=dict(color='white'),
-                        buttons=list([
+                go.layout.Updatemenu(
+                    bgcolor="#474747",  # This changes the background color to a dark gray
+                    font=dict(color="white"),
+                    buttons=list(
+                        [
                             dict(
                                 args=[{"visible": [True]}],
                                 label="Show all",
-                                method="update"
+                                method="update",
                             ),
                             dict(
-                                args=[{"visible": [False, False, False, False, True, True, True, True]}],
+                                args=[
+                                    {
+                                        "visible": [
+                                            False,
+                                            False,
+                                            False,
+                                            False,
+                                            True,
+                                            True,
+                                            True,
+                                            True,
+                                        ]
+                                    }
+                                ],
                                 label=" Hide Infrastructure ",
-                                method="update"
+                                method="update",
                             ),
-                        ]),
+                        ]
+                    ),
                     direction="down",
                     pad={"r": 10, "t": 10},
                     showactive=True,
                     x=0.75,
                     xanchor="left",
                     y=0.95,
-                    yanchor="top"
+                    yanchor="top",
                 ),
             ]
         self.fig.update_layout(
@@ -153,19 +188,55 @@ class StaticDataMap:
             ),
             xaxis=dict(showticklabels=False),
             yaxis=dict(showticklabels=False),
+            modebar=modebar,
+            hoverlabel=dict(font_size=9),
             **kwargs,
         )
+        if not selection_map:
+            # Title added here for FigureWidget
+            self.fig.layout.title = {
+                "text": "Current Infrastructure and <br> Connectivity Snapshot",
+                "y": 0.96,
+                "x": 0.5,
+                "xanchor": "center",
+                "yanchor": "top",
+                "font": dict(
+                    size=18, color="white", family="Verdana"
+                ),  # customize font size here
+            }
         return self.fig
 
+    def make_static_map_figure(self, figure):
+        figure.show(config=STATIC_MAP_MODEBAR_CONFIG)
+
     def get_selection_map(
-        self, center: List[float], layers: SelectionMapDataLayers, **kwargs
+        self,
+        center: List[float],
+        layers: SelectionMapDataLayers,
+        clear_output=True,
+        **kwargs
     ):
-        l = layers.layers_selection_no_cell if self.config.no_cell else layers.layers_selection
+        if clear_output:
+            self.selection_map_output.clear_output()
+        l = (
+            layers.layers_selection_no_cell
+            if self.config.no_cell
+            else layers.layers_selection
+        )
         self.add_layers(l)
-        m = self.get_map(center, infra_toggle=False)
+        m = self.get_map(center, infra_toggle=False, selection_map=True)
+        m._config = {**m._config, **{"displayModeBar": True, "displaylogo": False}}
         layers.connect_school_layer_selection(m)
+        upload_button = layers.make_upload_button(m)
+        selected_label = layers.make_selected_label()
         layout = Layout()  # add centering and other formatting here
-        return VBox([
-            m, 
-            HTML("<br/>"),
-            section("Current Selections", layers.school_selection_table, "nopad")], layout=layout)
+        return VBox(
+            [
+                upload_button,
+                HTML("<br>"),
+                m,
+                selected_label,
+                section("Current Selections", layers.school_selection_table, "nopad"),
+            ],
+            layout=layout,
+        )

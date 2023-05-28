@@ -90,8 +90,6 @@ hub:
     cds-handlers: |
       from cdsdashboards.hubextension import cds_extra_handlers
       c.JupyterHub.extra_handlers = cds_extra_handlers
-      c.VariableMixin.proxy_force_alive = False
-      c.VariableMixin.proxy_last_activity_interval = 300
     cds-templates: |
       from cdsdashboards.app import CDS_TEMPLATE_PATHS
       c.JupyterHub.template_paths = CDS_TEMPLATE_PATHS
@@ -133,7 +131,7 @@ hub:
       privateIPs: true
     interNamespaceAccessLabels: ignore
     allowedIngressPorts: []
-  allowNamedServers: false
+  allowNamedServers: true
   namedServerLimitPerUser:
   authenticatePrometheus:
   redirectToServer:
@@ -408,16 +406,6 @@ singleuser:
   storage:
     type: dynamic
     extraLabels: {}
-    # Actual config: this should reference an existing volume claim containing results data
-    #extraVolumes:
-    #  - name: jupyterhub-shared
-    #    persistentVolumeClaim:
-    #      claimName: nzm-model-data-reader-claim
-    #      readOnly: true
-    #extraVolumeMounts:
-    #  - name: jupyterhub-shared
-    #    mountPath: "/home/workspace"
-    #    readOnly: true
     static:
       pvcName:
       subPath: "{username}"
@@ -431,7 +419,7 @@ singleuser:
   image:
     # Actual config: single user image for notebook containers
     name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/notebooks
-    tag: "0.3.5"
+    tag: "0.3.6"
     pullPolicy: Always
     pullSecrets: []
   startTimeout: 300
@@ -701,7 +689,7 @@ cull:
   maxAge: 0 # --max-age
 
 debug:
-  enabled: false
+  enabled: true
 
 global:
   safeToShowValues: false

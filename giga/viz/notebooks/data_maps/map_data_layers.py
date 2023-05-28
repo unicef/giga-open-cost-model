@@ -6,6 +6,7 @@ from typing import List, Dict
 
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.school import GigaSchoolTable
+from giga.viz.colors import GIGA_CONNECTIVITY_COLORS
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
@@ -26,12 +27,7 @@ class SchoolMapLayerConfig(BaseDataLayerConfig):
     marker_opacity: float = 0.95
     layer_name: str = "School"
     ordered_status: List[str] = ["Unknown", "No connection", "Moderate", "Good"]
-    color_map: Dict[str, str] = {
-        "Good": "#8bd431",
-        "Moderate": "#ffc93d",
-        "No connection": "#ff615b",
-        "Unknown": "#556fc2",
-    }
+    color_map: Dict[str, str] = GIGA_CONNECTIVITY_COLORS
 
 
 class CellTowerMapLayerConfig(BaseDataLayerConfig):
@@ -106,6 +102,8 @@ class MapDataLayers:
                 lon=ff["lon"],
                 lat=ff["lat"],
                 text=ff["name"],
+                hovertemplate="<b>Name:</b> %{text}<br><b>ID:</b> %{customdata}",
+                customdata=ff["giga_id"],
                 mode="markers",
                 marker=go.scattermapbox.Marker(
                     size=self.config.school_layer.marker_size,

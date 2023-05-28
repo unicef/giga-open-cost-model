@@ -236,7 +236,8 @@ class CostEstimationParameterInput:
                 data_map.add_layers(map_layers.layers)
                 m = data_map.get_map(self.defaults[country].data.country_center_tuple)
             with self.map_output:
-                display(m)
+                data_map.make_static_map_figure(m)
+            return self.map_output
 
         def update_selection_map(change):
             self.selection_map_output.clear_output()
@@ -285,10 +286,7 @@ class CostEstimationParameterInput:
     def update(self, config):
         if len(config) == 0:
             return
-        if (
-            config["scenario_parameters"]["scenario_id"] == "minimum_cost"
-            or config["scenario_parameters"]["scenario_id"] == "budget_constrained"
-        ):
+        if config["scenario_parameters"]["scenario_id"] == "minimum_cost":
             tech_configs = {
                 t["technology"]: t
                 for t in config["scenario_parameters"]["technologies"]
@@ -415,14 +413,14 @@ class CostEstimationParameterInput:
         )
         conf.technologies[2] = cellular_params
         conf.technologies[3] = p2p_params
-        if p["scenario_type"] == "Budget Constrained":
+        if p["use_budget_constraint"]:
             conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"][
                 "budget_constraint"
             ]
             conf.scenario_id = "budget_constrained"
         return conf
 
-    def scenario_parameters(self, sheet_name="scenario"):
+    def scenario_parameters_old(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()
         if p["scenario_type"] == "Fiber Only":
             tech_params = self.fiber_parameters()
@@ -472,12 +470,86 @@ class CostEstimationParameterInput:
             )
             conf.technologies[2] = cellular_params
             conf.technologies[3] = p2p_params
-            if p["scenario_type"] == "Budget Constrained":
+            if p["use_budget_constraint"]:
                 conf.cost_minimizer_config.budget_constraint = p[
                     "cost_minimizer_config"
                 ]["budget_constraint"]
                 conf.scenario_id = "budget_constrained"
             return conf
+
+    def scenario_parameters(self, sheet_name="scenario"):
+        p = self.scenario_parameter_manager.get_model_parameters()
+        if p["scenario_type"] == "Fiber Only":
+            tech_params = self.fiber_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
+            conf = MinimumCostScenarioConf(
+                **p,
+                technologies=[
+                    tech_params,
+                ],
+                single_tech="Fiber",
+            )
+            conf.scenario_id = "single_tech_cost"
+        elif p["scenario_type"] == "Satellite LEO Only":
+            tech_params = self.satellite_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
+            conf = MinimumCostScenarioConf(
+                **p,
+                technologies=[
+                    tech_params,
+                ],
+                single_tech="Satellite",
+            )
+            conf.scenario_id = "single_tech_cost"
+        elif p["scenario_type"] == "Cellular Only":
+            tech_params = self.cellular_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
+            conf = MinimumCostScenarioConf(
+                **p,
+                technologies=[
+                    tech_params,
+                ],
+                single_tech="Cellular",
+            )
+            conf.scenario_id = "single_tech_cost"
+            conf.technologies[0] = tech_params
+        elif p["scenario_type"] == "P2P Only":
+            tech_params = self.p2p_parameters()
+            tech_params.electricity_config = self.electricity_parameters()
+            conf = MinimumCostScenarioConf(
+                **p,
+                technologies=[
+                    tech_params,
+                ],
+                single_tech="P2P",
+            )
+            conf.scenario_id = "single_tech_cost"
+            conf.technologies[0] = tech_params
+        else:
+            fiber_params = self.fiber_parameters()
+            satellite_params = self.satellite_parameters()
+            cellular_params = self.cellular_parameters()
+            p2p_params = self.p2p_parameters()
+            fiber_params.electricity_config = self.electricity_parameters()
+            satellite_params.electricity_config = self.electricity_parameters()
+            cellular_params.electricity_config = self.electricity_parameters()
+            p2p_params.electricity_config = self.electricity_parameters()
+            conf = MinimumCostScenarioConf(
+                **p,
+                technologies=[
+                    fiber_params,
+                    satellite_params,
+                    cellular_params,
+                    p2p_params,
+                ],
+            )
+            conf.technologies[2] = cellular_params
+            conf.technologies[3] = p2p_params
+        if p["use_budget_constraint"]:
+            conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"][
+                "budget_constraint"
+            ]
+        return conf
 
     def get_selected_schools(self):
         country = self.data_parameters().school_data_conf.country_id
@@ -546,7 +618,7 @@ class CostEstimationParameterInput:
             data_map.add_layers(map_layers.layers)
             m = data_map.get_map(self.defaults[country].data.country_center_tuple)
         with self.map_output:
-            display(m)
+            data_map.make_static_map_figure(m)
         return self.map_output
 
     def selection_map(self):
@@ -567,7 +639,7 @@ class CostEstimationParameterInput:
                 VBox(
                     [
                         HTML(
-                            value="To add multiple selections, hold <b>Shift</b> when making a new selection. Double-click a selection to clear it."
+                            value="To add multiple selections, hold <b>Shift</b> when making a new selection. Double-click a selection to clear it.<br> To upload schools, click the <b>Upload Schools</b> button and select a csv file that contains a <b>school_id</b> column."
                         ),
                         m,
                     ]
@@ -590,6 +662,14 @@ class CostEstimationParameterInput:
                     ),
                     extra_class="dark",
                 ).add_class("center"),
+                giga_sections.section(
+                    'School Selection <span style="color: #787; font-weight: normal">(click to expand)</span>',
+                    selection_map,
+                    "dark",
+                )
+                .add_class("center")
+                .add_class("expander")
+                .add_class("footer"),
                 giga_sections.section(
                     "Scenario Selection", self.scenario_parameter_input()
                 ),
@@ -622,29 +702,17 @@ class CostEstimationParameterInput:
                                 ],
                                 layout=layout,
                             ),
-                        ]
+                            GridBox(
+                                [
+                                    giga_sections.section(
+                                        "Electricity Parameters",
+                                        self.electricity_parameters_input(),
+                                    ),
+                                ],
+                            ),
+                        ],
                     ),
                     extra_class="center",
                 ),
-                GridBox(
-                    [
-                        giga_sections.section(
-                            "Electricity Parameters",
-                            self.electricity_parameters_input(),
-                        ),
-                        giga_sections.section(
-                            "Dashboard Configuration", self.dashboard_parameters_input()
-                        ),
-                    ],
-                    layout=layout,
-                ),
-                giga_sections.section(
-                    'School Selection <span style="color: #787; font-weight: normal">(click to expand)</span>',
-                    selection_map,
-                    "dark",
-                )
-                .add_class("center")
-                .add_class("expander")
-                .add_class("footer"),
             ]
         )
