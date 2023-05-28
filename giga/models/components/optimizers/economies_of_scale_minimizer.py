@@ -84,9 +84,7 @@ class EconomiesOfScaleMinimizer:
         baseline_cost_lookup = output.minimum_cost_lookup(
             self.config.years_opex, ignore_tech=ECONOMIES_OF_SCALE_TECHNOLOGIES
         )
-        distances = PairwiseDistanceTable(
-            distances=output.fiber_costs.technology_results.distances
-        )
+        distances = PairwiseDistanceTable(distances=output.fiber_distances)
         # group schools into clusters based on their root node (e.g. fiber nodes)
         clusters = list(distances.group_by_source().values())
         root_nodes = set(distances.group_by_source().keys())
@@ -113,9 +111,10 @@ class EconomiesOfScaleMinimizer:
         LOGGER.info(
             f"Economies of scale minimization: total schools: {len(output.aggregated_costs.keys())}, schools using economies of scale: {len(economies_of_scale_ids)}, schools not using economies of scale: {len(baseline_cost_ids)}, connection not feasible: {len(infeasible_ids)}"
         )
-        # update the output space with the new set of economies of scale connections for fiber and track the old fiber network
-        output.fiber_costs.technology_results.complete_network_distances = (
-            output.fiber_costs.technology_results.distances
-        )
-        output.fiber_costs.technology_results.distances = new_connections
+        if len(output.fiber_distances) > 0:
+            # update the output space with the new set of economies of scale connections for fiber and track the old fiber network
+            output.fiber_costs.technology_results.complete_network_distances = (
+                output.fiber_costs.technology_results.distances
+            )
+            output.fiber_costs.technology_results.distances = new_connections
         return minimums + baseline_costs + infeasible

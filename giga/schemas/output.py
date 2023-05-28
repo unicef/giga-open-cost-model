@@ -192,6 +192,13 @@ class OutputSpace(BaseModel):
     def table(self):
         return output_to_table(self)
 
+    @property
+    def fiber_distances(self):
+        if self.fiber_costs is not None:
+            return self.fiber_costs.technology_results.distances
+        else:
+            return []
+
     def full_results_table(self, n_years: int, attribution="both"):
         if self.minimum_cost_result:
             results = self.minimum_cost_result
@@ -254,12 +261,17 @@ class OutputSpace(BaseModel):
                     SchoolConnectionCosts(
                         school_id=school_id,
                         capex=math.nan,
+                        capex_provider=math.nan,
+                        capex_consumer=math.nan,
                         opex=math.nan,
                         opex_provider=math.nan,
                         opex_consumer=math.nan,
                         technology="None",
                         feasible=False,
                         reason=reasons,
+                        electricity=PowerConnectionCosts(
+                            electricity_opex=math.nan, electricity_capex=math.nan
+                        ),
                     )
                 )
         return connections

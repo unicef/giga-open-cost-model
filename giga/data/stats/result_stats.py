@@ -27,6 +27,12 @@ MILLION = 1_000_000
 
 
 class ResultStats:
+    """
+    This class is responsible for generating the statistics used in the app.
+    Namely the project overview and the project cost breakdown data displayed in the
+    project cost breakdown table.
+    """
+
     def __init__(self, data_space: ModelDataSpace, output_space: OutputSpace, config):
         self.output_space = output_space
         self.data_space = data_space
@@ -58,7 +64,9 @@ class ResultStats:
     def output_cost_table(self):
         if self._output_cost_table is None:
             full_table = self.output_cost_table_full
-            self._output_cost_table = full_table[full_table["total_cost"] != math.inf]
+            self._output_cost_table = full_table[
+                full_table["total_cost"] != math.inf
+            ].dropna()
         return self._output_cost_table
 
     @property
@@ -89,10 +97,14 @@ class ResultStats:
 
     @property
     def technology_counts(self):
-        return dict(self.output_cost_table["technology"].value_counts())
+        counts = dict(self.output_cost_table["technology"].value_counts())
+        _ = counts.pop("None", None)
+        return counts
 
     @property
     def average_mbps(self):
+        if len(self.output_cost_table) == 0:
+            return 0
         return sum(
             [
                 v * self.config.maximum_bandwidths[k]
@@ -178,6 +190,8 @@ class ResultStats:
         }
 
     def get_cumulative_distance_fraction(self, distance, distance_key):
+        if len(self.output_cost_table) == 0:
+            return 0
         return sum(self.output_cost_table[distance_key] <= distance) / len(
             self.output_cost_table
         )

@@ -219,9 +219,7 @@ class ConstrainedEconomiesOfScaleMinimizer:
         baseline_cost_lookup = output.minimum_cost_lookup(
             self.config.years_opex, ignore_tech=ECONOMIES_OF_SCALE_TECHNOLOGIES
         )
-        distances = PairwiseDistanceTable(
-            distances=output.fiber_costs.technology_results.distances
-        )
+        distances = PairwiseDistanceTable(distances=output.fiber_distances)
         # group schools into clusters based on their root node (e.g. fiber nodes)
         clusters = list(distances.group_by_source().values())
         root_nodes = set(distances.group_by_source().keys())
@@ -273,11 +271,12 @@ class ConstrainedEconomiesOfScaleMinimizer:
         LOGGER.info(
             f"Budget minimization: schools exceeding budget: {len(unable_to_connect_baseline_ids)}, connection not feasible: {len(infeasible_ids)}"
         )
-        # update the output space with the new set of economies of scale connections for fiber and track the old fiber network
-        output.fiber_costs.technology_results.complete_network_distances = (
-            output.fiber_costs.technology_results.distances
-        )
-        output.fiber_costs.technology_results.distances = connections
+        if len(output.fiber_distances) > 0:
+            # update the output space with the new set of economies of scale connections for fiber (if exist) and track the old fiber network
+            output.fiber_costs.technology_results.complete_network_distances = (
+                output.fiber_costs.technology_results.distances
+            )
+            output.fiber_costs.technology_results.distances = connections
         return (
             economies_of_scale_costs
             + budget_constrained_baseline_costs

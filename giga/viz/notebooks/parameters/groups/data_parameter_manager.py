@@ -25,6 +25,10 @@ def country_name_to_key(country_name):
     return country_name.lower().replace(" ", "_")
 
 
+def country_key_to_name(country_key):
+    return country_key.replace("_", " ").title()
+
+
 class DataParameterManager:
     def __init__(
         self, parameters=BASELINE_DATA_SPACE_PARAMETERS, workspace="workspace"
@@ -43,9 +47,9 @@ class DataParameterManager:
         return self._hash["country_name"]
 
     def update_parameters(self, config):
-        self._hash["country_name"].value = config["school_data_conf"][
-            "country_id"
-        ].capitalize()
+        self._hash["country_name"].value = country_key_to_name(
+            config["school_data_conf"]["country_id"]
+        )
 
     def input_parameters(self):
         # specaial handling for scenario type in base parameters

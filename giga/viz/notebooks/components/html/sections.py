@@ -149,7 +149,7 @@ display(
         left: 0 !important;
         margin: -10px;
     }
-    .giga-section .togg {
+    .giga-section .mapboxgl-map, .giga-section .togg {
         width: 100% !important;
         height: 100% !important;
         top: 0 !important;

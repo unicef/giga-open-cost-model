@@ -3,13 +3,19 @@ from pydantic import BaseModel
 import plotly.graph_objs as go
 import pandas as pd
 from typing import List, Dict
+import io
+from ipywidgets import FileUpload, Label
 
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.school import GigaSchoolTable
 from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
+from giga.viz.notebooks.components.widgets.giga_file_upload import GigaFileUpload
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
+
+SCHOOL_LAYERS_IDX_START = 2
+SCHOOL_LAYERS_IDX_END = 6
 
 
 class SelectionMapLayersConfig(MapLayersConfig):
@@ -17,14 +23,19 @@ class SelectionMapLayersConfig(MapLayersConfig):
     allow_connected_schools: bool = (
         False  # wether schools that are already connected can be selected
     )
-    table_headers: List[str] = ["Giga ID", "Name", "Connectivity", "Electricity"]
+    table_headers: List[str] = [
+        "Project Connect Identifier",
+        "School Name",
+        "District",
+        "Electricity",
+    ]
     table_data_columns: List[str] = [
         "giga_id",
         "name",
-        "connectivity_status",
+        "admin_1_name",
         "has_electricity",
     ]
-    table_column_widths: List[float] = [1.25, 1, 1, 1]
+    table_column_widths: List[float] = [2.5, 1.5, 1, 1]
     first_school_data_layer: str = "Good"  # connectivity quality
 
 
@@ -44,9 +55,13 @@ class SelectionMapDataLayers(MapDataLayers):
                 schools=self.data_space.school_entities
             ).to_data_frame()
         )
+        self._schools["has_electricity"] = self._schools["has_electricity"].apply(
+            lambda x: "Yes" if x else "No"
+        )
         self._school_table_selector = None
         self._layers_selection = None
         self._layers_selection_no_cell = None
+        self.selection_label = Label()
 
     @staticmethod
     def from_loaded_data_layers(
@@ -80,10 +95,10 @@ class SelectionMapDataLayers(MapDataLayers):
                             ],
                             fill=dict(color="#f5f5f5"),
                             align=["left"] * 5,
-                        )
+                        ),
                     )
                 ],
-                layout=layout
+                layout=layout,
             )
         return self._school_table_selector
 
@@ -108,9 +123,61 @@ class SelectionMapDataLayers(MapDataLayers):
                     )
                     values.append(vc)
                 self.school_selection_table.data[0].cells.values = values
+            # update selection label
+            self.selection_label.value = (
+                f"Total number of selected schools: {len(self.selected_schools)}"
+            )
 
-        for scatter in fig.data[2:6]:
+        for scatter in fig.data[SCHOOL_LAYERS_IDX_START:SCHOOL_LAYERS_IDX_END]:
             scatter.on_selection(selection_fn)
+
+    def make_selected_label(self):
+        self.selection_label.value = (
+            f"Total number of selected schools: {len(self.selected_schools)}"
+        )
+        return self.selection_label
+
+    def make_upload_button(self, fig):
+        def handle_upload(change):
+            # Convert the uploaded file to a pandas DataFrame
+            uploaded_file = change["new"][0]
+            content = uploaded_file["content"]
+            df = pd.read_csv(io.BytesIO(content))
+
+            # Get the giga_school_id from the uploaded file
+            uploaded_giga_school_id = df["school_id"].tolist()
+
+            # Filter the _schools DataFrame to include only the uploaded giga_school_id
+            filtered_schools = self._schools[
+                self._schools["giga_id"].isin(uploaded_giga_school_id)
+            ]
+            self.school_selection_table.data[0].cells.values = [
+                filtered_schools[col]
+                for i, col in enumerate(self.config.table_data_columns)
+            ]
+            # Highlight the selected schools on the map
+            for scatter in fig.data[
+                SCHOOL_LAYERS_IDX_START:SCHOOL_LAYERS_IDX_END
+            ]:  # Adjust this range according to your specific plot
+                scatter.selectedpoints = [
+                    i
+                    for i, giga_id in enumerate(scatter["customdata"])
+                    if giga_id in uploaded_giga_school_id
+                ]
+            # Update the selection label
+            self.selection_label.value = (
+                f"Total number of selected schools: {len(self.selected_schools)}"
+            )
+
+        # Create an upload button that handles csv files - note that this will not handle files > 15MB
+        upload_button = GigaFileUpload(
+            accept=".csv",
+            multiple=False,
+            description="Upload Schools",
+            button_color="#FAA95C",
+        )
+        upload_button.observe(handle_upload, "value")
+        return upload_button
 
     @property
     def layers_selection(self):

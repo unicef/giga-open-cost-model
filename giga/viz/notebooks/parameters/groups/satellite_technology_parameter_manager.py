@@ -7,7 +7,7 @@ from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 SATELLITE_MODEL_PARAMETERS = [
     {
         "parameter_name": "install_costs",
-        "parameter_input_name": "Installation Cost (USD)",
+        "parameter_input_name": "Setup Costs (USD)",
         "parameter_interactive": {
             "parameter_type": "int_slider",
             "value": 600,
@@ -26,18 +26,6 @@ SATELLITE_MODEL_PARAMETERS = [
             "min": 0,
             "max": 100,
             "step": 1,
-            "show_default": True,
-        },
-    },
-    {
-        "parameter_name": "fixed_costs",
-        "parameter_input_name": "Annual Maintenance Cost (USD)",
-        "parameter_interactive": {
-            "parameter_type": "int_slider",
-            "value": 0,
-            "min": 0,
-            "max": 1_000,
-            "step": 10,
             "show_default": True,
         },
     },
@@ -66,7 +54,6 @@ class SatelliteTechnologyParameterManager:
         if len(config) == 0:
             return
         self.sheet.update_parameter("install_costs", config["capex"]["fixed_costs"])
-        self.sheet.update_parameter("fixed_costs", config["opex"]["fixed_costs"])
         self.sheet.update_parameter(
             "annual_bandwidth_cost_per_mbps",
             config["opex"]["annual_bandwidth_cost_per_mbps"],
@@ -92,12 +79,11 @@ class SatelliteTechnologyParameterManager:
             self.get_parameter_from_sheet("annual_bandwidth_cost_per_mbps")
         )
         install_cost = float(self.get_parameter_from_sheet("install_costs"))
-        maintenance_cost = float(self.get_parameter_from_sheet("fixed_costs"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         return SatelliteTechnologyCostConf(
             capex={"fixed_costs": install_cost},
             opex={
-                "fixed_costs": maintenance_cost,
+                "fixed_costs": 0.0,
                 "annual_bandwidth_cost_per_mbps": annual_cost_per_mbps,
             },
             constraints={

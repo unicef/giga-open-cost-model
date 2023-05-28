@@ -8,6 +8,8 @@ from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
 
+DEFAULT_BUDGET_MILLIONS = 1
+
 SCENARIO_BASE_PARAMETERS = [
     {
         "parameter_name": "scenario_type",
@@ -17,7 +19,6 @@ SCENARIO_BASE_PARAMETERS = [
             "value": "Lowest Cost",
             "options": [
                 "Lowest Cost",
-                "Budget Constrained",
                 "Fiber Only",
                 "Satellite LEO Only",
                 "Cellular Only",
@@ -47,21 +48,30 @@ SCENARIO_SHEET_PARAMETERS = [
         "parameter_interactive": {
             "parameter_type": "int_slider",
             "value": 20,
-            "min": 1,
+            "min": 0,
             "max": 500,
-            "step": 1,
+            "step": 5,
             "show_default": True,
+        },
+    },
+    {
+        "parameter_name": "use_budget_constraint",
+        "parameter_input_name": "Use Budget Constraint",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": False,
+            "description": "",
         },
     },
     {
         "parameter_name": "budget_constraint",
         "parameter_input_name": "Project Budget (Millions USD)",
         "parameter_interactive": {
-            "parameter_type": "int_slider",
-            "value": 1,
+            "parameter_type": "float_slider",
+            "value": DEFAULT_BUDGET_MILLIONS,
             "min": 0,
             "max": 500,
-            "step": 1,
+            "step": 0.01,
         },
     },
 ]
@@ -72,8 +82,6 @@ MILLION_DOLLARS = 1_000_000
 def get_scenario_type(config):
     if config["scenario_id"] == "minimum_cost":
         return "Lowest Cost"
-    elif config["scenario_id"] == "budget_constrained":
-        return "Budget Constrained"
     elif (
         config["scenario_id"] == "single_tech_cost" and config["technology"] == "Fiber"
     ):
@@ -94,11 +102,8 @@ def get_scenario_type(config):
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
 
 
-def constraint_disabled_transform(scenario_type):
-    if scenario_type == "Budget Constrained":
-        return False
-    else:
-        return True
+def constraint_disabled_transform(budget_cosntraint_on):
+    return not budget_cosntraint_on
 
 
 class ScenarioParameterManager:
@@ -122,9 +127,10 @@ class ScenarioParameterManager:
         }
         # link the scenario to the budget
         scenario_type = self._hash["scenario_type"]
+        budget_flag = self.sheet.get_interactive_parameter("use_budget_constraint")
         budget_constraint = self.sheet.get_interactive_parameter("budget_constraint")
         directional_link(
-            (scenario_type, "value"),
+            (budget_flag, "value"),
             (budget_constraint, "disabled"),
             constraint_disabled_transform,
         )
@@ -138,11 +144,13 @@ class ScenarioParameterManager:
                 "budget_constraint",
                 config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
             )
+            self.sheet.update_parameter("use_budget_constraint", True)
         except KeyError:
             self.sheet.update_parameter(
                 "budget_constraint",
-                math.inf,
+                DEFAULT_BUDGET_MILLIONS,
             )
+            self.sheet.update_parameter("use_budget_constraint", False)
 
     def update_country_parameters(self, config):
         self.sheet.update_parameter("years_opex", config["years_opex"])
@@ -159,15 +167,23 @@ class ScenarioParameterManager:
 
     def freeze(self):
         # do not update budget constraint with this interface
-        budget_state = self.sheet.get_interactive_parameter("budget_constraint").disabled
+        budget_state = self.sheet.get_interactive_parameter(
+            "budget_constraint"
+        ).disabled
         self.sheet.freeze()
-        self.sheet.get_interactive_parameter("budget_constraint").disabled = budget_state
+        self.sheet.get_interactive_parameter(
+            "budget_constraint"
+        ).disabled = budget_state
         self._hash["scenario_type"].disabled = True
 
     def unfreeze(self):
-        budget_state = self.sheet.get_interactive_parameter("budget_constraint").disabled
+        budget_state = self.sheet.get_interactive_parameter(
+            "budget_constraint"
+        ).disabled
         self.sheet.unfreeze()
-        self.sheet.get_interactive_parameter("budget_constraint").disabled = budget_state
+        self.sheet.get_interactive_parameter(
+            "budget_constraint"
+        ).disabled = budget_state
         self._hash["scenario_type"].disabled = False
 
     def get_model_parameters(self):
@@ -177,10 +193,12 @@ class ScenarioParameterManager:
         }
         years_opex = float(self.get_parameter_from_sheet("years_opex"))
         bandwidth_demand = float(self.get_parameter_from_sheet("bandwidth_demand"))
+        use_budget_constraint = self.get_parameter_from_sheet("use_budget_constraint")
         budget_constraint = float(self.get_parameter_from_sheet("budget_constraint"))
         sheet_parameters = {
             "years_opex": years_opex,
             "bandwidth_demand": bandwidth_demand,
+            "use_budget_constraint": use_budget_constraint,
             "cost_minimizer_config": {
                 "budget_constraint": budget_constraint * MILLION_DOLLARS
             },
