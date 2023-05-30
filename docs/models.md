@@ -58,8 +58,6 @@ Considers economies of scale by default which assumes schools that have been con
 * **Outputs**: the fiber generates a collection of connection costs for each school considered. The connection costs contain both CapEx and OpEx estimates. The definition for a single school cost can be found [here](#school-connection-cost)
 
 
-
-
 ### Architecture
 
 The fiber model consists of the following sub-models:

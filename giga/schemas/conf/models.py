@@ -7,8 +7,7 @@ METERS_IN_KM = 1_000.0
 
 class ElectricityCapexConf(BaseModel):
 
-    solar_panel_costs: float  # USD
-    battery_costs: float  # USD
+    solar_cost_per_watt: float  # USD/Watt
 
 
 class ElectricityOpexConf(BaseModel):

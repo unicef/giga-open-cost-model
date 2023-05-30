@@ -7,13 +7,7 @@ import numpy as np
 from giga.schemas.geo import UniqueCoordinate
 
 
-class EducationLevel(str, Enum):
-    """Valid level of education"""
-
-    primary = "Primary"
-    secondary = "Secondary"
-    other = "Other"
-    none = ""
+DEFAULT_POWER_REQUIRED_PER_SCHOOL = 18_294  # Watts
 
 
 class SchoolZone(str, Enum):
@@ -37,7 +31,7 @@ class GigaSchool(BaseModel):
     admin_2_name: str
     admin_3_name: str
     admin_4_name: str
-    education_level: EducationLevel
+    education_level: str
     giga_id: str = Field(..., alias="giga_id_school")
     school_zone: SchoolZone = Field(..., alias="environment")
     connected: bool = False
@@ -49,6 +43,7 @@ class GigaSchool(BaseModel):
     has_fiber: bool = False  # True if the school is connected to a fiber network
     num_students: int = None
     cell_coverage_type: str = None
+    power_required_watts: float = DEFAULT_POWER_REQUIRED_PER_SCHOOL
 
     class Config:
         use_enum_values = True
