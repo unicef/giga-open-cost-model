@@ -43,8 +43,8 @@ class ElectricityCostModel:
         :return: PowerConnectionCosts, contains the cost of solar connectivity for the school
         """
         capex = (
-            self.config.electricity_config.capex.solar_panel_costs
-            + self.config.electricity_config.capex.battery_costs
+            school.power_required_watts
+            * self.config.electricity_config.capex.solar_cost_per_watt
         )
         return PowerConnectionCosts(electricity_capex=capex, cost_type="Solar")
 

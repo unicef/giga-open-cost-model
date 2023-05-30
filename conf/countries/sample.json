@@ -82,8 +82,7 @@
         },
         "electricity": {
             "capex": {
-                "solar_panel_costs": 10000.0,
-                "battery_costs": 0.0
+                "solar_cost_per_watt": 3.00
             },
             "opex": {
                 "cost_per_kwh": 0.1

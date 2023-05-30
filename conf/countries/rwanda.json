@@ -41,7 +41,7 @@
             },
             "opex": {
                 "fixed_costs": 0.0,
-                "annual_bandwidth_cost_per_mbps": 60.0
+                "annual_bandwidth_cost_per_mbps": 6.0
             },
             "constraints": {
                 "maximum_bandwithd": 150.0,
@@ -51,7 +51,7 @@
         },
         "cellular": {
             "capex": {
-                "fixed_costs": 23.0
+                "fixed_costs": 534.0
             },
             "opex": {
                 "fixed_costs": 0.0,
@@ -82,8 +82,7 @@
         },
         "electricity": {
             "capex": {
-                "solar_panel_costs": 10000.0,
-                "battery_costs": 0.0
+                "solar_cost_per_watt": 3.0
             },
             "opex": {
                 "cost_per_kwh": 0.087

@@ -17,14 +17,14 @@ ELECTRICITY_MODEL_PARAMETERS = [
         },
     },
     {
-        "parameter_name": "solar_panel_costs",
-        "parameter_input_name": "Solar Panel Install Cost (USD)",
+        "parameter_name": "solar_cost_per_watt",
+        "parameter_input_name": "Solar Total Cost (USD/Watt)",
         "parameter_interactive": {
-            "parameter_type": "int_slider",
-            "value": 10_000,
+            "parameter_type": "float_slider",
+            "value": 1.0,
             "min": 0,
-            "max": 30_000,
-            "step": 1,
+            "max": 10,
+            "step": 0.01,
             "show_default": True,
         },
     },
@@ -48,7 +48,7 @@ class ElectricityParameterManager:
             return
         self.sheet.update_parameter("per_kwh_cost", config["opex"]["cost_per_kwh"])
         self.sheet.update_parameter(
-            "solar_panel_costs", config["capex"]["solar_panel_costs"]
+            "solar_cost_per_watt", config["capex"]["solar_cost_per_watt"]
         )
 
     def input_parameters(self):
@@ -65,11 +65,10 @@ class ElectricityParameterManager:
 
     def get_model_parameters(self):
         cost_per_kwh = float(self.get_parameter_from_sheet("per_kwh_cost"))
-        install_solar_panels = float(self.get_parameter_from_sheet("solar_panel_costs"))
+        solar_cost_per_watt = float(self.get_parameter_from_sheet("solar_cost_per_watt"))
         return ElectricityCostConf(
             capex={
-                "solar_panel_costs": install_solar_panels,
-                "battery_costs": 0.0,
-            },  # TODO: ignore for now
+                "solar_cost_per_watt": solar_cost_per_watt
+            },
             opex={"cost_per_kwh": cost_per_kwh},
         )
