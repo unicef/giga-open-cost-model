@@ -6,7 +6,10 @@ from typing import List
 from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 
 
-SKIP_IN_DEPLOYMENT = ["sample"]
+# Get the countries to skip from an variable
+skip_in_deployment_str = os.getenv("SKIP_COUNTRIES_IN_DEPLOYMENT", "sample")
+# Parse the string into a list
+SKIP_IN_DEPLOYMENT = skip_in_deployment_str.split(",") if skip_in_deployment_str else []
 
 
 def get_registered_countries(directory: str) -> None:
@@ -17,7 +20,9 @@ def get_registered_countries(directory: str) -> None:
     return countries
 
 
-def get_registered_country_names(default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE, skip=SKIP_IN_DEPLOYMENT):
+def get_registered_country_names(
+    default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE, skip=SKIP_IN_DEPLOYMENT
+):
     countries = get_registered_countries(default_parameter_dir)
     return [c.replace("_", " ").title() for c in countries if c not in skip]
 

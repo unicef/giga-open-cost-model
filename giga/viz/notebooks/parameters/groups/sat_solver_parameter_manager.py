@@ -88,14 +88,14 @@ class SATSolverParameterManager:
     def unfreeze(self):
         self.sheet.unfreeze()
 
-    def get_model_parameters(self, budget: float = 0.0, cost_per_km: float = 0.0):
+    def get_model_parameters(self, sat_engine: bool = False, road_data: bool = False):
         time_limit = int(self.get_parameter_from_sheet("time_limit"))
         num_workers = int(self.get_parameter_from_sheet("num_workers"))
         do_hints = bool(float(self.get_parameter_from_sheet("do_hints")))
         search_log = bool(float(self.get_parameter_from_sheet("search_log")))
         return SATSolverConf(
-            budget=budget,
-            cost_per_km=cost_per_km,
+            sat_engine=sat_engine,
+            road_data=road_data,
             time_limit=time_limit,
             do_hints=do_hints,
             num_workers=num_workers,

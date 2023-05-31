@@ -3,7 +3,7 @@ import numpy as np
 
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.output import OutputSpace, SchoolConnectionCosts, CostResultSpace
-from giga.schemas.conf.models import SATMinimumCostScenarioConf
+from giga.schemas.conf.models import MinimumCostScenarioConf
 from giga.models.nodes.sat.sat_solver_constrained import SATSolverConstrained
 from giga.models.components.optimizers.sat_optimizer import SATOptimizer
 from giga.utils.logging import LOGGER
@@ -17,7 +17,7 @@ class SATMinimumCostScenario:
 
     def __init__(
         self,
-        config: SATMinimumCostScenarioConf,
+        config: MinimumCostScenarioConf,
         data_space: ModelDataSpace,
         output_space: OutputSpace,
     ):
@@ -30,7 +30,12 @@ class SATMinimumCostScenario:
         self.data_space.schools.update_bw_demand_all(self.config.bandwidth_demand)
 
     def _create_minimizer(self):
-        return SATOptimizer(self.config.sat_solver_config)
+        return SATOptimizer(
+            self.config.sat_solver_config,
+            self.config.technologies,
+            self.config.cost_minimizer_config.budget_constraint,
+            self.config.cost_minimizer_config.years_opex,
+        )
 
     def run(self, progress_bar: bool = False):
         """

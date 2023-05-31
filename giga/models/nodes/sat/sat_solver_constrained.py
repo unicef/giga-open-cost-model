@@ -8,22 +8,41 @@ from giga.data.sat.cost_relational_graph import CostRelationalGraph
 from giga.models.nodes.sat.commons import SATSolution
 from giga.schemas.conf.models import SATSolverConf
 from giga.utils.logging import LOGGER
+from typing import List
+from giga.schemas.conf.models import TechnologyConfiguration
+import math
+
+METERS_IN_KM = 1_000.0
 
 
 class SATSolverConstrained:
-    def __init__(self, config: SATSolverConf):
+    def __init__(
+        self,
+        config: SATSolverConf,
+        technologies: List[TechnologyConfiguration],
+        budget_constraint: int,
+    ):
         self.config = config
+        self.technologies = technologies
+        self.budget_constraint = budget_constraint
+
+    def _get_fiber_tech_conf(self):
+        for tech in self.technologies:
+            if tech.technology == "Fiber":
+                return tech
+        raise Exception("Fiber technology must be provided")
 
     def _get_solution(self, solver, problem):
         T = nx.Graph()
         d = {}
         num_schools = 0
         for n, attributes in problem.graph.nodes(data=True):
-            if solver.Value(problem.X[n]):
-                T.add_node(n)
-                d[n] = attributes
-                if attributes["label"] == "uschool":
-                    num_schools += 1
+            if n != "metanode":
+                if solver.Value(problem.X[n]):
+                    T.add_node(n)
+                    d[n] = attributes
+                    if attributes["label"] == "uschool":
+                        num_schools += 1
         nx.set_node_attributes(T, d)
         for n1, n2, attributes in problem.graph.edges(data=True):
             add_edge = False
@@ -34,7 +53,7 @@ class SATSolverConstrained:
                 if solver.Value(problem.P[(n2, n1)]):
                     add_edge = True
             if add_edge:
-                T.add_edge(n1, n2, weight=attributes["weight"])
+                T.add_edge(n1, n2, weight=attributes["weight_float"])
         return T, num_schools, solver.Value(problem.budget_variable)
 
     def _set_solver_params(self, solver):
@@ -67,7 +86,6 @@ class SATSolverConstrained:
             )
 
     def _solve_constrained(self, problem: SATFormula, solver: cp_model.CpSolver):
-        upper_bound = problem.budget - problem.budget_variable
         # k is the number of schools connected -> objective value
         k = int(
             solver.ObjectiveValue()
@@ -91,7 +109,7 @@ class SATSolverConstrained:
                 if solver.Value(problem.P[(n2, n1)]):
                     problem.model.AddHint(problem.P[(n2, n1)], True)
         constrained_status = solver.Solve(problem.model)
-        return constrained_status, solver
+        return constrained_status
 
     def _solve(self, problem: SATFormula):
         LOGGER.info("Solving SAT problem")
@@ -102,6 +120,7 @@ class SATSolverConstrained:
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
             LOGGER.info("Solving Updated SAT problem with constrained objective")
             constrained_status = self._solve_constrained(problem, solver)
+            LOGGER.info("Solved")
             return self._parse_solution(constrained_status, solver, problem)
         else:
             return SATSolution()
@@ -121,15 +140,21 @@ class SATSolverConstrained:
             )
         else:
             relational_graph = None
+        fiber_conf = self._get_fiber_tech_conf()
+        cost_per_m = math.ceil(
+            fiber_conf.capex.cost_per_km / METERS_IN_KM
+        )  # Fiber is always the first technology
         problem = SATFormula(
-            self.config.budget,
-            self.config.cost_per_m,
+            self.budget_constraint,
+            cost_per_m,
             graph,
             relational_graph=relational_graph,
             do_hints=self.config.do_hints,
         )
         LOGGER.info("Building SAT problem")
-        problem.build()
+        problem.build(
+            road_data=self.config.road_data, all_techs=(len(self.technologies) > 1)
+        )
         solution = self._solve(problem)
         solution.initial_cost_graph = graph
         solution.problem = problem

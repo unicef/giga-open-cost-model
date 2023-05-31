@@ -6,7 +6,7 @@ from ortools.sat.python import cp_model
 
 from giga.data.sat.sat_cost_graph import SATCostGraph
 from giga.utils.logging import LOGGER
-from giga.data.sat.sat_utils import build_sat_problem
+from giga.data.sat.sat_utils import build_sat_problem_fiber, build_sat_problem_all
 
 
 class SATFormula:
@@ -42,33 +42,67 @@ class SATFormula:
         self.budget_variable = None
         self.school_objective = None
 
-    def build(self):
+    def build(self, road_data=True, all_techs=False):
         # start with the graphs - the MST is used as an upper bound
-        mst = self.graph.compute_mst()
-        upper_bound = round(mst.compute_cost())
+        mst = None
+        upper_bound = 0
+        lower_bound = 0
+        if self.budget == 0:
+
+            if all_techs:
+                mst = self.graph.compute_mst_directed()
+                upper_bound = int(round(mst.compute_cost_all(self.cost_per_m)))
+            else:
+                mst = self.graph.compute_mst()
+                upper_bound = int(round(mst.compute_cost_fiber(self.cost_per_m)))
+            if road_data == False:
+                lower_bound = upper_bound
         # create the relational graph
         if self.relational_graph is None:
             self.relational_graph = self.graph.compute_relational_graph()
+        if all_techs:
+            (
+                X,
+                P,
+                A,
+                model,
+                fixed_costs,
+                remaining_budget,
+                budget_upper_bound,
+                school_objective,
+            ) = build_sat_problem_all(
+                self.graph.graph,
+                self.relational_graph,
+                None,  # dt
+                self.cost_per_m,
+                self.budget,
+                upper_bound,
+                lower_bound,
+                self.do_hints,
+                mst,
+            )
+        else:
+            (
+                X,
+                P,
+                A,
+                model,
+                fixed_costs,
+                remaining_budget,
+                budget_upper_bound,
+                school_objective,
+            ) = build_sat_problem_fiber(
+                self.graph.graph,
+                self.relational_graph,
+                None,  # dt
+                self.cost_per_m,
+                self.budget,
+                upper_bound,
+                lower_bound,
+                self.do_hints,
+                mst,
+            )
 
-        (
-            X,
-            P,
-            A,
-            model,
-            fixed_costs,
-            remaining_budget,
-            budget_upper_bound,
-            school_objective,
-        ) = build_sat_problem(
-            self.graph.graph,
-            self.relational_graph,
-            None,  # dt
-            self.cost_per_m,
-            self.budget,
-            upper_bound,
-            self.do_hints,
-            mst,
-        )
         self.X = X
         self.P = P
         self.A = A

@@ -3,8 +3,7 @@ import networkx as nx
 
 DEFAULT_MAX_NUMBER_EDGES_THRESHOLD = 1_000
 
-RELATIONAL_NODE_LABELS = set(["cfnode", "ufnode", "cschool", "uschool"])
-
+RELATIONAL_NODE_LABELS = set(["cfnode", "ufnode", "cschool"])
 CONNECTED_META_NODE_LABEL = "metanode"
 
 
@@ -67,12 +66,10 @@ class CostRelationalGraph:
 
     def _simple_relational_graph(self):
         relational_graph = self.base_graph.copy()
-        relational_graph = add_meta_node(
-            relational_graph,
-            CONNECTED_META_NODE_LABEL,
-            RELATIONAL_NODE_LABELS,
-            edge_weight=0,
-        )
+        for id, attributes in self.base_graph.nodes(data=True):
+            if id != "metanode":
+                if attributes["label"] == "uschool":
+                    relational_graph.add_edge(id, "metanode", weight=0)
         relational_graph, _ = nx.algorithms.chordal.complete_to_chordal_graph(
             relational_graph
         )
@@ -80,12 +77,10 @@ class CostRelationalGraph:
 
     def _adhoc_relational_graph(self):
         relational_graph = self.base_graph.copy()
-        relational_graph = add_meta_node(
-            relational_graph,
-            CONNECTED_META_NODE_LABEL,
-            RELATIONAL_NODE_LABELS,
-            edge_weight=0,
-        )
+        for id, attributes in self.base_graph.nodes(data=True):
+            if id != "metanode":
+                if attributes["label"] == "uschool":
+                    relational_graph.add_edge(id, "metanode", weight=0)
         nodes = list(self.base_graph.nodes)
         tmp = relational_graph.copy()
         edges = []
