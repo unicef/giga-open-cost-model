@@ -6,7 +6,12 @@ from pandas.api.types import CategoricalDtype
 import numpy as np
 import math
 
-from giga.viz.colors import COST_COLORS_PAIR, COST_COLORS_TRIPLET
+from giga.viz.colors import (
+    COST_COLORS_PAIR,
+    COST_COLORS_TRIPLET,
+    ORDERED_CUMULATIVE_DISTANCE_COLORS,
+    SATELLITE_BREAKDOWN_COLORS,
+)
 
 
 DEFAULT_FIBER_BINS = [0, 5_000, 10_000, 15_000, 20_000, np.inf]
@@ -146,8 +151,12 @@ def cumulative_distance_bar_plot(
     # Use the cut function
     df = data
     df["category"] = pd.cut(df[distance_key], bins, labels=names)
+    # Convert the category to a categorical datatype and sort it based on the original order
     category_counts = df["category"].value_counts().sort_index()
     cumulative_counts = category_counts.cumsum()
+    cumulative_counts = cumulative_counts.reindex(names, fill_value=0)
+    # Sort cumulative_counts by the names list
+    cumulative_counts = cumulative_counts[names]
     percent_within = round(sum(data[distance_key] <= distance_cutoff) / len(data) * 100)
     y_labels = [label + " " for label in cumulative_counts.index[::-1]]
     # Create the plot
@@ -155,12 +164,12 @@ def cumulative_distance_bar_plot(
         data=[
             go.Bar(
                 name="Count",
-                x=cumulative_counts.values[::-1],
-                y=y_labels,
-                text=cumulative_counts.values[::-1],
+                x=list(cumulative_counts.values[::-1]),
+                y=list(y_labels),
+                text=list(cumulative_counts.values[::-1]),
                 orientation="h",
                 textposition="outside",
-                marker_color=["#009dff", "#59bfff", "#8cd3ff", "#bfe6ff", "#e8ffff"],
+                marker_color=ORDERED_CUMULATIVE_DISTANCE_COLORS,
                 marker_line_color="rgb(8,48,107)",
                 marker_line_width=1.5,
                 opacity=0.6,
@@ -171,7 +180,7 @@ def cumulative_distance_bar_plot(
     # Update layout
     fig.update_layout(
         title={
-            "text": f"{percent_within}% of " + title,
+            "text": f"<b>{percent_within}% of " + title + "</b>",
             "y": 0.9,
             "x": 0.5,
             "xanchor": "center",
@@ -186,7 +195,7 @@ def cumulative_distance_bar_plot(
         plot_bgcolor="#faf8f2",
         paper_bgcolor="#faf8f2",
         yaxis={
-            "categoryorder": "total descending",
+            "categoryorder": "array",
             "tickfont": dict(size=13, color="black", family="Arial, bold"),
             "range": [-0.5, len(cumulative_counts)],
         },
@@ -204,7 +213,7 @@ def cumulative_fiber_distance_barplot(
     distance_cutoff=10_000,
     bins=DEFAULT_FIBER_BINS,
     names=DEFAULT_FIBER_NAMES,
-    title="Schools within 10km of a Fiber Node",
+    title="Unconnected Schools within 10km of a Fiber Node",
 ):
     return cumulative_distance_bar_plot(
         data, distance_key, distance_cutoff, bins, names, title
@@ -217,7 +226,7 @@ def cumulative_cell_tower_distance_barplot(
     distance_cutoff=3_000,
     bins=DEFAULT_CELL_BINS,
     names=DEFAULT_CELL_NAMES,
-    title="Schools within 3km of a Cell Tower",
+    title="Unconnected Schools within 3km of a Cell Tower",
 ):
     return cumulative_distance_bar_plot(
         data, distance_key, distance_cutoff, bins, names, title
@@ -250,7 +259,7 @@ def make_project_cost_bar_plots(stats, bar_width=0.3):
             go.Bar(
                 name=key,
                 x=[key],
-                y=[round(value)],
+                y=[round(value, 2)],
                 marker_color=COST_COLORS_PAIR[i],
                 text=[round(value)],
                 textposition="auto",
@@ -412,4 +421,40 @@ def make_unit_cost_bar_plot(stats):
         height=600,  # adjust as needed
         autosize=False,
     )
+    return fig
+
+
+def make_satellite_pie_breakdown(to_show):
+    # Create a new column to classify technologies as "Satellite" or "Other"
+    to_show["tech_class"] = to_show["technology"].apply(
+        lambda x: "Satellite" if x == "Satellite" else "Other"
+    )
+    # Get the count for each class
+    grouped = to_show["tech_class"].value_counts().reset_index()
+    grouped.columns = ["tech_class", "total"]
+    # Calculate the percentage for each class
+    grouped["percentage"] = (grouped["total"] / grouped["total"].sum()) * 100
+    # Create a pie chart
+    fig = px.pie(
+        grouped,
+        values="total",
+        names="tech_class",
+        color="tech_class",
+        color_discrete_map=SATELLITE_BREAKDOWN_COLORS,
+    )
+    # Show the total counts and percentages on the plot
+    fig.update_traces(textinfo="label+value+percent", hoverinfo="label+value+percent")
+    # Add title to the plot
+    fig.update_layout(
+        title={
+            "text": "<b>Satellite Only Viable Modality</b>",
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(size=24, color="black", family="Arial, sans-serif"),
+        },
+        showlegend=False,
+        margin=dict(t=100),
+    )  # Adjust top margin to fit title)
     return fig

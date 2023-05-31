@@ -4,7 +4,17 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-from giga.viz.colors import ORDERED_COST_COLORS, GIGA_TECHNOLOGY_COLORS
+from giga.viz.colors import (
+    ORDERED_COST_COLORS,
+    GIGA_TECHNOLOGY_COLORS,
+    FIBER_COLORBAR_MIN,
+    FIBER_COLORBAR_MAX,
+    CELLULAR_COLORBAR_MIN,
+    CELLULAR_COLORBAR_MAX,
+    GIGA_BLACK,
+    GIGA_WHITE,
+    CELL_COVERAGE_COLOR_MAP,
+)
 
 
 CUSTOM_TEMPLATE = custom_template = {
@@ -28,7 +38,9 @@ CUSTOM_TEMPLATE = custom_template = {
 }
 
 
-def make_cost_map(results, cost_key="total_cost", display_key="Total Cost (USD)"):
+def make_cost_map(
+    results, cost_key="total_cost", display_key="Total Cost (USD)", title="Cost Map"
+):
     df = results.rename(columns={cost_key: display_key})
     df["size"] = np.ones(len(df))
     style = "carto-darkmatter"
@@ -70,6 +82,16 @@ def make_cost_map(results, cost_key="total_cost", display_key="Total Cost (USD)"
             title=dict(font=dict(color="#dbd5d5")), tickfont=dict(color="#dbd5d5")
         )
     )
+    fig.layout.title = {
+        "text": "<b>" + title + "</b>",
+        "y": 0.96,
+        "x": 0.5,
+        "xanchor": "center",
+        "yanchor": "top",
+        "font": dict(
+            size=18, color="white", family="Verdana"
+        ),  # customize font size here
+    }
     return fig
 
 
@@ -94,25 +116,26 @@ def make_technology_map(results, style="carto-positron"):
     map_technology.update_layout(
         height=650,
         width=850,
-        title={
-            "text": "Your Title Here",
-            "y": 0.9,
-            "x": 0.5,
-            "xanchor": "center",
-            "yanchor": "top",
-        },
-        title_font=dict(size=16, color="white", family="Arial, sans-serif"),
         legend=dict(
             title="Technology",
             x=0.0,
             y=1.0,
-            # titlefont=dict(size=14, family="Arial, sans-serif"),
             font=dict(size=12, family="Arial, sans-serif", color="white"),
             bgcolor="#242423",
             bordercolor="black",
             borderwidth=1,
         ),
     )
+    map_technology.layout.title = {
+        "text": "<b>Unconnected Schools - Modality to Connect</b>",
+        "y": 0.96,
+        "x": 0.5,
+        "xanchor": "center",
+        "yanchor": "top",
+        "font": dict(
+            size=18, color=GIGA_BLACK, family="Verdana Bold"
+        ),  # customize font size here
+    }
     return map_technology
 
 
@@ -256,7 +279,9 @@ def make_technology_total_cost_barplot(
     return fig
 
 
-def make_fiber_distance_map_plot(results):
+def make_fiber_distance_map_plot(
+    results, distance_lower=FIBER_COLORBAR_MIN, distance_upper=FIBER_COLORBAR_MAX
+):
     style = "carto-positron"
     df = results.rename(columns={"nearest_fiber": "Nearest Fiber (km)"})
     df["Nearest Fiber (km)"] = np.round(df["Nearest Fiber (km)"] / 1_000, 2)
@@ -271,6 +296,7 @@ def make_fiber_distance_map_plot(results):
         zoom=7,
         size_max=3,
         mapbox_style=style,
+        range_color=[distance_lower, distance_upper],
         hover_data={
             "lat": False,
             "lon": False,
@@ -290,10 +316,22 @@ def make_fiber_distance_map_plot(results):
             title=dict(font=dict(color="#474747")), tickfont=dict(color="#474747")
         )
     )
+    fig.layout.title = {
+        "text": "<b>Unconnected School Proximity to Fiber Nodes</b>",
+        "y": 0.96,
+        "x": 0.5,
+        "xanchor": "center",
+        "yanchor": "top",
+        "font": dict(
+            size=18, color=GIGA_BLACK, family="Verdana Bold"
+        ),  # customize font size here
+    }
     return go.FigureWidget(fig)
 
 
-def make_cellular_distance_map_plot(results):
+def make_cellular_distance_map_plot(
+    results, distance_lower=CELLULAR_COLORBAR_MIN, distance_upper=CELLULAR_COLORBAR_MAX
+):
     style = "carto-positron"
     df = results.rename(columns={"nearest_cell_tower": "Nearest Cell Tower (km)"})
     df["Nearest Cell Tower (km)"] = np.round(df["Nearest Cell Tower (km)"] / 1_000, 2)
@@ -308,6 +346,7 @@ def make_cellular_distance_map_plot(results):
         zoom=7,
         size_max=3,
         mapbox_style=style,
+        range_color=[distance_lower, distance_upper],
         hover_data={
             "lat": False,
             "lon": False,
@@ -327,6 +366,16 @@ def make_cellular_distance_map_plot(results):
         autosize=True,
         width=850,
         height=600,
+        title={
+            "text": "<b>Unconnected School Proximity to Cell Towers</b>",
+            "y": 0.96,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(
+                size=18, color=GIGA_BLACK, family="Verdana Bold"
+            ),  # customize font size here
+        },
     )
     fig.update_coloraxes(
         colorbar=dict(
@@ -337,22 +386,33 @@ def make_cellular_distance_map_plot(results):
 
 
 def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
+    categories_order = [
+        t
+        for t in list(reversed(CELL_COVERAGE_COLOR_MAP.keys()))
+        if t in results["cell_coverage_type"].unique()
+    ]
     df = results.rename(columns={"cell_coverage_type": new_cell_key})
-    df["size"] = np.ones(len(df))
+    # Set order for categories
+    df[new_cell_key] = pd.Categorical(
+        df[new_cell_key], categories=categories_order, ordered=True
+    )
+    # Ensure all category levels are present in the data
+    missing_categories = set(categories_order) - set(df[new_cell_key].unique())
+    for category in missing_categories:
+        df = df.append(
+            {new_cell_key: category, "size": 0, "lat": np.nan, "lon": np.nan},
+            ignore_index=True,
+        )
+    df["size"] = np.where(
+        df[new_cell_key].isin(missing_categories), 0, np.ones(len(df))
+    )
     style = "carto-positron"
-    color_discrete_map = {
-        "None": "#e8ffff",
-        "2G": "#bfe6ff",
-        "3G": "#8cd3ff",
-        "4G": "#009dff",
-        "LTE": "#009dff",
-    }  # Define color for each category here
     fig = px.scatter_mapbox(
         df,
         lat="lat",
         lon="lon",
         color=new_cell_key,
-        color_discrete_map=color_discrete_map,
+        color_discrete_map=CELL_COVERAGE_COLOR_MAP,
         size="size",
         zoom=7,
         size_max=4,
@@ -378,4 +438,14 @@ def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
             title=dict(font=dict(color="#474747")), tickfont=dict(color="#474747")
         )
     )
+    fig.layout.title = {
+        "text": "<b>Cellular Coverage</b>",
+        "y": 0.96,
+        "x": 0.5,
+        "xanchor": "center",
+        "yanchor": "top",
+        "font": dict(
+            size=18, color=GIGA_BLACK, family="Verdana Bold"
+        ),  # customize font size here
+    }
     return fig

@@ -12,7 +12,7 @@ CELLULAR_MODEL_PARAMETERS = [
             "parameter_type": "int_slider",
             "value": 50,
             "min": 0,
-            "max": 500,
+            "max": 1_000,
             "step": 1,
             "show_default": True,
         },

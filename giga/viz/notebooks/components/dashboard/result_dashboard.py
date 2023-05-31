@@ -25,8 +25,10 @@ from giga.viz.notebooks.components.charts.plotters import (
     make_cost_histogram,
     make_project_cost_bar_plots,
     make_unit_cost_bar_plot,
+    make_satellite_pie_breakdown,
 )
 from giga.viz.colors import GIGA_TECHNOLOGY_COLORS
+from giga.viz.plot_configs import STATIC_MAP_MODEBAR_CONFIG
 
 
 class ResultDashboard:
@@ -52,29 +54,32 @@ class ResultDashboard:
                 self.unit_cost_tab(),
             ]
         )
-        tabs.set_title(0, "Infra Maps")
+        tabs.set_title(0, "Infrastructure Availability")
         tabs.set_title(1, "Project Overview")
         tabs.set_title(2, "Project Cost")
         tabs.set_title(3, "Unit Costs")
 
         style = """
-        <style>
-            .widget-tab > .p-TabBar .p-TabBar-tab {
-                font-family: Arial, sans-serif;
-                font-weight: bold;
-                font-size: 14px;
-                background-color: lightgrey;
-                border-radius: 10px 10px 0 0;
-                padding: 5px;
-            }
-        </style>
+            <style>
+                .widget-tab > .p-TabBar .p-TabBar-tab {
+                    font-family: Arial, sans-serif;
+                    font-weight: bold;
+                    font-size: 14px;
+                    background-color: lightgrey;
+                    border-radius: 10px 10px 0 0;
+                    padding: 5px;
+                }
+                .jupyter-widgets.widget-tab > .p-TabBar .p-TabBar-tab {
+                    flex: 0 1 auto
+                }
+            </style>
         """
         display(widgets.HTML(style))
         display(tabs)
 
     def _update_title_font(self, fig):
         fig.update_layout(
-            title_font=dict(family="Arial, sans-serif", size=14, color="black")
+            title_font=dict(family="Arial, sans-serif", size=16, color="black")
         )
 
     def _figure_to_output(self, fig, layout=widgets.Layout(width="100%")):
@@ -85,11 +90,11 @@ class ResultDashboard:
         return output
 
     def _map_to_output(self, fig, layout=widgets.Layout(width="850px", height="650px")):
-        self._update_title_font(fig)
         output = widgets.Output(layout=layout)
+        fig = go.FigureWidget(fig)
+        fig._config = {**fig._config, **STATIC_MAP_MODEBAR_CONFIG}
         with output:
-            fig = go.FigureWidget(fig)
-            fig.show(renderer="notebook_connected")
+            display(fig)
         return output
 
     def overview_tab(self):
@@ -124,7 +129,7 @@ class ResultDashboard:
         )
         fiber_plots = widgets.VBox([fiber_infra_map, fiber_distance_bar])
         # Cell Infra
-        cell_infra_map = self._figure_to_output(
+        cell_infra_map = self._map_to_output(
             make_cellular_distance_map_plot(self.results.new_connected_schools)
         )
         cell_distance_bar = self._figure_to_output(
@@ -132,28 +137,34 @@ class ResultDashboard:
         )
         cell_plots = widgets.VBox([cell_infra_map, cell_distance_bar])
         # Cell Coverage
-        cell_coverage_map = self._figure_to_output(
+        cell_coverage_map = self._map_to_output(
             make_cellular_coverage_map(self.results.new_connected_schools)
         )
         coverage_plots = widgets.VBox([cell_coverage_map])
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         # Technology Map
-        map_technology = self._figure_to_output(
+        map_technology = self._map_to_output(
             make_technology_map(self.results.new_connected_schools)
         )
+        # Satellite Breakdown
+        satellite_breakdown = self._figure_to_output(
+            make_satellite_pie_breakdown(self.results.new_connected_schools)
+        )
         # cost maps
-        map_costs = self._figure_to_output(
+        map_costs = self._map_to_output(
             make_cost_map(
                 self.results.new_connected_schools,
                 cost_key="total_cost",
                 display_key="Per School Cost (USD)",
+                title="Average Cost Per School",
             )
         )
-        map_costs_per_student = self._figure_to_output(
+        map_costs_per_student = self._map_to_output(
             make_cost_map(
                 self.results.new_connected_schools,
                 cost_key="total_cost_per_student",
                 display_key="Per Student Cost (USD)",
+                title="Average Cost Per Student",
             )
         )
         with tab:
@@ -164,6 +175,7 @@ class ResultDashboard:
                         section("Cellular Infrastructure", cell_plots, "dark"),
                         section("Cellular Coverage", coverage_plots, "dark"),
                         section("Technology Modalities", map_technology, "dark"),
+                        section("Satellite Only Modality", satellite_breakdown, "dark"),
                         section("Average Cost Per School", map_costs, "dark"),
                         section(
                             "Average Cost Per Student", map_costs_per_student, "dark"
@@ -236,6 +248,8 @@ class ResultDashboard:
                 names="technology",
                 color="technology",
                 color_discrete_map=GIGA_TECHNOLOGY_COLORS,
+            ).update_traces(
+                textinfo="label+value+percent", hoverinfo="label+value+percent"
             )
         )
         cost_pie = self._figure_to_output(
@@ -245,6 +259,8 @@ class ResultDashboard:
                 names="technology",
                 color="technology",
                 color_discrete_map=GIGA_TECHNOLOGY_COLORS,
+            ).update_traces(
+                textinfo="label+value+percent", hoverinfo="label+value+percent"
             )
         )
         # summary table

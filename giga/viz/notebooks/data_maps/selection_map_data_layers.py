@@ -193,7 +193,7 @@ class SelectionMapDataLayers(MapDataLayers):
         if self._layers_selection is None:
             self._layers_selection = [
                 self.fiber_layer_mb,
-                self.fiber_layer_mb_legend,
+                self.cell_tower_layer_mb_empty,
             ] + self.school_layers_mb
         return self._layers_selection
 

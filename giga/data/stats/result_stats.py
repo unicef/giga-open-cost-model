@@ -12,12 +12,16 @@ class ProjectOverview(BaseModel):
     total_students: int
     total_schools: int
     schools_connected_current: int
-    schools_connected_projected: int
+    schools_connected_project: int
     students_connected_current: int
-    students_connected_projected: int
+    students_connected_project: int
     connected_percentage_current: float
     connected_percentage_projected: float
     average_mbps: float
+    schools_with_electricity: int
+    schools_with_electricity_percentage: float
+    schools_without_electricity: int
+    schools_without_electricity_percentage: float
 
 
 DEFAULT_BINS = [0, 5_000, 10_000, 15_000, 20_000, np.inf]
@@ -118,15 +122,17 @@ class ResultStats:
         new_connected_schools = self.output_cost_table["feasible"].sum()
         current_connected_students = self.complete_school_table["num_students"].sum()
         new_connected_students = self.output_cost_table["num_students"].sum()
+        schools_with_electricity = self.complete_school_table["has_electricity"].sum()
+        schools_without_electricity = (
+            len(self.complete_school_table) - schools_with_electricity
+        )
         return ProjectOverview(
             total_students=self.complete_school_table["num_students"].sum(),
             total_schools=len(self.complete_school_table),
             schools_connected_current=current_connected_schools,
-            schools_connected_projected=new_connected_schools
-            + current_connected_schools,
+            schools_connected_project=new_connected_schools,
             students_connected_current=current_connected_students,
-            students_connected_projected=current_connected_students
-            + new_connected_students,
+            students_connected_project=new_connected_students,
             connected_percentage_current=round(
                 current_connected_schools / len(self.complete_school_table) * 100
             ),
@@ -136,6 +142,14 @@ class ResultStats:
                 * 100
             ),
             average_mbps=round(self.average_mbps),
+            schools_with_electricity=schools_with_electricity,
+            schools_with_electricity_percentage=round(
+                schools_with_electricity / len(self.complete_school_table) * 100
+            ),
+            schools_without_electricity=schools_without_electricity,
+            schools_without_electricity_percentage=round(
+                schools_without_electricity / len(self.complete_school_table) * 100
+            ),
         )
 
     @property
