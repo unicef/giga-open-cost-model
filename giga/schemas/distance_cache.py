@@ -1,4 +1,5 @@
 import os
+import math
 from pydantic import BaseModel
 from typing import List, Dict
 import pandas as pd
@@ -26,6 +27,14 @@ class SingleLookupDistanceCache(BaseModel):
 
     lookup: Dict[str, PairwiseDistance]
     cache_type: str = "one-to-one"
+
+    def get(self, key: str, default: None) -> PairwiseDistance:
+        return self.lookup.get(key, default)
+
+    def get_distance(self, key: str, default: float = math.inf) -> float:
+        if not key in self.lookup:
+            return default
+        return self.lookup[key].distance
 
     @staticmethod
     def from_distances(distances):

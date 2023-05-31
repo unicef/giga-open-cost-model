@@ -206,14 +206,14 @@ class ModelDataSpace:
                 "has_fiber": c.has_fiber,
                 "cell_coverage_type": c.cell_coverage_type,
                 "bandwidth_demand": c.bandwidth_demand,
-                "nearest_fiber": self.fiber_cache.connected_cache.lookup[
+                "nearest_fiber": self.fiber_cache.connected_cache.get_distance(
                     c.giga_id
-                ].distance
+                )
                 if self.fiber_cache.connected_cache is not None
                 else math.inf,
-                "nearest_cell_tower": self.cellular_cache.connected_cache.lookup[
+                "nearest_cell_tower": self.cellular_cache.connected_cache.get_distance(
                     c.giga_id
-                ].distance
+                )
                 if self.cellular_cache.connected_cache is not None
                 else math.inf,
             }
