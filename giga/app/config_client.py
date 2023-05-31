@@ -8,6 +8,7 @@ from giga.schemas.conf.data import DataSpaceConf
 from giga.schemas.conf.country import CountryDefaults
 from giga.app.config import get_registered_countries, get_country_defaults
 
+from giga.utils.logging import LOGGER
 
 class ConfigClient:
     """
@@ -29,15 +30,15 @@ class ConfigClient:
 
     @property
     def school_file(self):
-        return str(self.defaults.data.school_file.absolute())
+        return self.defaults.data.school_file
 
     @property
     def fiber_file(self):
-        return str(self.defaults.data.fiber_file.absolute())
+        return self.defaults.data.fiber_file
 
     @property
     def cellular_file(self):
-        return str(self.defaults.data.cellular_file.absolute())
+        return self.defaults.data.cellular_file
 
     @property
     def distance_cache_workspace(self):

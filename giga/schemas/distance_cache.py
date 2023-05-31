@@ -10,6 +10,7 @@ except ImportError:
     import json
 
 from giga.schemas.geo import PairwiseDistance, UniqueCoordinate
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 
 
 def encode_coord(coord):
@@ -58,37 +59,13 @@ class SingleLookupDistanceCache(BaseModel):
 
     @staticmethod
     def from_json(file):
-        with open(file, "r") as f:
+        with data_store.open(file, "r") as f:
             d = json.load(f)
         return SingleLookupDistanceCache(**d)
 
     def to_json(self, file):
-        with open(file, "w") as f:
+        with data_store.open(file, "w") as f:
             json.dump(self.dict(), f)
-
-    @staticmethod
-    def from_csv(file):
-        table = pd.read_csv(file)
-        lookup = {}
-        for i, row in table.iterrows():
-            pair_ids = tuple(row.pair_ids.split(","))
-            source_id = pair_ids[0]
-            lookup[source_id] = PairwiseDistance(
-                pair_ids=pair_ids,
-                distance=row.distance,
-                coordinate1=decode_coord(row.coordinate1),
-                coordinate2=decode_coord(row.coordinate2),
-                distance_type=row.distance_type,
-            )
-        return SingleLookupDistanceCache(lookup=lookup)
-
-    def to_csv(self, file):
-        flat = [v.dict() for v in self.lookup.values()]
-        for c in flat:
-            c["coordinate1"] = encode_coord(c["coordinate1"])
-            c["coordinate2"] = encode_coord(c["coordinate2"])
-            c["pair_ids"] = ",".join(c["pair_ids"])
-        pd.DataFrame(flat).to_csv(file, index=False)
 
     def __len__(self):
         return len(self.lookup)
@@ -128,12 +105,12 @@ class MultiLookupDistanceCache(BaseModel):
 
     @staticmethod
     def from_json(file):
-        with open(file, "r") as f:
+        with data_store.open(file, "r") as f:
             d = json.load(f)
         return MultiLookupDistanceCache(**d)
 
     def to_json(self, file):
-        with open(file, "w") as f:
+        with data_store.open(file, "w") as f:
             json.dump(self.dict(), f)
 
     def __len__(self):
@@ -155,13 +132,13 @@ class GreedyConnectCache(BaseModel):
         connected_cache, unconnected_cache = None, None
         if connected_file is not None:
             # check to see if the file exists
-            if os.path.exists(os.path.join(workspace, connected_file)):
+            if data_store.file_exists(os.path.join(workspace, connected_file)):
                 connected_cache = SingleLookupDistanceCache.from_json(
                     os.path.join(workspace, connected_file)
                 )
         if unconnected_file is not None:
             # check to see if the file exists
-            if os.path.exists(os.path.join(workspace, unconnected_file)):
+            if data_store.file_exists(os.path.join(workspace, unconnected_file)):
                 unconnected_cache = MultiLookupDistanceCache.from_json(
                     os.path.join(workspace, unconnected_file)
                 )

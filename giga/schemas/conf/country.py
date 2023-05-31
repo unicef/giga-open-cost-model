@@ -28,10 +28,10 @@ class GigaDefaults(BaseModel):
 class DataDefaults(BaseModel):
     country: str
     country_code: int = None
-    workspace: DirectoryPath
-    school_file: FilePath
-    fiber_file: FilePath
-    cellular_file: FilePath
+    workspace: str
+    school_file: str
+    fiber_file: str
+    cellular_file: str
     cellular_distance_cache_file: str  # name of file for the cache, not direct path
     p2p_distance_cache_file: str
     country_center: Dict[str, float] = {"lat": 0.0, "lon": 0.0}

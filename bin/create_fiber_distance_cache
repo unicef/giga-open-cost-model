@@ -18,6 +18,7 @@ from giga.schemas.distance_cache import (
     MultiLookupDistanceCache,
 )
 from giga.utils.logging import LOGGER
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 
 
 def main():
@@ -69,11 +70,11 @@ def main():
     )
     args = parser.parse_args()
 
-    if not os.path.isfile(os.path.join(args.workspace_directory, "fiber.csv")):
+    if not data_store.isfile(os.path.join(args.workspace_directory, "fiber.csv")):
         LOGGER.warning(
             f"Fiber file not found in {args.workspace_directory}, creating empty file."
         )
-        open(os.path.join(args.workspace_directory, "fiber.csv"), "a").close()
+        data_store.open(os.path.join(args.workspace_directory, "fiber.csv"), "a").close()
         return
 
     fiber_coordinates = UniqueCoordinateTable.from_csv(

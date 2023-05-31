@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from giga.schemas.geo import UniqueCoordinate
-
+from giga.data.store.stores import COUNTRY_DATA_STORE
 
 DEFAULT_POWER_REQUIRED_PER_SCHOOL = 18_294  # Watts
 
@@ -64,7 +64,8 @@ class GigaSchoolTable(BaseModel):
 
     @staticmethod
     def from_csv(file_name: str):
-        frame = pd.read_csv(file_name, keep_default_na=False)
+        with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
+            frame = pd.read_csv(file, keep_default_na=False)
         return GigaSchoolTable(schools=frame.to_dict("records"))
 
     @property
@@ -80,7 +81,8 @@ class GigaSchoolTable(BaseModel):
                 "connectivity_status": "connectivity_speed_status",
             }
         )
-        frame.to_csv(file_name)
+        with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
+            frame.to_csv(file)
 
     def filter_schools_by_id(self, school_ids):
         # Filter schools by school_id - uses giga_id as the school_id
