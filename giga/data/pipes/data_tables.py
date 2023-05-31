@@ -11,6 +11,7 @@ from giga.schemas.distance_cache import (
     MultiLookupDistanceCache,
     GreedyConnectCache,
 )
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 
 """
 The pydantic below provide pipelines that can be used to load
@@ -19,6 +20,7 @@ These pipelines can be configured to implement that aggregates this data
 """
 
 
+# TODO route other places in app through this?
 class LocalTablePipeline(BaseModel):
 
     file_path: str
@@ -26,7 +28,7 @@ class LocalTablePipeline(BaseModel):
 
     @validator("file_path")
     def must_be_valid_path(cls, v):
-        if not os.path.isfile(v):
+        if not data_store.file_exists(v):
             raise ValueError(f"Invalid path to local data table {v}")
         return v
 
@@ -52,7 +54,7 @@ class LocalJSONPipeline(BaseModel):
 
     @validator("file_path")
     def must_be_valid_path(cls, v):
-        if not os.path.isfile(v):
+        if not data_store.is_file(v):
             raise ValueError(f"Invalid path to local data table {v}")
         return v
 
@@ -72,7 +74,7 @@ class LocalConnectCachePipeline(BaseModel):
 
     @validator("workspace")
     def must_be_valid_dir(cls, v):
-        if not os.path.isdir(v):
+        if not data_store.is_dir(v):
             raise ValueError(f"Invalid workspace {v}")
         return v
 

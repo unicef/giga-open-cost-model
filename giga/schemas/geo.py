@@ -2,6 +2,7 @@ from typing import Tuple, List, Dict, Optional
 from pydantic import BaseModel, Field
 import pandas as pd
 import numpy as np
+from giga.data.store.stores import COUNTRY_DATA_STORE
 
 
 LatLonPoint = Tuple[float, float]  # [lat, lon] or (lat, lon)
@@ -23,7 +24,8 @@ class UniqueCoordinateTable(BaseModel):
     @staticmethod
     def from_csv(file_name):
         try:
-            table = pd.read_csv(file_name).to_dict("records")
+            with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
+                table = pd.read_csv(file).to_dict("records")
         except pd.errors.EmptyDataError:
             return UniqueCoordinateTable(coordinates=[])
         coords = list(
@@ -47,7 +49,8 @@ class UniqueCoordinateTable(BaseModel):
                 self.coordinates,
             )
         )
-        pd.DataFrame(tabular).to_csv(file_name)
+        with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
+            pd.DataFrame(tabular).to_csv(file)
 
     def to_coordinate_vector(self):
         """Transforms the coordinate table into a numpy vector of coordinates"""

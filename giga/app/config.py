@@ -4,7 +4,7 @@ import json
 from typing import List
 
 from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
-
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 
 # Get the countries to skip from an variable
 skip_in_deployment_str = os.getenv("SKIP_COUNTRIES_IN_DEPLOYMENT", "sample")
@@ -12,9 +12,9 @@ skip_in_deployment_str = os.getenv("SKIP_COUNTRIES_IN_DEPLOYMENT", "sample")
 SKIP_IN_DEPLOYMENT = skip_in_deployment_str.split(",") if skip_in_deployment_str else []
 
 
-def get_registered_countries(directory: str) -> None:
+def get_registered_countries(directory=COUNTRY_DEFAULT_WORKSPACE) -> None:
     countries = []
-    for root, _, filenames in os.walk(directory):
+    for root, _, filenames in data_store.walk(directory):
         for filename in fnmatch.filter(filenames, "*.json"):
             countries.append(filename.split(".")[0])
     return countries
@@ -30,12 +30,10 @@ def get_registered_country_names(
 def get_country_defaults(
     workspace="workspace", default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE
 ):
-    # NOTE: if the defaults need to be loaded from another data store you can reimplement
-    # this function to pull from a known database or other data store
     countries = get_registered_countries(default_parameter_dir)
     defaults = {}
     for country in countries:
-        with open(os.path.join(default_parameter_dir, f"{country}.json")) as f:
+        with data_store.open(os.path.join(default_parameter_dir, f"{country}.json")) as f:
             default = json.load(f)
         default["data"]["workspace"] = workspace
         defaults[country] = default

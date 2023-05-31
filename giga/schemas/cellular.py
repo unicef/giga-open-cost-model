@@ -8,6 +8,7 @@ from giga.data.transforms.giga_format import (
     str_to_list_cb,
 )
 from giga.schemas.geo import UniqueCoordinate
+from giga.data.store.stores import COUNTRY_DATA_STORE
 
 
 class CellTechnology(str, Enum):
@@ -51,7 +52,8 @@ class CellTowerTable(BaseModel):
     ):
         try:
             # try to read in dataset
-            frame = pd.read_csv(file_name, keep_default_na=False)
+            with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
+                frame = pd.read_csv(file, keep_default_na=False)
         except pd.errors.EmptyDataError:
             # if empty, return empty table
             return CellTowerTable(towers=[])

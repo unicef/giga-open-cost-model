@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import io
 import argparse
 import logging
 import math
@@ -17,7 +18,7 @@ from giga.schemas.distance_cache import (
     SingleLookupDistanceCache,
     MultiLookupDistanceCache,
 )
-
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 
 def main():
     parser = argparse.ArgumentParser()
@@ -61,11 +62,11 @@ def main():
     )
     args = parser.parse_args()
 
-    if not os.path.isfile(os.path.join(args.workspace_directory, "cellular.csv")):
+    if not data_store.is_file(os.path.join(args.workspace_directory, "cellular.csv")):
         LOGGER.warning(
             f"Cell tower file not found in {args.workspace_directory}, creating empty file."
         )
-        open(os.path.join(args.workspace_directory, "cellular.csv"), "a").close()
+        data_store.open(os.path.join(args.workspace_directory, "cellular.csv"), "a").close()
         return
 
     cellular_coordinates = CellTowerTable.from_csv(

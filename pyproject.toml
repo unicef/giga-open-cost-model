@@ -41,6 +41,8 @@ dash-bootstrap-components = "^1.4.1"
 cdsdashboards = {extras = ["user"], version = "^0.6.3"}
 jhsingle-native-proxy = "^0.8.0"
 simpervisor = "0.4"
+google-cloud-storage = "^2.9.0"
+gcsfs = "^2023.5.0"
 
 [tool.poetry.scripts]
 total_cost_scenario = "giga.app.run_total_cost_scenario:main"

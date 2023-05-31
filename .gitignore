@@ -179,3 +179,4 @@ notebooks/sample_workspace
 notebooks/parameter_workspace/*
 # Do not ignore the TM_WORLD_BORDERS-0.3 directory
 !notebooks/parameter_workspace/TM_WORLD_BORDERS-0.3/
+.gcs_creds.json
