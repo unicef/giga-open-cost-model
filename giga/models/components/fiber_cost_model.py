@@ -4,6 +4,7 @@ from pydantic import validate_arguments
 
 from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
 from giga.models.nodes.graph.pairwise_distance_model import PairwiseDistanceModel
+from giga.models.nodes.graph.vectorized_distance_model import VectorizedDistanceModel
 from giga.schemas.conf.models import FiberTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.schemas.geo import PairwiseDistance
@@ -113,7 +114,7 @@ class FiberCostModel:
         self,
         data_space: ModelDataSpace,
         progress_bar: bool = False,
-        distance_model=PairwiseDistanceModel(),
+        distance_model=VectorizedDistanceModel(),
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input

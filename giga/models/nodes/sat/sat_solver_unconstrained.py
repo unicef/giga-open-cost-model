@@ -8,22 +8,37 @@ from giga.data.sat.cost_relational_graph import CostRelationalGraph
 from giga.models.nodes.sat.commons import SATSolution
 from giga.schemas.conf.models import SATSolverConf
 from giga.utils.logging import LOGGER
+from typing import List
+from giga.schemas.conf.models import TechnologyConfiguration
+import math
+
+METERS_IN_KM = 1_000.0
 
 
 class SATSolverUnconstrained:
-    def __init__(self, config: SATSolverConf):
+    def __init__(
+        self, config: SATSolverConf, technologies: List[TechnologyConfiguration]
+    ):
         self.config = config
+        self.technologies = technologies
+
+    def _get_fiber_tech_conf(self):
+        for tech in self.technologies:
+            if tech.technology == "Fiber":
+                return tech
+        raise Exception("Fiber technology must be provided")
 
     def _get_solution(self, solver, problem):
         T = nx.Graph()
         d = {}
         num_schools = 0
         for n, attributes in problem.graph.nodes(data=True):
-            if solver.Value(problem.X[n]):
-                T.add_node(n)
-                d[n] = attributes
-                if attributes["label"] == "uschool":
-                    num_schools += 1
+            if n != "metanode":
+                if solver.Value(problem.X[n]):
+                    T.add_node(n)
+                    d[n] = attributes
+                    if attributes["label"] == "uschool":
+                        num_schools += 1
         nx.set_node_attributes(T, d)
 
         for n1, n2, attributes in problem.graph.edges(data=True):
@@ -35,7 +50,7 @@ class SATSolverUnconstrained:
                 if solver.Value(problem.P[(n2, n1)]):
                     add_edge = True
             if add_edge:
-                T.add_edge(n1, n2, weight=attributes["weight"])
+                T.add_edge(n1, n2, weight=attributes["weight_float"], tech="fiber")
         return T, num_schools, solver.ObjectiveValue()
 
     def _set_solver_params(self, solver):
@@ -59,10 +74,12 @@ class SATSolverUnconstrained:
             return SATSolution()
 
     def _solve(self, problem: SATFormula):
+        LOGGER.info("Solving SAT problem")
         solver = cp_model.CpSolver()
         solver = self._set_solver_params(solver)
         # run solver
         status = solver.Solve(problem.model)
+        LOGGER.info("Solved")
         return self._parse_solution(status, solver, problem)
 
     def run(self, graph: SATCostGraph):
@@ -80,15 +97,21 @@ class SATSolverUnconstrained:
             )
         else:
             relational_graph = None
+        fiber_conf = self._get_fiber_tech_conf()
+        cost_per_m = math.ceil(
+            fiber_conf.capex.cost_per_km / METERS_IN_KM
+        )  # Fiber is always the first technology
         problem = SATFormula(
-            self.config.budget,
-            self.config.cost_per_m,
+            0,
+            cost_per_m,
             graph,
             relational_graph=relational_graph,
             do_hints=self.config.do_hints,
         )
         LOGGER.info("Building SAT problem")
-        problem.build()
+        problem.build(
+            road_data=self.config.road_data, all_techs=(len(self.technologies) > 1)
+        )
         solution = self._solve(problem)
         solution.initial_cost_graph = graph
         solution.problem = problem

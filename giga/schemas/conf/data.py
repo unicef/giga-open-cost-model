@@ -19,17 +19,6 @@ from giga.utils.logging import LOGGER
 REGISTERED_COUNTRIES = tuple(get_registered_countries(COUNTRY_DEFAULT_WORKSPACE))
 
 
-class SATCostGraphConf(BaseModel):
-    """Configuration for SAT cost graph"""
-
-    base_node_cost: int = 0
-    base_n_cost: int = 0
-    base_per_km_cost: int = 0
-    relational_graph_edge_threshold: int = (
-        800  # determines at what point to create a simplified graph
-    )
-
-
 class CoordinateMapConf(BaseModel):
     """Configuration for loading a local coordinate data map"""
 
@@ -126,6 +115,7 @@ class P2PDistanceCacheConf(BaseModel):
         args.workspace_directory = self.data.workspace
         P2PCacheCreator(args).run()
         LOGGER.info(f"> P2P cache saved locally. Future runs will now be faster.")
+
 
 
 

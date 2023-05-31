@@ -83,20 +83,20 @@ def get_scenario_type(config):
     if config["scenario_id"] == "minimum_cost":
         return "Lowest Cost"
     elif (
-        config["scenario_id"] == "single_tech_cost" and config["technology"] == "Fiber"
+        config["scenario_id"] == "single_tech_cost" and config["single_tech"] == "Fiber"
     ):
         return "Fiber Only"
     elif (
         config["scenario_id"] == "single_tech_cost"
-        and config["technology"] == "Satellite"
+        and config["single_tech"] == "Satellite"
     ):
         return "Satellite LEO Only"
     elif (
         config["scenario_id"] == "single_tech_cost"
-        and config["technology"] == "Cellular"
+        and config["single_tech"] == "Cellular"
     ):
         return "Cellular Only"
-    elif config["scenario_id"] == "single_tech_cost" and config["technology"] == "P2P":
+    elif config["scenario_id"] == "single_tech_cost" and config["single_tech"] == "P2P":
         return "P2P Only"
     else:
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")

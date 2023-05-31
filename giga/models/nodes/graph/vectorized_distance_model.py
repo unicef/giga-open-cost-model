@@ -10,7 +10,7 @@ from giga.utils.progress_bar import progress_bar as pb
 
 
 RADIUS_EARTH_M = 6371000.0
-DEFAULT_N_CHUNKS = 100
+DEFAULT_N_CHUNKS = 500
 
 
 class VectorizedDistanceModel:
@@ -39,7 +39,7 @@ class VectorizedDistanceModel:
         return np.array(coordinates)[idxs], ordered_distances[idxs]
 
     @validate_arguments
-    def run(
+    def _run_single_matrix(
         self, data: Tuple[List[UniqueCoordinate], List[UniqueCoordinate]], **kwargs
     ) -> List[PairwiseDistance]:
         """
@@ -101,3 +101,20 @@ class VectorizedDistanceModel:
                 continue
             pairs.extend(self.run((set1[start:end], set2), progress_bar=False))
         return pairs
+
+    @validate_arguments
+    def run(
+        self, data: Tuple[List[UniqueCoordinate], List[UniqueCoordinate]], **kwargs
+    ) -> List[PairwiseDistance]:
+        """
+        This method computes pairwise distances between two sets of coordinates
+        and wraps the run chunks method if the first set of coordinates is too large
+        to be processed in a single matrix.
+        It will break the first set of coordinates into smaller chunks and process them
+        by default, but this behavior can be disabled by setting the n_chunks parameter to 1.
+        """
+        set1, set2 = data
+        if len(set1) > DEFAULT_N_CHUNKS:
+            return self.run_chunks(data, **kwargs)
+        else:
+            return self._run_single_matrix(data, **kwargs)

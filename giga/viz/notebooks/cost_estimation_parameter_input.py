@@ -283,7 +283,7 @@ class CostEstimationParameterInput:
     def config_json(self):
         return json.dumps(self.config)
 
-    def update(self, config):
+    def update_old(self, config):
         if len(config) == 0:
             return
         if config["scenario_parameters"]["scenario_id"] == "minimum_cost":
@@ -331,6 +331,41 @@ class CostEstimationParameterInput:
                 self.p2p_parameter_manager.update_parameters(tech_config)
             else:
                 raise ValueError(f"Unknown technology name: {tech}")
+        else:
+            raise ValueError(
+                f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
+            )
+
+    def update(self, config):
+        if len(config) == 0:
+            return
+        if (
+            config["scenario_parameters"]["scenario_id"] == "minimum_cost"
+            or config["scenario_parameters"]["scenario_id"] == "single_tech_cost"
+        ):
+            tech_configs = {
+                t["technology"]: t
+                for t in config["scenario_parameters"]["technologies"]
+            }
+            self.data_parameter_manager.update_parameters(config["data_parameters"])
+            self.scenario_parameter_manager.update_parameters(
+                config["scenario_parameters"]
+            )
+            self.cellular_parameter_manager.update_parameters(
+                tech_configs.get("Cellular", {})
+            )
+            self.satellite_parameter_manager.update_parameters(
+                tech_configs.get("Satellite", {})
+            )
+            self.fiber_parameter_manager.update_parameters(
+                tech_configs.get("Fiber", {})
+            )
+            self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
+            self.electricity_parameter_manager.update_parameters(
+                config["scenario_parameters"]["technologies"][0].get(
+                    "electricity_config", {}
+                )
+            )
         else:
             raise ValueError(
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
@@ -419,63 +454,6 @@ class CostEstimationParameterInput:
             ]
             conf.scenario_id = "budget_constrained"
         return conf
-
-    def scenario_parameters_old(self, sheet_name="scenario"):
-        p = self.scenario_parameter_manager.get_model_parameters()
-        if p["scenario_type"] == "Fiber Only":
-            tech_params = self.fiber_parameters()
-            tech_params.electricity_config = self.electricity_parameters()
-            return SingleTechnologyScenarioConf(
-                technology="Fiber", tech_config=tech_params, **p
-            )
-        elif p["scenario_type"] == "Satellite LEO Only":
-            tech_params = self.satellite_parameters()
-            tech_params.electricity_config = self.electricity_parameters()
-            return SingleTechnologyScenarioConf(
-                technology="Satellite", tech_config=tech_params, **p
-            )
-        elif p["scenario_type"] == "Cellular Only":
-            tech_params = self.cellular_parameters()
-            tech_params.electricity_config = self.electricity_parameters()
-            p = SingleTechnologyScenarioConf(
-                technology="Cellular", tech_config=tech_params, **p
-            )
-            p.tech_config = tech_params
-            return p
-        elif p["scenario_type"] == "P2P Only":
-            tech_params = self.p2p_parameters()
-            tech_params.electricity_config = self.electricity_parameters()
-            p = SingleTechnologyScenarioConf(
-                technology="P2P", tech_config=tech_params, **p
-            )
-            p.tech_config = tech_params
-            return p
-        else:
-            fiber_params = self.fiber_parameters()
-            satellite_params = self.satellite_parameters()
-            cellular_params = self.cellular_parameters()
-            p2p_params = self.p2p_parameters()
-            fiber_params.electricity_config = self.electricity_parameters()
-            satellite_params.electricity_config = self.electricity_parameters()
-            cellular_params.electricity_config = self.electricity_parameters()
-            p2p_params.electricity_config = self.electricity_parameters()
-            conf = MinimumCostScenarioConf(
-                **p,
-                technologies=[
-                    fiber_params,
-                    satellite_params,
-                    cellular_params,
-                    p2p_params,
-                ],
-            )
-            conf.technologies[2] = cellular_params
-            conf.technologies[3] = p2p_params
-            if p["use_budget_constraint"]:
-                conf.cost_minimizer_config.budget_constraint = p[
-                    "cost_minimizer_config"
-                ]["budget_constraint"]
-                conf.scenario_id = "budget_constrained"
-            return conf
 
     def scenario_parameters(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()

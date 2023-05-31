@@ -156,41 +156,13 @@ class SingleTechnologyScenarioConf(BaseModel):
         return {self.technology: self.tech_config.constraints.maximum_bandwithd}
 
 
-class MinimumCostScenarioConf(BaseModel):
-    """
-    Configuration for a model scenario that estimates minimum budget
-    necessary to connect schools with the cheapest technology when available
-    """
-
-    scenario_id: Literal["minimum_cost", "single_tech_cost"] = "minimum_cost"
-    technologies: List[TechnologyConfiguration]
-    years_opex: int = 5  # the number of opex years to consider in the estimate
-    opex_responsible: Literal[
-        "Provider", "Consumer", "Both"
-    ]  # type of opex costs to consider
-    bandwidth_demand: float  # Mbps
-    single_tech: Literal["Fiber", "Cellular", "Satellite", "P2P"] = None  # if not None, only consider this technology
-    cost_minimizer_config: CostMinimizerConf = None
-
-    class Config:
-        case_sensitive = False
-
-    @validator("cost_minimizer_config", always=True)
-    def validate_minimizer_conf(cls, value, values):
-        return CostMinimizerConf(years_opex=values["years_opex"])
-
-    @property
-    def maximum_bandwidths(self):
-        return {t.technology: t.constraints.maximum_bandwithd for t in self.technologies}
-
-
 class SATSolverConf(BaseModel):
     """
     Configuration for the SAT solver
     """
 
-    budget: int = 0  # $
-    cost_per_km: float = 0.0  # $/km
+    sat_engine: bool = False
+    road_data: bool = False
     time_limit: int = 600  # seconds
     do_hints: bool = False
     num_workers: int = 16
@@ -205,6 +177,38 @@ class SATSolverConf(BaseModel):
         return math.ceil(self.cost_per_km / METERS_IN_KM)
 
 
-class SATMinimumCostScenarioConf(MinimumCostScenarioConf):
+class MinimumCostScenarioConf(BaseModel):
+    """
+    Configuration for a model scenario that estimates minimum budget
+    necessary to connect schools with the cheapest technology when available
+    """
 
-    sat_solver_config: SATSolverConf
+    scenario_id: Literal["minimum_cost", "single_tech_cost"] = "minimum_cost"
+    technologies: List[TechnologyConfiguration]
+    years_opex: int = 5  # the number of opex years to consider in the estimate
+    opex_responsible: Literal[
+        "Provider", "Consumer", "Both"
+    ]  # type of opex costs to consider
+    bandwidth_demand: float  # Mbps
+    single_tech: Literal[
+        "Fiber", "Cellular", "Satellite", "P2P"
+    ] = None  # if not None, only consider this technology
+    cost_minimizer_config: CostMinimizerConf = None
+    sat_solver_config: SATSolverConf = SATSolverConf()
+
+    class Config:
+        case_sensitive = False
+
+    @validator("cost_minimizer_config", always=True)
+    def validate_minimizer_conf(cls, value, values):
+        return CostMinimizerConf(years_opex=values["years_opex"])
+
+    @property
+    def maximum_bandwidths(self):
+        return {
+            t.technology: t.constraints.maximum_bandwithd for t in self.technologies
+        }
+
+    @property
+    def includes_fiber(self):
+        return any([t.technology == "Fiber" for t in self.technologies])

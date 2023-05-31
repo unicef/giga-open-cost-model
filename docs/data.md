@@ -115,7 +115,7 @@ Cell tower data for a country can be specified using the schema below in a csv t
 | outdoor      | bool                     | Whether the tower is outdoor     |
 | lat          | float                    | Latitude of the tower            |
 | lon          | float                    | Longitude of the tower           |
-| height       | float                    | Height of the tower              |
+| height       | float                    | Height of the tower in meters    |
 | technologies | List[CellTechnology]     | List of supported technologies [2G, 3G, 4G, LTE] |
 
 ---

@@ -16,6 +16,8 @@ from giga.viz.colors import (
     CELL_COVERAGE_COLOR_MAP,
 )
 
+METERS_IN_KM = 1000.0
+
 
 CUSTOM_TEMPLATE = custom_template = {
     "layout": go.Layout(
@@ -136,6 +138,73 @@ def make_technology_map(results, style="carto-positron"):
             size=18, color=GIGA_BLACK, family="Verdana Bold"
         ),  # customize font size here
     }
+    return map_technology
+
+
+def plot_pairwise_connections(connections, color="gold"):
+    traces = []
+    total_dist_km = np.round(sum([c.distance for c in connections]) / METERS_IN_KM, 2)
+    title_html = f"Total length of connections: {total_dist_km} km"
+
+    for c in connections:
+        # Compute mid-point for hover information
+        mid_lat = (c.coordinate1.coordinate[0] + c.coordinate2.coordinate[0]) / 2
+        mid_lon = (c.coordinate1.coordinate[1] + c.coordinate2.coordinate[1]) / 2
+        hover_text = f"Distance: {np.round(c.distance / METERS_IN_KM, 2)} km"
+
+        # Create line trace
+        line_trace = go.Scattermapbox(
+            lat=[c.coordinate1.coordinate[0], c.coordinate2.coordinate[0], None],
+            lon=[c.coordinate1.coordinate[1], c.coordinate2.coordinate[1], None],
+            mode="lines",
+            line=dict(width=2, color=color),
+            hoverinfo="none",
+            showlegend=False,
+        )
+        traces.append(line_trace)
+
+        # Create mid-point trace for hover information
+        mid_point_trace = go.Scattermapbox(
+            lat=[mid_lat],
+            lon=[mid_lon],
+            mode="markers",
+            marker=dict(size=0),  # Invisible marker
+            text=[hover_text],
+            hoverinfo="text",
+            showlegend=False,
+            hoverlabel=dict(
+                bgcolor="darkgray",  # Set background color
+                font=dict(color="white"),  # Set font color
+            ),
+        )
+        traces.append(mid_point_trace)
+
+    return traces, title_html
+
+
+def create_fiber_nodes_trace(fiber_nodes, color="black"):
+    latitudes = [node.coordinate[0] for node in fiber_nodes]
+    longitudes = [node.coordinate[1] for node in fiber_nodes]
+    fiber_nodes_trace = go.Scattermapbox(
+        lat=latitudes,
+        lon=longitudes,
+        mode="markers",
+        marker=dict(size=8, color=color),  # Adjust size and color as needed
+        text=[node.coordinate_id for node in fiber_nodes],
+        hoverinfo="text",
+        name="Fiber Nodes",  # This will appear in the legend
+    )
+    return fiber_nodes_trace
+
+
+def make_technology_map_with_fiber(stats, style="carto-positron"):
+    map_technology = make_technology_map(stats.new_connected_schools, style=style)
+    lines, title_html = plot_pairwise_connections(stats.fiber_connections)
+    for line in lines:
+        map_technology.add_trace(line)
+    fiber_nodes_trace = create_fiber_nodes_trace(stats.data_space.fiber_coordinates)
+    map_technology.add_trace(fiber_nodes_trace)
+    map_technology.layout.title.text = title_html
     return map_technology
 
 

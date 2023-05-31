@@ -5,7 +5,6 @@ from giga.models.scenarios.sat_minimum_cost_scenario import SATMinimumCostScenar
 from giga.schemas.conf.models import (
     SingleTechnologyScenarioConf,
     MinimumCostScenarioConf,
-    SATMinimumCostScenarioConf,
 )
 
 
@@ -13,8 +12,12 @@ def create_scenario(scenario_config, data_space, output_space):
     if type(scenario_config) is SingleTechnologyScenarioConf:
         return SingleTechnologyScenario(scenario_config, data_space, output_space)
     elif type(scenario_config) is MinimumCostScenarioConf:
-        return MinimumCostScenario(scenario_config, data_space, output_space)
-    elif type(scenario_config) is SATMinimumCostScenarioConf:
-        return SATMinimumCostScenario(scenario_config, data_space, output_space)
+        if (
+            scenario_config.sat_solver_config is not None
+            and scenario_config.sat_solver_config.sat_engine
+        ):
+            return SATMinimumCostScenario(scenario_config, data_space, output_space)
+        else:
+            return MinimumCostScenario(scenario_config, data_space, output_space)
     else:
         raise ValueError(f"Invalid scenario config {type(scenario_config)}")

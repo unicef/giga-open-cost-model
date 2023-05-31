@@ -69,8 +69,9 @@ class ResultStats:
         if self._output_cost_table is None:
             full_table = self.output_cost_table_full
             self._output_cost_table = full_table[
-                full_table["total_cost"] != math.inf
-            ].dropna()
+                (full_table["total_cost"] != math.inf)
+                & (full_table["total_cost"].notna())
+            ]
         return self._output_cost_table
 
     @property
@@ -92,11 +93,27 @@ class ResultStats:
         }
 
     @property
+    def average_cost_per_school(self):
+        cost = self.output_cost_table["total_cost"].mean()
+        if math.isnan(cost) or cost == math.inf:
+            return 0
+        return cost
+
+    @property
+    def average_cost_per_student(self):
+        cost = (
+            self.output_cost_table["total_cost"].sum()
+            / self.output_cost_table["num_students"].sum()
+        )
+        if math.isnan(cost) or cost == math.inf:
+            return 0
+        return cost
+
+    @property
     def averages_lookup_table_usd(self):
         return {
-            "Cost per School": self.output_cost_table["total_cost"].mean(),
-            "Cost per Student": self.output_cost_table["total_cost"].sum()
-            / self.output_cost_table["num_students"].sum(),
+            "Cost per School": self.average_cost_per_school,
+            "Cost per Student": self.average_cost_per_student,
         }
 
     @property
@@ -202,6 +219,12 @@ class ResultStats:
                 },
             },
         }
+
+    @property
+    def fiber_connections(self):
+        if self.output_space.fiber_costs is not None:
+            return self.output_space.fiber_costs.technology_results.distances
+        return []
 
     def get_cumulative_distance_fraction(self, distance, distance_key):
         if len(self.output_cost_table) == 0:
