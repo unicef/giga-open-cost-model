@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "giga"
-version = "0.3.6"
+version = "0.3.8"
 description = "Giga models for internet connectivity cost estimation"
 authors = ["Max Nova <max.nova@actualhq.com>"]
 readme = "README.md"
@@ -40,6 +40,7 @@ pypdf2 = "^3.0.1"
 dash-bootstrap-components = "^1.4.1"
 cdsdashboards = {extras = ["user"], version = "^0.6.3"}
 jhsingle-native-proxy = "^0.8.0"
+simpervisor = "0.4"
 
 [tool.poetry.scripts]
 total_cost_scenario = "giga.app.run_total_cost_scenario:main"

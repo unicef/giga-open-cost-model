@@ -41,7 +41,7 @@ If you would like to upload a configuration from a local machine, use the `Impor
 
 Once you have finalized or updated the configuration above, click **Run Model** to generate new results and display summary tables that show aggregated cost statistics across the schools of interest. 
 
-The final section below show electricity avaibility and costs. For additional visualizations, download your results and see the [drilldown notebook](notebooks/results-drilldown.ipynb).
+The final section below show electricity availability and costs. For additional visualizations, download your results and see the [drilldown notebook](notebooks/results-drilldown.ipynb).
 Click **Download Results** to save model results locally on your computer.
 
 ### Scenarios
@@ -49,7 +49,6 @@ Click **Download Results** to save model results locally on your computer.
 The following scenarios are available in the model:
 
 - `Lowest Cost`: determines the lowest cost of connectivity for the schools in question by selecting across the available and feasible technologies
-- `Budget Constrained`: computes the minimum cost under a constrained budget. When this scenario is selected, the models will attempt to connect the maximum number of schools within the given budget. The budget constraint is set with respect to the total NPV of the schools in question
 - `Fiber Only`: computes the total cost of connecting all the unconnected schools with fiber technology
 - `Satellite Only`: computes the total cost of connecting all the unconnected schools with satellite technology
 - `Cellular Only`: computes the total cost of connecting all the unconnected schools with cellular technology
@@ -63,6 +62,7 @@ The following parameters can be configured in the model:
     * `Cost Scenario` determines which scenario to estimate costs for; either `Minimum Cost` which finds the cheapest technology can be selected, or an individual technology can be selected which will find the costs for just that technology
     * `OpEx Years` determines the number of years that will be considered in the total cost estimates, where total cost is CapEx + OpEx * `OpEx Years`
     * `Bandwidth Demand (Mbps)` determines the expected demand at each school being considered
+    * `Use Budget Constraint` flag that allows users to specif a budget, when set will run a constrained optimization on lowest cost or single technology scenarios
     * `Project Budget (Millions USD)` sets the maximum budget for the connectivity project being analyzed, this budget is for the NPV of the project
 * **Fiber Model**
     * `Annual cost per Mbps (USD)`: the annual cost of connectivity per Mbps in US Dollars
@@ -90,7 +90,7 @@ The following parameters can be configured in the model:
     * `Maximum  Range (km)` is the maximum distance from a cell tower that a school can receive internet service
 * **Electricity Model**
     * `Cost per kWh (USD)` is the expected average cost of electricity for the schools considered in US Dollars
-    * `Solar Panel Install Cost (USD)` is the average cost of installing solar panels for the schools considered in US Dollars
+    * `Solar Total Cost (USD/Watt)` is the average cost of installing solar panels at schools in USD/Watt
 
 ---
 

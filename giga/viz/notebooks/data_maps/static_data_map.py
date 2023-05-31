@@ -11,71 +11,14 @@ from giga.viz.notebooks.data_maps.selection_map_data_layers import (
     SelectionMapDataLayers,
 )
 from giga.viz.notebooks.components.html.sections import section
+from giga.viz.plot_configs import (
+    STATIC_MAP_MODEBAR_CONFIG,
+    SELECTION_MAP_MODEBAR_BUTTON_CONFIG,
+    SELECTION_MAP_MODEBAR_GLOBAL_CONFIG,
+)
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
-
-
-STATIC_MAP_MODEBAR_CONFIG = {
-    "displayModeBar": True,
-    "modeBarButtonsToRemove": [
-        "zoom2d",
-        "pan2d",
-        "zoomIn2d",
-        "zoomOut2d",
-        "autoScale2d",
-        "resetScale2d",
-        "hoverClosestCartesian",
-        "hoverCompareCartesian",
-        "toggleSpikelines",
-        "select",
-        "lasso",
-    ],
-    "toImageButtonOptions": {
-        "format": "jpeg",  # one of png, svg, jpeg, webp
-        "filename": "custom_image",
-        "height": 1600,
-        "width": 1600,
-    },
-    "displaylogo": False,
-}
-
-SELECTION_MAP_MODEBAR_CONFIG = {
-    "displayModeBar": True,
-    "modeBarButtonsToRemove": [
-        "zoom2d",
-        "pan2d",
-        "zoomin",
-        "zoomout",
-        "autoScale2d",
-        "resetScale2d",
-        "hoverClosestCartesian",
-        "hoverCompareCartesian",
-        "toggleSpikelines",
-    ],
-    "toImageButtonOptions": {
-        "format": "jpeg",  # one of png, svg, jpeg, webp
-        "filename": "custom_image",
-        "height": 1600,
-        "width": 1600,
-    },
-    "displaylogo": False,
-}
-
-SELECTION_MAP_MODEBAR_CONFIG = {
-    "activecolor": "#FFFFFF",
-    "remove": [
-        "zoom2d",
-        "pan2d",
-        "zoomin",
-        "zoomout",
-        "autoScale2d",
-        "resetScale2d",
-        "hoverClosestCartesian",
-        "hoverCompareCartesian",
-        "toggleSpikelines",
-    ],
-}
 
 
 class DataMapConfig(BaseModel):
@@ -92,8 +35,6 @@ class DataMapConfig(BaseModel):
     legend_font_color: str = "white"
     legend_border_color: str = "#070807"
     legend_border_width: int = 1
-    mode_bar_config: Dict = STATIC_MAP_MODEBAR_CONFIG
-    jupyterlab: bool = True
     no_cell: bool = False
 
 
@@ -120,7 +61,7 @@ class StaticDataMap:
             else self.config.style_mapbox
         )
         token = None if MAP_BOX_ACCESS_TOKEN == "" else MAP_BOX_ACCESS_TOKEN
-        modebar = SELECTION_MAP_MODEBAR_CONFIG if selection_map else {}
+        modebar = SELECTION_MAP_MODEBAR_BUTTON_CONFIG if selection_map else {}
         update_menu = []
         if infra_toggle:
             update_menu = [
@@ -225,7 +166,7 @@ class StaticDataMap:
         )
         self.add_layers(l)
         m = self.get_map(center, infra_toggle=False, selection_map=True)
-        m._config = {**m._config, **{"displayModeBar": True, "displaylogo": False}}
+        m._config = {**m._config, **SELECTION_MAP_MODEBAR_GLOBAL_CONFIG}
         layers.connect_school_layer_selection(m)
         upload_button = layers.make_upload_button(m)
         selected_label = layers.make_selected_label()

@@ -35,7 +35,7 @@ DEFAULT_SCENARIO_PARAMS = {
 }  # in mbs
 
 DEFAULT_ELECTRICITY_CONF = ElectricityCostConf(
-    capex={"solar_panel_costs": 10_000, "battery_costs": 0.0},  # USD
+    capex={"solar_cost_per_watt": 3.0},  # USD
     opex={"cost_per_kwh": 0.10},  # USD
 )
 
