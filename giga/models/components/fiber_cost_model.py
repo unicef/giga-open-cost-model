@@ -32,7 +32,7 @@ class FiberCostModel:
 
     def _cost_of_connection(self, distance_km):
         return (
-            distance_km * self.config.capex.cost_per_km + self.config.capex.fixed_costs
+            distance_km * self.config.capex.cost_per_km
         )
 
     def _cost_of_maintenance(self, distance_km):
