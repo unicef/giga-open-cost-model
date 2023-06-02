@@ -168,6 +168,32 @@ Most of the GCP specific deployment parameters are defined in the stack CLI, the
 
 Migrating to a different cloud provider or a different auth system would require updating these parameters.
 
+### Managing Voila Dashboards
+
+Once the application is deployed you can create a standalone voila dashboard on a stand-alone url.
+Currently, dashboard can not be shared between different accounts.
+One way to have demo-able and sharable dashboards is to create a guest credential, create a dashboard for the application user associated with that credential, and sharing that credential and url with the user who needs access to the dashboard.
+The standalone dashboard can support multi-tenantcy (e.g. multiple accounts logged in at the same time).
+However, the dashboard is running in a single pod that is constrained by the deployed resources associated with a single-user pod.
+
+To create a dashboard follow the steps below:
+1. Log-in using the credential you want to provide dashboard access for (this could be your own personal account, a guest credential, or something else)
+2. Navigate to the hub control panel - click `File` (top right) and `Hub Control Panel` (at the bottom of the menu)
+3. Click on the `Dashboards` sub-menu at the top
+4. Click `New Dashboard` to begin creating a new dashboard
+5. Fill in the information for the dashboard you want to create by specifying the dashboard name (which will be reflected in the url), the description of the dashboard which will appear when the dashboard is first started, the framework - choose voila, and the relative path to the notebook that will be turned into a dashboard (see below for an example models dashboard)
+6. Click `Save` which will create a container in which the dashboard runs
+
+**Please note**: that on new deployments or releases the dashboard container will be stopped, and the dashboard will need to be recreated by following the steps above.
+
+The properties of a dashboard (step 5) above are as follows:
+* `Dashboard name` refers to the name of the dashboard and constructs the url under which the dashboard can be accessed. For example, if you call the dashboard `models`, then the user under which the dashboard was created can access the dashboard directly under https://<base-url>/hub/dashboards/models, for a given base url, the dashboard could be accessed directly by at https://giga.notebooks.actualhq.com/hub/dashboards/
+* `Description` will be the brief text that shows up when the dashboard is starting. If anyone is accessing the dashboard through the url above directly, this property is not surfaced
+* `Frameworks` specifies the dashboarding framework to use, for this application select `voila`
+* `Relative Path` refers to the notebook in the single user container that will be used to create the dashboard. The primary notebook for this application can be found under `notebooks/cost-scenario.ipynb`
+
+You can create a number of dashboard using different notebooks by following the steps above.
+
 ### Known Issues
 
 #### SSL Certs
