@@ -145,7 +145,6 @@ class CountryUpdater:
         n_updated += 2
         print(f"\nIn total, updated {n_updated} files for {req.country_name}.")
 
-
     @staticmethod
     def validate_raw_school_inputs(raw_schools: List[GigaSchool]) -> str:
         if len(raw_schools) == 0:

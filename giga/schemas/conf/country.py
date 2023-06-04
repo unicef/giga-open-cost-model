@@ -6,6 +6,7 @@ from giga.schemas.conf.models import (
     FiberTechnologyCostConf,
     SatelliteTechnologyCostConf,
     CellularTechnologyCostConf,
+    P2PTechnologyCostConf,
     SingleTechnologyScenarioConf,
     MinimumCostScenarioConf,
 )
@@ -17,12 +18,12 @@ class ScenarioDefaults(BaseModel):
 
 
 class GigaDefaults(BaseModel):
-    # TODO (Nathan): add P2P defaults + need minor tweak to the defaults json configs to include P@P
     scenario: ScenarioDefaults
     fiber: FiberTechnologyCostConf
     satellite: SatelliteTechnologyCostConf
     cellular: CellularTechnologyCostConf
     electricity: ElectricityCostConf
+    p2p: P2PTechnologyCostConf
 
 
 class DataDefaults(BaseModel):

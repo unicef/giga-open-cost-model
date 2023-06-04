@@ -123,10 +123,12 @@ class CostEstimationParameterInput:
         electricity_parameter_manager=None,
         show_map=SHOW_MAP,
         school_selection=SCHOOL_SELECTION,
+        show_defaults=True
     ):
         self._hashed_sheets = {}
         self._hashed_data_layers = {}
         self.show_map = show_map
+        self.show_defaults = show_defaults
         self.school_selection = school_selection
         self.map_output = Output(
             layout=Layout(display="flex", justify_content="center")
@@ -191,18 +193,7 @@ class CostEstimationParameterInput:
         # link country selection to default parameters for that country
         def update_country_defaults(change):
             country = country_name_to_key(change["new"])
-            defaults = self.defaults[country].model_defaults
-            self.scenario_parameter_manager.update_country_parameters(
-                defaults.scenario.dict()
-            )
-            self.fiber_parameter_manager.update_parameters(defaults.fiber.dict())
-            self.satellite_parameter_manager.update_parameters(
-                defaults.satellite.dict()
-            )
-            self.cellular_parameter_manager.update_parameters(defaults.cellular.dict())
-            self.electricity_parameter_manager.update_parameters(
-                defaults.electricity.dict()
-            )
+            self.set_defaults_for_country(country, self.defaults[country].model_defaults)
 
         # update defaults on load
         update_country_defaults(
@@ -272,6 +263,22 @@ class CostEstimationParameterInput:
             update_selection_map, names="value"
         )
 
+    def set_defaults_for_country(self, country_name: str, new_defaults):
+        country = country_name_to_key(country_name)
+        defaults = self.defaults[country].model_defaults
+        self.scenario_parameter_manager.update_country_parameters(
+            defaults.scenario.dict()
+        )
+        self.fiber_parameter_manager.update_parameters(defaults.fiber.dict())
+        self.satellite_parameter_manager.update_parameters(
+            defaults.satellite.dict()
+        )
+        self.cellular_parameter_manager.update_parameters(defaults.cellular.dict())
+        self.electricity_parameter_manager.update_parameters(
+            defaults.electricity.dict()
+        )
+        self.p2p_parameter_manager.update_parameters(defaults.p2p.dict())
+        
     @property
     def config(self):
         return {
@@ -339,37 +346,38 @@ class CostEstimationParameterInput:
     def update(self, config):
         if len(config) == 0:
             return
-        if (
-            config["scenario_parameters"]["scenario_id"] == "minimum_cost"
-            or config["scenario_parameters"]["scenario_id"] == "single_tech_cost"
+        sp = config["scenario_parameters"]
+        if ("scenario_id" in sp and 
+            sp["scenario_id"] != "minimum_cost"
+            and sp["scenario_id"] != "single_tech_cost"
         ):
-            tech_configs = {
-                t["technology"]: t
-                for t in config["scenario_parameters"]["technologies"]
-            }
-            self.data_parameter_manager.update_parameters(config["data_parameters"])
-            self.scenario_parameter_manager.update_parameters(
-                config["scenario_parameters"]
-            )
-            self.cellular_parameter_manager.update_parameters(
-                tech_configs.get("Cellular", {})
-            )
-            self.satellite_parameter_manager.update_parameters(
-                tech_configs.get("Satellite", {})
-            )
-            self.fiber_parameter_manager.update_parameters(
-                tech_configs.get("Fiber", {})
-            )
-            self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
-            self.electricity_parameter_manager.update_parameters(
-                config["scenario_parameters"]["technologies"][0].get(
-                    "electricity_config", {}
-                )
-            )
-        else:
             raise ValueError(
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
             )
+        tech_configs = [] if "technologies" not in sp else {
+            t["technology"]: t for t in sp["technologies"]
+        }
+        self.data_parameter_manager.update_parameters(config["data_parameters"])
+        self.scenario_parameter_manager.update_parameters(
+            sp
+        )
+        self.cellular_parameter_manager.update_parameters(
+            tech_configs.get("Cellular", {})
+        )
+        self.satellite_parameter_manager.update_parameters(
+            tech_configs.get("Satellite", {})
+        )
+        self.fiber_parameter_manager.update_parameters(
+            tech_configs.get("Fiber", {})
+        )
+        self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
+        
+        self.electricity_parameter_manager.update_parameters(
+            sp["technologies"][0].get(
+                "electricity_config", {}
+            )
+        )
+
 
     def data_parameters_input(self, sheet_name="data"):
         return self.data_parameter_manager.input_parameters()
@@ -378,7 +386,7 @@ class CostEstimationParameterInput:
         return self.data_parameter_manager.get_model_parameters()
 
     def scenario_parameter_input(self, sheet_name="scenario"):
-        return self.scenario_parameter_manager.input_parameters()
+        return self.scenario_parameter_manager.input_parameters(self.show_defaults)
 
     def fiber_parameters(self, sheet_name="fiber"):
         return self.fiber_parameter_manager.get_model_parameters()
@@ -387,7 +395,7 @@ class CostEstimationParameterInput:
         return self.fiber_parameter_manager.input_parameters()
 
     def satellite_parameters_input(self, sheet_name="satellite"):
-        return self.satellite_parameter_manager.input_parameters()
+        return self.satellite_parameter_manager.input_parameters(self.show_defaults)
 
     def satellite_parameters(self, sheet_name="satellite"):
         return self.satellite_parameter_manager.get_model_parameters()
@@ -396,16 +404,16 @@ class CostEstimationParameterInput:
         return self.cellular_parameter_manager.get_model_parameters()
 
     def cellular_parameters_input(self, sheet_name="cellular"):
-        return self.cellular_parameter_manager.input_parameters()
+        return self.cellular_parameter_manager.input_parameters(self.show_defaults)
 
     def p2p_parameters(self, sheet_name="p2p"):
         return self.p2p_parameter_manager.get_model_parameters()
 
     def p2p_parameters_input(self, sheet_name="p2p"):
-        return self.p2p_parameter_manager.input_parameters()
+        return self.p2p_parameter_manager.input_parameters(self.show_defaults)
 
     def electricity_parameters_input(self, sheet_name="electricity"):
-        return self.electricity_parameter_manager.input_parameters()
+        return self.electricity_parameter_manager.input_parameters(self.show_defaults)
 
     def electricity_parameters(self, sheet_name="electricity"):
         return self.electricity_parameter_manager.get_model_parameters()
@@ -625,52 +633,54 @@ class CostEstimationParameterInput:
             )
         return self.selection_map_output
 
-    def country_default_parameter_input(self):
-        """Exposes country default parameters only."""
+    def model_parameter_input(self):
+        """Exposes sub-model parameters only."""
+        # Create a grid with two columns, splitting space equally
         layout = Layout(grid_template_columns="1fr 1fr")
-        return VBox([
-            giga_sections.section(
-                "Scenario Selection", self.scenario_parameter_input()
-            ),
-            giga_sections.section(
-                title="Model Configuration",
-                contents=VBox(
+        return VBox(
+            [
+                GridBox(
                     [
-                        GridBox(
-                            [
-                                giga_sections.section(
-                                    "Fiber Model",
-                                    self.fiber_parameter_manager.input_parameters(),
-                                ),
-                                giga_sections.section(
-                                    "Satellite - LEO Model",
-                                    self.satellite_parameters_input(),
-                                ),
-                            ],
-                            layout=layout,
+                        giga_sections.section(
+                            "Fiber Model",
+                            self.fiber_parameter_manager.input_parameters(self.show_defaults),
                         ),
-                        GridBox(
-                            [
-                                giga_sections.section(
-                                    "Cellular Model",
-                                    self.cellular_parameters_input(),
-                                ),
-                                giga_sections.section(
-                                    "P2P Model", self.p2p_parameters_input()
-                                ),
-                            ],
-                            layout=layout,
+                        giga_sections.section(
+                            "Satellite - LEO Model",
+                            self.satellite_parameters_input(),
                         ),
-                        GridBox(
-                            [
-                                giga_sections.section(
-                                    "Electricity Parameters",
-                                    self.electricity_parameters_input(),
-                                ),
-                            ],
+                    ],
+                    layout=layout,
+                ),
+                GridBox(
+                    [
+                        giga_sections.section(
+                            "Cellular Model",
+                            self.cellular_parameters_input(),
+                        ),
+                        giga_sections.section(
+                            "P2P Model", self.p2p_parameters_input()
+                        ),
+                    ],
+                    layout=layout,
+                ),
+                GridBox(
+                    [
+                        giga_sections.section(
+                            "Electricity Parameters",
+                            self.electricity_parameters_input(),
                         ),
                     ],
                 ),
+            ],
+        )
+
+    def country_default_parameter_input(self):
+        """Exposes country default parameters only."""
+        return VBox([
+            giga_sections.section(
+                title="Country Model Defaults",
+                contents=self.model_parameter_input(),
                 extra_class="center",
             )
 
@@ -680,8 +690,6 @@ class CostEstimationParameterInput:
         # main method that exposes the parameter input interface to users in a notebook
         data_map = self.data_map() if self.show_map else HTML()
         selection_map = self.selection_map() if self.selection_map else HTML()
-        # Create a grid with two columns, splitting space equally
-        layout = Layout(grid_template_columns="1fr 1fr")
         return VBox(
             [
                 giga_sections.section(
@@ -704,43 +712,7 @@ class CostEstimationParameterInput:
                 ),
                 giga_sections.section(
                     title="Model Configuration",
-                    contents=VBox(
-                        [
-                            GridBox(
-                                [
-                                    giga_sections.section(
-                                        "Fiber Model",
-                                        self.fiber_parameter_manager.input_parameters(),
-                                    ),
-                                    giga_sections.section(
-                                        "Satellite - LEO Model",
-                                        self.satellite_parameters_input(),
-                                    ),
-                                ],
-                                layout=layout,
-                            ),
-                            GridBox(
-                                [
-                                    giga_sections.section(
-                                        "Cellular Model",
-                                        self.cellular_parameters_input(),
-                                    ),
-                                    giga_sections.section(
-                                        "P2P Model", self.p2p_parameters_input()
-                                    ),
-                                ],
-                                layout=layout,
-                            ),
-                            GridBox(
-                                [
-                                    giga_sections.section(
-                                        "Electricity Parameters",
-                                        self.electricity_parameters_input(),
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
+                    contents=self.model_parameter_input(),
                     extra_class="center",
                 ),
             ]

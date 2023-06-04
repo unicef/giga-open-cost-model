@@ -72,12 +72,12 @@ class ParameterSheet:
             self.sheet = self._create_sheet()
         return self._sheet_lookup[parameter_name].value
 
-    def _create_sheet(self):
+    def _create_sheet(self, show_defaults: bool):
         # Calculate the number of rows needed
         rows = len(self.parameters)
 
         def _create_row(i, p):
-            if self.interactive_parameters[i].show_default:
+            if self.interactive_parameters[i].show_default and show_defaults:
                 param = self.interactive_parameters[i].parameter_with_default
                 # add a callback to update the background color of the cell
                 self.interactive_parameters[i].set_off_default_css_style(
@@ -99,12 +99,12 @@ class ParameterSheet:
 
         return widgets.VBox([_create_row(i, p) for i, p in enumerate(self.parameters)])
 
-    def input_parameters(self):
+    def input_parameters(self, show_defaults = True):
         """
         Returns a Jupyter widget that allows user input into the parameter sheet
         """
         if self.sheet is None:
-            self.sheet = self._create_sheet()
+            self.sheet = self._create_sheet(show_defaults)
             return self.sheet
         else:
             return self.sheet
