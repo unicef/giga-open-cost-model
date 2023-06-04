@@ -16,6 +16,7 @@ from IPython.display import display
 
 from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 from giga.data.space.model_data_space import ModelDataSpace
+from giga.schemas.conf.country import GigaDefaults
 
 from giga.schemas.conf.models import (
     MinimumCostScenarioConf,
@@ -193,7 +194,7 @@ class CostEstimationParameterInput:
         # link country selection to default parameters for that country
         def update_country_defaults(change):
             country = country_name_to_key(change["new"])
-            self.set_defaults_for_country(country, self.defaults[country].model_defaults)
+            self.set_defaults_for_country(self.defaults[country].model_defaults)
 
         # update defaults on load
         update_country_defaults(
@@ -263,9 +264,8 @@ class CostEstimationParameterInput:
             update_selection_map, names="value"
         )
 
-    def set_defaults_for_country(self, country_name: str, new_defaults):
-        country = country_name_to_key(country_name)
-        defaults = self.defaults[country].model_defaults
+    def set_defaults_for_country(self, new_defaults: GigaDefaults):
+        defaults = new_defaults
         self.scenario_parameter_manager.update_country_parameters(
             defaults.scenario.dict()
         )
