@@ -396,6 +396,7 @@ singleuser:
   extraFiles: {}
   extraEnv:
     MAP_BOX_ACCESS_TOKEN: ""
+    OBJSTORE_GCS_CREDS: ""
   lifecycleHooks: {}
   initContainers: []
   extraContainers: []
