@@ -625,6 +625,57 @@ class CostEstimationParameterInput:
             )
         return self.selection_map_output
 
+    def country_default_parameter_input(self):
+        """Exposes country default parameters only."""
+        layout = Layout(grid_template_columns="1fr 1fr")
+        return VBox([
+            giga_sections.section(
+                "Scenario Selection", self.scenario_parameter_input()
+            ),
+            giga_sections.section(
+                title="Model Configuration",
+                contents=VBox(
+                    [
+                        GridBox(
+                            [
+                                giga_sections.section(
+                                    "Fiber Model",
+                                    self.fiber_parameter_manager.input_parameters(),
+                                ),
+                                giga_sections.section(
+                                    "Satellite - LEO Model",
+                                    self.satellite_parameters_input(),
+                                ),
+                            ],
+                            layout=layout,
+                        ),
+                        GridBox(
+                            [
+                                giga_sections.section(
+                                    "Cellular Model",
+                                    self.cellular_parameters_input(),
+                                ),
+                                giga_sections.section(
+                                    "P2P Model", self.p2p_parameters_input()
+                                ),
+                            ],
+                            layout=layout,
+                        ),
+                        GridBox(
+                            [
+                                giga_sections.section(
+                                    "Electricity Parameters",
+                                    self.electricity_parameters_input(),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                extra_class="center",
+            )
+
+        ])
+
     def parameter_input(self):
         # main method that exposes the parameter input interface to users in a notebook
         data_map = self.data_map() if self.show_map else HTML()
