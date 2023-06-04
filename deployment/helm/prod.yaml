@@ -397,6 +397,7 @@ singleuser:
   extraEnv:
     MAP_BOX_ACCESS_TOKEN: ""
     OBJSTORE_GCS_CREDS: ""
+    GIGA_AUTH_TOKEN: ""
   lifecycleHooks: {}
   initContainers: []
   extraContainers: []

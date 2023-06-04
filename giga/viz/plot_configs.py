@@ -28,7 +28,6 @@ SELECTION_MAP_MODEBAR_BUTTON_CONFIG = {
     "activecolor": "#FFFFFF",
     "remove": [
         "zoom2d",
-        "pan2d",
         "zoomin",
         "zoomout",
         "autoScale2d",

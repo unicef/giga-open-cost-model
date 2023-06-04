@@ -50,13 +50,20 @@ class CellTowerTable(BaseModel):
     def from_csv(
         file_name: str, giga_format: bool = True, tech_column: str = "technologies"
     ):
+        frame = []
         try:
             # try to read in dataset
             with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
                 frame = pd.read_csv(file, keep_default_na=False)
         except pd.errors.EmptyDataError:
             # if empty, return empty table
-            return CellTowerTable(towers=[])
+            pass
+        return CellTowerTable.from_frame(frame, giga_format, tech_column)
+    
+    @staticmethod
+    def from_frame(
+        frame: pd.DataFrame, giga_format: bool = True, tech_column: str = "technologies"
+    ):
         if giga_format:
             # reformat from giga format into internal model format
             frame = cell_towers_to_standard_format(frame)
