@@ -3,6 +3,7 @@ from google.cloud import storage
 from .data_store import DataStore
 import os
 import gcsfs
+import json
 import urllib.parse
 
 from giga.utils.globals import COUNTRY_DEFAULT_RELATIVE_DIR
@@ -13,9 +14,8 @@ COUNTRY_DATA_DIR = "workspace"
 GCS_BUCKET_NAME = 'test-giga-obj-store'
 # TODO change to actual-off-platform
 GCS_PROJECT = 'actual-platform-dev'
-GCS_CRED_FILE = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../../../.gcs_creds.json'))
-
+# Configured for deployment in prod.yaml
+GCS_CRED_DATA = os.environ.get("OBJSTORE_GCS_CREDS", "{}")
 
 class GCSDataStore(DataStore):
     """
@@ -28,9 +28,10 @@ class GCSDataStore(DataStore):
         :param bucket_name: The name of the bucket in GCS to interact with.
         :param service_account_key_file: The path to the service account key file.
         """
-        self.client = storage.Client.from_service_account_json(GCS_CRED_FILE)
+        cred_data = json.loads(GCS_CRED_DATA)
+        self.client = storage.Client.from_service_account_info(cred_data)
         self.bucket = self.client.get_bucket(GCS_BUCKET_NAME)
-        self.fs = gcsfs.GCSFileSystem(project=GCS_PROJECT, token=GCS_CRED_FILE)
+        self.fs = gcsfs.GCSFileSystem(project=GCS_PROJECT, token=cred_data)
     
     def _gcs_path(self, path: str) -> str:
         """
