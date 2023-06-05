@@ -86,3 +86,13 @@ class GCSDataStore(DataStore):
             if blob.name != path:
                 return True
         return False
+    
+    def rmdir(self, dir: str) -> None:
+        blobs = self.client.list_blobs(self.bucket, prefix=self._gcs_path(dir))
+        for blob in blobs:
+            blob.delete()
+
+    def remove(self, path: str) -> None:
+        blob = self.bucket.blob(self._gcs_path(path))
+        if blob.exists():
+            blob.delete()

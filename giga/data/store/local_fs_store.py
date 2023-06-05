@@ -35,3 +35,9 @@ class LocalFS(DataStore):
     
     def is_dir(self, path: str) -> bool:
         return os.path.isdir(path)
+    
+    def rmdir(self, path: str) -> None:
+        os.rmdir(path)
+
+    def remove(self, path: str) -> None:
+        os.remove(path)

@@ -30,14 +30,6 @@ class CountryUpdateRequest:
 
     def validation_error_str(self) -> str:
         """Returns None if request is valid, otherwise returns validation error message."""
-        # Validate that required files exist
-        if (self.is_creating_new()):
-            if len(self.country_defaults.value) == 0:
-                return "Missing country defaults file, which is required for new countries."
-            if len(self.schools.value):
-                return "Missing schools file, which is required for new countries."
-        # Validate country defaults
-
         # Validate cellular tower locations.
         if len(self.cellular.value) != 0:
             try:
@@ -119,24 +111,31 @@ class CountryUpdateRequest:
         }
         self.country_defaults = CountryDefaults.from_defaults(defaults_dict)
 
-    def attempt(self):
+    def attempt(self) -> bool:
         # TODO make name safe
-        CountryUpdater.update(self)
+        return CountryUpdater.update(self)
         
 
 class CountryUpdater:
     """Exposes static methods to update countries in GCS."""
     @staticmethod
-    def update(req: CountryUpdateRequest):
+    def update(req: CountryUpdateRequest) -> bool:
         val_err = req.validation_error_str()
         if val_err is not None:
             print(f"Validation error: {val_err}")
-            return
+            return False
         
+        # Fetch raw schools using the Giga API
+        print(f"Fetching updated schools for {req.country_name}. This may take a moment...")
+        raw_schools = CountryUpdater.get_raw_schools(req)
+        print(f"Found {len(raw_schools)} schools.")
+        school_err = CountryUpdater.validate_raw_school_inputs(raw_schools)
+        assert school_err is None, school_err
+
         # Write country defaults.
 
         print("Writing country data to file...")
-        defaults_file_path = f"{COUNTRY_DEFAULT_RELATIVE_DIR}/{req.country_name}.json"
+        defaults_file_path = CountryUpdater.conf_path(req.country_name)
         data_store.write_file(defaults_file_path, req.country_defaults.to_json())
         n_updated = 1
 
@@ -153,12 +152,6 @@ class CountryUpdater:
             print(f"Updated {btn.description} at {path}")
             n_updated += 1
 
-        # Fetch raw schools using the Giga API
-        print(f"Fetching updated schools for {req.country_name}. This may take a moment...")
-        raw_schools = CountryUpdater.get_raw_schools(req.country_name)
-        print(f"Found {len(raw_schools)} schools.")
-        school_err = CountryUpdater.validate_raw_school_inputs(raw_schools)
-        assert school_err is None, school_err
 
         print(f"Merging schools with supplemental information for this country...")
         if len(req.schools_supplemental.value) > 0:
@@ -181,6 +174,7 @@ class CountryUpdater:
             electricity.to_csv(f, index=False)
         n_updated += 2
         print(f"\nIn total, updated {n_updated} files for {req.country_name}.")
+        return True
 
     @staticmethod
     def validate_raw_school_inputs(raw_schools: List[GigaSchool]) -> str:
@@ -191,13 +185,21 @@ class CountryUpdater:
     @staticmethod
     def get_current_supp_data(country: str):
         path = f"/workspace/{country}/schools_supplemental.csv"
-        if not data_store.file_exists(path):
-            return pd.DataFrame(columns=["giga_id"])
-        with data_store.open(path) as file:
-            sup = pd.read_csv(file)
-            supp_err = CountryUpdater.validate_supplemental_inputs(sup)
-            assert supp_err is None, supp_err
-            return sup
+        try:
+            with data_store.open(path) as file:
+                sup = pd.read_csv(file)
+                supp_err = CountryUpdater.validate_supplemental_inputs(sup)
+                assert supp_err is None, supp_err
+                return sup
+        except:
+            return pd.DataFrame(columns=["giga_id_school", "electricity", "fiber", "num_students", "coverage_type"])
+        
+    @staticmethod
+    def delete(country: str):
+        dir = f"/workspace/{country}/"
+        data_store.rmdir(dir)
+        data_store.remove(CountryUpdater.conf_path(country))
+        
 
     @staticmethod
     def validate_supplemental_inputs(sup) -> str:
@@ -222,6 +224,10 @@ class CountryUpdater:
         return None
     
     @staticmethod
+    def conf_path(country_name: str):
+        return f"{COUNTRY_DEFAULT_RELATIVE_DIR}/{country_name}.json"
+    
+    @staticmethod
     def get_electricity_lookup(supp_data):
         """Returns a dataframe with only electricity information"""
         return {
@@ -231,8 +237,9 @@ class CountryUpdater:
 
 
     @staticmethod
-    def get_raw_schools(country_name: str):
-        return GigaAPIClient(GIGA_AUTH_TOKEN).get_schools(country_name)
+    def get_raw_schools(req: CountryUpdateRequest):
+        return GigaAPIClient(GIGA_AUTH_TOKEN).get_schools_by_code(
+            req.country_defaults.data.country_code)
 
     @staticmethod
     def get_countries_with_supp_data(raw_schools, sup):
