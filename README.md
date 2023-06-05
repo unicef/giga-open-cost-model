@@ -1,5 +1,7 @@
-# Giga Model Notebooks
+# Model Notebooks
 
+The project is a collaboration between [Giga](https://giga.global/) and [Actual](https://www.actualhq.com/).
+The repository contains models for estimating school connectivity costs and deploying them as a standalone application.
 This document provides an overview of the Giga model notebooks and provides details on running each notebook. 
 
 ### [Cost Estimation Notebook](notebooks/cost-scenario.ipynb)
