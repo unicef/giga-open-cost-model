@@ -36,7 +36,7 @@ P2P_MODEL_PARAMETERS = [
             "parameter_type": "int_slider",
             "value": 10,
             "min": 0,
-            "max": 100,
+            "max": 1800,
             "step": 1,
             "show_default": True,
         },
