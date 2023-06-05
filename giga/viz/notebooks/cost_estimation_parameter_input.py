@@ -142,42 +142,42 @@ class CostEstimationParameterInput:
             k: ConfigClient.from_registered_country(k, local_data_workspace).defaults
             for k, v in get_country_defaults(workspace=local_data_workspace).items()
         }
-        self.data_parameter_manager = (
+        self.data_parameter_manager: DataParameterManager = (
             DataParameterManager(workspace=local_data_workspace)
             if data_parameter_manager is None
             else data_parameter_manager
         )
-        self.scenario_parameter_manager = (
+        self.scenario_parameter_manager: ScenarioParameterManager = (
             ScenarioParameterManager()
             if scenario_parameter_manager is None
             else scenario_parameter_manager
         )
-        self.fiber_parameter_manager = (
+        self.fiber_parameter_manager: FiberTechnologyParameterManager = (
             FiberTechnologyParameterManager()
             if fiber_parameter_manager is None
             else fiber_parameter_manager
         )
-        self.satellite_parameter_manager = (
+        self.satellite_parameter_manager: SatelliteTechnologyParameterManager = (
             SatelliteTechnologyParameterManager()
             if satellite_parameter_manager is None
             else satellite_parameter_manager
         )
-        self.cellular_parameter_manager = (
+        self.cellular_parameter_manager: CellularTechnologyParameterManager = (
             CellularTechnologyParameterManager()
             if cellular_parameter_manager is None
             else cellular_parameter_manager
         )
-        self.p2p_parameter_manager = (
+        self.p2p_parameter_manager: P2PTechnologyParameterManager = (
             P2PTechnologyParameterManager()
             if p2p_parameter_manager is None
             else p2p_parameter_manager
         )
-        self.electricity_parameter_manager = (
+        self.electricity_parameter_manager: ElectricityParameterManager = (
             ElectricityParameterManager()
             if electricity_parameter_manager is None
             else electricity_parameter_manager
         )
-        self.dashboard_parameter_manager = ParameterSheet(
+        self.dashboard_parameter_manager: ParameterSheet = ParameterSheet(
             "dashboard", DASHBOARD_PARAMETERS
         )
         self.managers = {

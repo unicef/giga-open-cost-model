@@ -2,6 +2,8 @@
 import ipywidgets as widgets
 import pandas as pd
 import os
+import json
+from IPython.display import display
 from io import StringIO
 
 from typing import List
@@ -11,7 +13,9 @@ from giga.utils.globals import COUNTRY_DEFAULT_RELATIVE_DIR
 from giga.schemas.school import GigaSchoolTable, GigaSchool
 from giga.schemas.cellular import CellTowerTable
 from giga.schemas.geo import UniqueCoordinateTable
+from giga.schemas.conf.country import CountryDefaults
 from giga.app.config import get_registered_countries
+from giga.viz.notebooks.cost_estimation_parameter_input import CostEstimationParameterInput
 
 GIGA_AUTH_TOKEN = os.environ.get("GIGA_AUTH_TOKEN", "")
 
@@ -19,9 +23,7 @@ GIGA_AUTH_TOKEN = os.environ.get("GIGA_AUTH_TOKEN", "")
 
 class CountryUpdateRequest:
     """Represents a request to add or update one country."""
-    country_name: str = None
-
-    country_defaults: widgets.FileUpload = None
+    country_defaults: CountryDefaults
     cellular: widgets.FileUpload = None
     fiber: widgets.FileUpload = None
     schools_supplemental: widgets.FileUpload = None
@@ -34,6 +36,8 @@ class CountryUpdateRequest:
                 return "Missing country defaults file, which is required for new countries."
             if len(self.schools.value):
                 return "Missing schools file, which is required for new countries."
+        # Validate country defaults
+
         # Validate cellular tower locations.
         if len(self.cellular.value) != 0:
             try:
@@ -64,6 +68,10 @@ class CountryUpdateRequest:
         return not self.country_name in self.registered_countries
     
     @property
+    def country_name(self) -> str:
+        return self.country_defaults.data.country
+    
+    @property
     def registered_countries(self):
         if self.registered_countries_ is None:
             self.registered_countries_ = get_registered_countries()
@@ -82,11 +90,34 @@ class CountryUpdateRequest:
     @property
     def default_paths(self):
         return {
-            self.country_defaults: f"{COUNTRY_DEFAULT_RELATIVE_DIR}/{self.country_name}.json",
             self.cellular: f"/workspace/{self.country_name}/cellular.csv",
             self.fiber: f"/workspace/{self.country_name}/fiber.csv",
             self.schools_supplemental: f"/workspace/{self.country_name}/schools_supplemental.csv"
         }
+    
+    def set_country_defaults(self, inputs: CostEstimationParameterInput, country_name, country_code, lat_lon):
+        defaults_dict = {
+            "data": {
+                "country": country_name,
+                "country_code": country_code,
+                "workspace": "workspace",
+                "school_file": "schools.csv",
+                "fiber_file": "fiber.csv",
+                "cellular_file": "cellular.csv",
+                "cellular_distance_cache_file": "cellular_cache.json",
+                "p2p_distance_cache_file": "p2p_cache.json",
+                "country_center": lat_lon
+            },
+            "model_defaults": {
+                "scenario": inputs.scenario_parameters(),
+                "fiber": inputs.fiber_parameters(),
+                "satellite": inputs.satellite_parameters(),
+                "cellular": inputs.cellular_parameters(),
+                "p2p": inputs.p2p_parameters(),
+                "electricity": inputs.electricity_parameters()
+            }
+        }
+        self.country_defaults = CountryDefaults.from_defaults(defaults_dict)
 
     def attempt(self):
         # TODO make name safe
@@ -101,8 +132,14 @@ class CountryUpdater:
         if val_err is not None:
             print(f"Validation error: {val_err}")
             return
+        
+        # Write country defaults.
 
-        n_updated = 0
+        print("Writing country data to file...")
+        defaults_file_path = f"{COUNTRY_DEFAULT_RELATIVE_DIR}/{req.country_name}.json"
+        data_store.write_file(defaults_file_path, req.country_defaults.to_json())
+        n_updated = 1
+
         for btn, path in req.default_paths.items():
             if len(btn.value) == 0:
                 if data_store.file_exists(path):

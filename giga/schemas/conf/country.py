@@ -1,4 +1,5 @@
 import os
+import json
 from pydantic import BaseModel, FilePath, DirectoryPath, validator
 from typing import List, Dict, Union
 from giga.schemas.conf.models import (
@@ -88,6 +89,12 @@ class CountryDefaultsRegistration(BaseModel):
 class CountryDefaults(BaseModel):
     data: DataDefaults
     model_defaults: GigaDefaults
+
+    def to_json(self) -> str:
+        return json.dumps({
+            "data": self.data.dict(),
+            "model_defaults": self.model_defaults.dict()
+        })
 
     @staticmethod
     def from_defaults(defaults: Dict, **kwargs):

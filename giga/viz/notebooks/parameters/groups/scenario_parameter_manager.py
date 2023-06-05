@@ -187,7 +187,7 @@ class ScenarioParameterManager:
 
     def get_model_parameters(self):
         base_parameters = {
-            "scenario_type": self._hash["scenario_type"].value,
+            "scenario_type": self._hash["scenario_type"].value if "scenario_type" in self._hash else None,
             "opex_responsible": "Consumer",  # s["opex_responsible"].value,
         }
         years_opex = float(self.get_parameter_from_sheet("years_opex"))
