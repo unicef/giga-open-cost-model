@@ -14,7 +14,7 @@ FIBER_MODEL_PARAMETERS = [
             "parameter_type": "float_slider",
             "value": 1,
             "min": 0,
-            "max": 20,
+            "max": 1800,
             "step": 0.01,
             "show_default": True,
         },
