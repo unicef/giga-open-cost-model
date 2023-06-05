@@ -98,6 +98,10 @@ The following parameters can be configured in the model:
 
 The [results drilldown notebook](notebooks/results-drilldown.ipynb) allows you to upload the result of a previous model run and visualize/down-select results.
 
+## Country Updates
+
+The [update country notebook](notebooks/dev/update-objstore.ipynb) allows you to update the data associated with each country being hosted temporarily in Google Cloud object storage. See the [data docs](notebooks/docs/data.ipynb) for details.
+
 ---
 
 ## Driver Notebooks

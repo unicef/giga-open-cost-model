@@ -1,20 +1,14 @@
-
 # Giga Dev Documentation
 
 This documentation provides technical details on the Giga model's implementation,
 setup, and deployment process.
 
-Jump to:
-* [Setup](#setup)
-* [Deployment](#deployment)
-* [CLI](#cli)
-
 > Also see the following additional documentation:
-> * [User overview](../README.md) and details on running each notebook.
-> * [Model overview](models.md), including a breakdown of each model.
-> * [Model data](data.md), including data schemas and how to update countries.
-> * [Model architecture](arch.md), focusing on key parts of the library used for configuration, data aggregation, and model execution.
-> * [Python documentation](../notebooks/dev/documentation.ipynb) automatically generated from the model source code.
+> * [User overview](main.ipynb) and details on running each notebook.
+> * [Model overview](models.ipynb), including a breakdown of each model.
+> * [Model data](data.ipynb), including data schemas and how to update countries.
+> * [Model architecture](arch.ipynb), focusing on key parts of the library used for configuration, data aggregation, and model execution.
+> * [Python documentation](../dev/documentation.ipynb) automatically generated from the model source code.
 
 ### Repository Structure
 
@@ -109,8 +103,8 @@ Do note that no cpu limit is not set above.
 Additionally, the somewhat large memory guarantee is needed to run models for all schools in large countries (like Brazil).
 If the school data is broken down into smaller sub-regions for those larger countries, it's likely possible to make the memory guarantee significantly smaller.
 
-
 ### Deployment Workflow
+
 Please note that the workflow is currently manually managed with the CLI explained below.
 The full deployment workflow looks as follows, which can all be managed with the `stack` CLI: 
 1. Authenticate with GCP by running `./stack auth`. This will also configure the credentials for the GKE cluster to which jupyterhub is deployed
@@ -118,11 +112,27 @@ The full deployment workflow looks as follows, which can all be managed with the
 3. Push the image to Actual's docker registry: `./stack push-image`
 4. Update or launch a new instance of the cluster with `./stack launch` 
 
+> **Note** In order to authenticate with external services, [environment secrets](#environment-secrets) must be injected during deployment.
+
 ### Updating the Cluster + Local Testing
 
 You can stop the jupyterhub cluster by running `./stack stop`.
 If you need to update the single user image, you can rebuild it using the CLI above.
 You can interact with the single user container locally by running `./stack start-container <local-workspace>`.
+
+### Environment Secrets
+
+The deployed application authenticates with a number of backends via deployment and
+environment secrets that are not checked in with the application code. 
+
+---
+`MAP_BOX_ACCESS_TOKEN` | MapBox API access token string | Used to display detailed country maps during school selection and results visualization.
+`OBJSTORE_GCS_CREDS` | JSON service account credentials | Used to connect to Google Cloud APIs, primarily object store
+`GIGA_AUTH_TOKEN` | Bearer token to Giga Connect API | Used to fetch updated
+---
+
+When deploying the application, you can use deployment secrets to inject these environment
+variables, or populate them in an `.env` file in the root folder.
 
 ### Authentication and Authorization Configuration
 
