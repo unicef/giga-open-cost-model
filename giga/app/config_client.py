@@ -45,7 +45,7 @@ class ConfigClient:
         return os.path.join(self.defaults.data.workspace, self.defaults.data.country)
 
     @property
-    def local_workspace_data_space_config(self):
+    def local_workspace_data_space_config(self) -> DataSpaceConf:
         return DataSpaceConf(
             school_data_conf={
                 "country_id": self.defaults.data.country,

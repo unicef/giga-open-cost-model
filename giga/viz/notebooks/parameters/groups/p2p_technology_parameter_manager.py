@@ -94,8 +94,8 @@ class P2PTechnologyParameterManager:
             "maximum_range", config["constraints"]["maximum_range"] / METERS_PER_KM
         )
 
-    def input_parameters(self):
-        return self.sheet.input_parameters()
+    def input_parameters(self, show_defaults = True):
+        return self.sheet.input_parameters(show_defaults)
 
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)

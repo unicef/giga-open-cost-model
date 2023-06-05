@@ -48,6 +48,12 @@ display(
     .giga-section.run .giga-section-contents {
         margin: 0 auto;
     }
+    .giga-section.right .giga-section-contents,
+    .giga-section.right .giga-section-contents * {
+        margin-right: 0;
+        text-align: right;
+        float: right;
+    }
     .giga-section .giga-section {
         background-color: #cde3e1; /* Giga Light Pine */
         margin-bottom: 25px;

@@ -126,7 +126,6 @@ class ScenarioParameterManager:
             for p in base_parameters
         }
         # link the scenario to the budget
-        scenario_type = self._hash["scenario_type"]
         budget_flag = self.sheet.get_interactive_parameter("use_budget_constraint")
         budget_constraint = self.sheet.get_interactive_parameter("budget_constraint")
         directional_link(
@@ -156,10 +155,10 @@ class ScenarioParameterManager:
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
 
-    def input_parameters(self):
+    def input_parameters(self, show_defaults = True):
         # specaial handling for scenario type in base parameters
         base = VBox(list(self._hash.values()))
-        sheet = self.sheet.input_parameters()
+        sheet = self.sheet.input_parameters(show_defaults)
         return VBox([base, sheet])
 
     def get_parameter_from_sheet(self, parameter_name):
@@ -188,7 +187,7 @@ class ScenarioParameterManager:
 
     def get_model_parameters(self):
         base_parameters = {
-            "scenario_type": self._hash["scenario_type"].value,
+            "scenario_type": self._hash["scenario_type"].value if "scenario_type" in self._hash else None,
             "opex_responsible": "Consumer",  # s["opex_responsible"].value,
         }
         years_opex = float(self.get_parameter_from_sheet("years_opex"))

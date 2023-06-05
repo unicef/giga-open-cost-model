@@ -80,3 +80,17 @@ class DataStore(ABC):
         :return: True if the path is a directory, False otherwise.
         """
         pass
+
+    @abstractmethod
+    def remove(self, path: str) -> None:
+        """
+        Attempts to remove a file
+        """
+        pass
+
+    @abstractmethod
+    def rmdir(self, dir: str) -> None:
+        """
+        Attempts to remove a directory and its contents
+        """
+        pass

@@ -67,21 +67,14 @@ class GigaAPIClient:
                 return documents
         return documents
 
+
     @validate_arguments
-    def get_schools(self, country: str, **kwargs):
-        """
-        Fetches school data from the project connect API
-        Schools are organized by document pages
-        """
-        assert (
-            country.lower() in self.school_id_map
-        ), f"Country {country} is not supported"
+    def get_schools_by_code(self, country_code, **kwargs):
         school_url = kwargs.get(
             "school_url",
             "https://uni-connect-services-dev.azurewebsites.net/api/v1/schools_connectivity/country",
         )
-        country_id = self.school_id_map[country.lower()]
-        base_url = f"{school_url}/{country_id}"
+        base_url = f"{school_url}/{country_code}"
         schools = self._get_document_pages(
             base_url,
             docs_per_request=500_000,  # fetch all schools at once
@@ -92,3 +85,15 @@ class GigaAPIClient:
             **kwargs,
         )
         return schools
+
+    @validate_arguments
+    def get_schools(self, country: str, **kwargs):
+        """
+        Fetches school data from the project connect API
+        Schools are organized by document pages
+        """
+        assert (
+            country.lower() in self.school_id_map
+        ), f"Country {country} is not supported"
+        country_id = self.school_id_map[country.lower()]
+        return self.get_schools_by_code(country_id, **kwargs)
