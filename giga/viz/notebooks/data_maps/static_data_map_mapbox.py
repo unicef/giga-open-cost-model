@@ -6,8 +6,7 @@ import plotly.graph_objs as go
 from giga.data.space.model_data_space import ModelDataSpace
 
 
-MAP_BOX_ACCESS_TOKEN = "pk.eyJ1IjoiYWN0dWFsIiwiYSI6ImNrOTBhd2txbTBkd3czbnBwMjh5djV3bTEifQ.ZtHr-dlKXwlqYm0BzncEGw"
-
+MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
 
 class DataMapConfig(BaseModel):
 
