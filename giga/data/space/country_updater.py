@@ -28,6 +28,18 @@ class CountryUpdateRequest:
     fiber: widgets.FileUpload = None
     schools_supplemental: widgets.FileUpload = None
 
+    def column_check_error_str(self, file: StringIO, req_cols: List[str]) -> str:
+        df = pd.read_csv(file)
+        err_str = None
+        for col in req_cols:
+            if col in df.columns:
+                continue
+            if err_str is None:
+                err_str = f"Missing required column(s): {col}"
+            else:
+                err_str = f"{err_str}, {col}"
+        return err_str
+
     def validation_error_str(self) -> str:
         """Returns None if request is valid, otherwise returns validation error message."""
         # Validate cellular tower locations.
@@ -41,16 +53,13 @@ class CountryUpdateRequest:
                 return f"Error loading cell data: {e}"
         # Validate fiber tower locations.
         if len(self.fiber.value) != 0:
-            try:
-                fiber_data = pd.read_csv(self.file_string_io(self.fiber))
-                fiber_table = UniqueCoordinateTable(coordinates=fiber_data)
-                if len(fiber_table.coordinates) == 0:
-                    return "Provided fiber data was empty."
-            except Exception as e:
-                return f"Error loading fiber data: {e}"
+            fiber_err = self.column_check_error_str(self.file_string_io(self.fiber),
+                    ["coordinate_id", "lat", "lon"])
+            if fiber_err is not None:
+                return fiber_err
         # Validate supplemental school data
         if len(self.schools_supplemental.value) != 0:
-            sup_data = pd.read_csv(self.file_string_io(self.schools))
+            sup_data = pd.read_csv(self.file_string_io(self.schools_supplemental))
             supp_err = CountryUpdater.validate_supplemental_inputs(sup_data)
             if supp_err is not None:
                 return supp_err
@@ -109,7 +118,7 @@ class CountryUpdateRequest:
                 "electricity": inputs.electricity_parameters()
             }
         }
-        self.country_defaults = CountryDefaults.from_defaults(defaults_dict)
+        self.country_defaults = CountryDefaults.from_defaults(defaults_dict, full_paths=False)
 
     def attempt(self) -> bool:
         # TODO make name safe
@@ -156,7 +165,7 @@ class CountryUpdater:
         print(f"Merging schools with supplemental information for this country...")
         if len(req.schools_supplemental.value) > 0:
             # Merge with provided supplemental info (already validated)
-            supp_data = req.file_contents(req.schools_supplemental)
+            supp_data = pd.read_csv(req.file_string_io(req.schools_supplemental))
         else:
             # Will be empty frame for new schools
             supp_data = CountryUpdater.get_current_supp_data(req.country_name)
@@ -192,7 +201,8 @@ class CountryUpdater:
                 assert supp_err is None, supp_err
                 return sup
         except:
-            return pd.DataFrame(columns=["giga_id_school", "electricity", "fiber", "num_students", "coverage_type"])
+            return pd.DataFrame(
+                columns=["giga_id_school", "electricity", "fiber", "num_students", "coverage_type"])
         
     @staticmethod
     def delete(country: str):

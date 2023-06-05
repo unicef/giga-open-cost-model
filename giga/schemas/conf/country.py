@@ -97,27 +97,23 @@ class CountryDefaults(BaseModel):
         })
 
     @staticmethod
-    def from_defaults(defaults: Dict, **kwargs):
+    def from_defaults(defaults: Dict, full_paths=True, **kwargs):
         data_defaults = defaults["data"]
+        def get_path(arg):
+            if not full_paths:
+                return data_defaults[arg]
+            return os.path.join(
+                data_defaults["workspace"],
+                data_defaults["country"],
+                data_defaults[arg]
+            )
         data = DataDefaults(
             country=data_defaults["country"],
             country_code=data_defaults["country_code"],
             workspace=data_defaults["workspace"],
-            school_file=os.path.join(
-                data_defaults["workspace"],
-                data_defaults["country"],
-                data_defaults["school_file"],
-            ),
-            fiber_file=os.path.join(
-                data_defaults["workspace"],
-                data_defaults["country"],
-                data_defaults["fiber_file"],
-            ),
-            cellular_file=os.path.join(
-                data_defaults["workspace"],
-                data_defaults["country"],
-                data_defaults["cellular_file"],
-            ),
+            school_file=get_path("school_file"),
+            fiber_file=get_path("fiber_file"),
+            cellular_file=get_path("cellular_file"),
             cellular_distance_cache_file=data_defaults["cellular_distance_cache_file"],
             p2p_distance_cache_file=data_defaults["p2p_distance_cache_file"],
             country_center=data_defaults["country_center"],

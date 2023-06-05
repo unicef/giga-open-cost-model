@@ -72,7 +72,7 @@ class ParameterSheet:
             self.sheet = self._create_sheet()
         return self._sheet_lookup[parameter_name].value
 
-    def _create_sheet(self, show_defaults: bool):
+    def _create_sheet(self, show_defaults = True):
         # Calculate the number of rows needed
         rows = len(self.parameters)
 
