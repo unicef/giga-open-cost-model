@@ -6,12 +6,72 @@ This document describes the input data Giga models use and how to modify this da
 Jump to:
 * [Fetching country data](#fetching-country-data)
 * [Adding a new country](#adding-a-new-country)
+* [Updating an existing country](#updating-an-existing-country)
+* [Deleting a country](#deleting-a-country)
 * [Preparing a data workspace](#preparing-a-data-workspace)
+* [Data store interface](#data-store-interface)
+* [Country data libraries](#country-data-libraries)
 * [Data schemas](#data-schemas)
 
 ---
 
-## Fetching country data
+## Updating country data
+
+The application provides a stand-alone [country update notebook](/notebooks/dev/update-objstore.ipynb)
+that can be used to add, edit, and remove countries and their default configurations within the app.
+Countries can be changed
+
+> **Note**: This data is stored on a temporary Google Cloud object store instance behind a
+> [DataStore](#data-store-interface) interface. This notebook will be compatible with (and use)
+> the default data storage solution for the connectivity cost application.
+
+### Adding a New Country
+
+To add a new country, select **Add a new country** at the top of the notebook.
+A form will appear with values populated from the sample country. 
+For new countries, you'll need to provide:
+* The **Giga country code** for this country. This will be a numeric code used to fetch updated
+  school information each time a country is updated. The notebook will validate this code before
+  beginning the country update.
+* Country center latitude and longitude. This will be used to correctly center maps of this country.
+
+Optionally, you can also provide:
+* A CSV file containing cellular tower locations and metadata (see [cell tower schema](#cell-tower-data)).
+* A CSV file containing fiber node locations and metadata (see [fiber node schema](#fiber-node-data))
+* A CSV file containing supplemental school information (see [supplemental data schema](#supplemental-data))
+
+All values except for name can be changed later.
+
+> **Note** Names are used to uniquely identify countries within the application, and are immutable. To
+> rename a country, create a new one with the new name and use the same configuration.
+
+Once you've configured the country appropriately, click **Save Country** at the bottom of the page. This
+will validate the configuration you've supplied, download an updated school set for the provided country,
+and create a configuration fileset based on what you've provided.
+
+For any files you do not provide, it will create a blank file.
+
+### Updating an Existing Country
+
+To update a country, select **Update an existing country** at the top of the notebook.
+From the drop-down, select the country to modify.
+* Model configuration defaults will be populated in the form below. To change these defaults,
+  modify the parameter values under each model section.
+* You can also provide one or more CSV files with additional country configuration data. If you do
+  not provide a file, the existing one will be preserved.
+
+To finalize any changes, click "Save Country" at the bottom of the notebook. Your changes will be
+validated before being saved.
+
+### Deleting a Country
+
+To update a country:
+
+* select **Update an existing country** at the top of the notebook.
+* From the drop-down, select the country to remove
+* At the bottom of the page, click "Delete", then click "DELETE" again to confirm.
+
+## Country Data Libraries
 
 To generate a school dataset for a given country, we can use the API client in the library that can fetch school data from the project connect API - spec can be found [here](https://uni-connect-services-dev.azurewebsites.net/api/v1/#/School/get_api_v1_schools_country__country_id_).
 The client can fetch school data by specified country, currently `Brazil` and `Rwanda` are supported.
@@ -36,8 +96,6 @@ coordinate_table = table.to_coordinates()
 ```
 
 ---
-
-## Adding a New Country
 
 The library provides a number of helpers to add new countries that can be supported in the models.
 There are a few steps that need to be completed in order to do this. 
@@ -160,6 +218,122 @@ You can generate a line-of-sight cache to help warm-start the P2P model using th
 
 After each run completes, the cache will be written to the model workspace.
 If you load the model data space from that workspace, it will automatically use and load the distance cache for model calculations when it exists.
+
+## Data Store Interface
+
+The application accesses underlying country information through a `DataStore` interface.
+
+`/giga/data/store/stores.py` contains the global data store configuration for the application.
+Note the two stores defined in that file:
+
+* **LocalFS**: Reads and writes data to the local filesystem of the server running the application.
+  In deployed environments, will require a redeployment to edit files in a persistent manner.
+* **GCSDataStore**: An implementation of the interface that uses a Google Cloud Storage object store
+  to house country information, shared across all active runners.
+
+To change which backend is used for the application's country data store, modify the
+`COUNTRY_DATA_STORE` variable to the desired implementation.
+
+> **Note**: The GCSDataStore uses [service account credentials](https://cloud.google.com/iam/docs/service-account-creds)
+> to authenticate with Google Cloud Storage. These credentials can be supplied in the deployment
+> environment or the local filesystem. For more, see [deployment docs](./dev.md)
+
+The **DataStore** implements the following interface:
+
+```python
+class DataStore(ABC):
+    """
+    Abstract base class for a data store. This can be a local filesystem,
+    Google Cloud Storage, or any other system where you can store data.
+    """
+
+    @abstractmethod
+    def read_file(self, path: str) -> Any:
+        """
+        Read a file from the data store.
+        :param path: Path to the file in the data store.
+        :return: The content of the file.
+        """
+        pass
+
+    @abstractmethod
+    def write_file(self, path: str, data: Any) -> None:
+        """
+        Write data to a file in the data store.
+        :param path: Path to the file in the data store.
+        :param data: The data to write.
+        """
+        pass
+
+    @abstractmethod
+    def file_exists(self, path: str) -> bool:
+        """
+        Check if a file exists in the data store.
+        :param path: Path to the file in the data store.
+        :return: True if the file exists, False otherwise.
+        """
+        pass
+
+    @abstractmethod
+    def list_files(self, path: str) -> List[str]:
+        """
+        Lists all files in a given directory path.
+        :param path: The directory path.
+        :return: A list of file names.
+        """
+        pass
+
+    @abstractmethod
+    def walk(self, top: str) -> Generator:
+        """
+        Generate the file names in a directory tree by walking the tree either top-down or bottom-up.
+        For each directory in the tree rooted at directory top, it yields a 3-tuple: (dirpath, dirnames, filenames).
+        :param top: The root directory path.
+        """
+        pass
+
+    @abstractmethod
+    def open(self, file: str, mode: str='r') -> IO:
+        """
+        Open a file.
+        :param file: The file path.
+        :param mode: The mode in which the file is opened.
+        :return: a file object.
+        """
+        pass
+
+    @abstractmethod
+    def is_file(self, path: str) -> bool:
+        """
+        Check if the path points to a file.
+        :param path: The file path.
+        :return: True if the path points to a file, False otherwise.
+        """
+        pass
+
+    @abstractmethod
+    def is_dir(self, path: str) -> bool:
+        """
+        Check if the path points to a directory.
+        :param path: The path to check.
+        :return: True if the path is a directory, False otherwise.
+        """
+        pass
+
+    @abstractmethod
+    def remove(self, path: str) -> None:
+        """
+        Attempts to remove a file
+        """
+        pass
+
+    @abstractmethod
+    def rmdir(self, dir: str) -> None:
+        """
+        Attempts to remove a directory and its contents
+        """
+        pass
+```
 
 ## Data Schemas
 
