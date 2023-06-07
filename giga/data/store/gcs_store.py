@@ -11,9 +11,9 @@ from giga.utils.globals import COUNTRY_DEFAULT_RELATIVE_DIR
 COUNTRY_DATA_DIR = "workspace"
 
 # Configure the Google Cloud Storage bucket and JSON authentication.
-GCS_BUCKET_NAME = 'test-giga-obj-store'
-# TODO change to actual-off-platform
-GCS_PROJECT = 'actual-platform-dev'
+GCS_BUCKET_NAME = 'giga-hosted-country-data'
+# Configure the Google Cloud project this bucket lives in
+GCS_PROJECT = 'actual-common'
 # Configured for deployment in prod.yaml
 GCS_CRED_DATA = os.environ.get("OBJSTORE_GCS_CREDS", "{}")
 
