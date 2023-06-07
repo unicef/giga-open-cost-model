@@ -77,6 +77,104 @@ class ResultDashboard:
         display(widgets.HTML(style))
         display(tabs)
 
+    def populate_outputs(self):
+        self.overview_grid = project_overview_grid(self.results.output_project_overview)
+        self.fiber_infra_map = make_fiber_distance_map_plot(self.results.new_connected_schools)
+        self.fiber_distance_bar = cumulative_fiber_distance_barplot(self.results.output_cost_table)
+        self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools)
+        self.cell_distance_bar = cumulative_cell_tower_distance_barplot(self.results.output_cost_table)
+        self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools)
+        self.technology_map = make_technology_map(self.results.new_connected_schools)
+        self.satellite_pie_breakdown = make_satellite_pie_breakdown(self.results.new_connected_schools)
+        self.per_school_cost_map = make_cost_map(
+            self.results.new_connected_schools,
+            cost_key="total_cost",
+            display_key="Per School Cost (USD)",
+            title="Average Cost Per School",
+        )
+        self.per_student_cost_map = make_cost_map(
+            self.results.new_connected_schools,
+            cost_key="total_cost_per_student",
+            display_key="Per Student Cost (USD)",
+            title="Average Cost Per Student",
+        )
+        self.total_cost_map = make_cost_map(self.results.new_connected_schools, cost_key="total_cost")
+        self.total_cost_histogram = make_cost_histogram(
+            self.results.new_connected_schools, cost_key="total_cost"
+        )
+        self.cost_per_student_map = make_cost_map(
+            self.results.new_connected_schools, cost_key="total_cost_per_student"
+        )
+        try:
+            self.cost_per_student_histogram = make_cost_histogram(
+                self.results.new_connected_schools, cost_key="total_cost_per_student"
+            )
+        except:
+            self.cost_per_student_histogram = None
+        self.project_cost_barplot = make_project_cost_bar_plots(self.results)
+        self.average_cost_barplot = make_technology_average_cost_barplot(
+            self.results.new_connected_schools
+        )
+        self.total_cost_barplot = make_technology_total_cost_barplot(
+            self.results.new_connected_schools
+        )
+        to_show = self.results.new_connected_schools
+        self.technology_pie = px.pie(
+            to_show,
+            names="technology",
+            color="technology",
+            color_discrete_map=GIGA_TECHNOLOGY_COLORS,
+        ).update_traces(
+            textinfo="label+value+percent", hoverinfo="label+value+percent"
+        )
+        self.cost_pie = px.pie(
+            to_show,
+            values="total_cost",
+            names="technology",
+            color="technology",
+            color_discrete_map=GIGA_TECHNOLOGY_COLORS,
+        ).update_traces(
+            textinfo="label+value+percent", hoverinfo="label+value+percent"
+        )
+        self.summary_table = create_summary_table(
+            self.results.output_space, self.results.data_space
+        )
+        self.unit_cost_bar_plot = make_unit_cost_bar_plot(self.results)
+        self.tech_pie = px.pie(to_show, names="technology")
+        self.tech_cost_pie = px.pie(to_show, values="total_cost", names="technology")
+        self.feasibility_pie = px.pie(self.results.output_cost_table, names="reason")
+        self.tech_distrib_plot = technology_distribution_bar_plot(self.results.technology_counts)
+
+    def get_visual_plots(self):
+        # These plots will be included in downloaded reports.
+        return [
+            self.overview_grid,
+            self.fiber_infra_map,
+            self.fiber_distance_bar,
+            self.cell_infra_map,
+            self.cell_distance_bar,
+            self.cell_coverage_map,
+            self.technology_map,
+            self.satellite_pie_breakdown,
+            self.per_school_cost_map,
+            self.per_student_cost_map,
+            self.total_cost_map,
+            self.total_cost_histogram,
+            self.cost_per_student_map,
+            self.cost_per_student_histogram,
+            self.project_cost_barplot,
+            self.average_cost_barplot,
+            self.total_cost_barplot,
+            self.technology_pie,
+            self.cost_pie,
+            self.summary_table,
+            self.unit_cost_bar_plot,
+            self.tech_pie,
+            self.tech_cost_pie,
+            self.feasibility_pie,
+            self.tech_distrib_plot
+        ]
+
     def _update_title_font(self, fig):
         fig.update_layout(
             title_font=dict(family="Arial, sans-serif", size=16, color="black")
@@ -98,20 +196,15 @@ class ResultDashboard:
         return output
 
     def overview_tab(self):
-        overview = self.results.output_project_overview
-        overview_grid = project_overview_grid(overview)
-        technology_distribution = self._figure_to_output(
-            technology_distribution_bar_plot(self.results.technology_counts)
-        )
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         with tab:
             display(
                 widgets.HBox(
                     [
-                        section("Project Summary", overview_grid, "dark"),
+                        section("Project Summary", self.overview_grid, "dark"),
                         section(
                             "Schools Connected by Technology",
-                            technology_distribution,
+                            self._figure_to_output(self.tech_distrib_plot),
                             "dark",
                         ),
                     ]
@@ -121,52 +214,22 @@ class ResultDashboard:
 
     def infrastructure_tab(self):
         # Fiber Infra
-        fiber_infra_map = self._map_to_output(
-            make_fiber_distance_map_plot(self.results.new_connected_schools)
-        )
-        fiber_distance_bar = self._figure_to_output(
-            cumulative_fiber_distance_barplot(self.results.output_cost_table)
-        )
-        fiber_plots = widgets.VBox([fiber_infra_map, fiber_distance_bar])
+        fiber_plots = widgets.VBox([
+            self._map_to_output(self.fiber_infra_map),
+            self._figure_to_output(self.cell_infra_map)
+        ])
         # Cell Infra
-        cell_infra_map = self._map_to_output(
-            make_cellular_distance_map_plot(self.results.new_connected_schools)
-        )
-        cell_distance_bar = self._figure_to_output(
-            cumulative_cell_tower_distance_barplot(self.results.output_cost_table)
-        )
-        cell_plots = widgets.VBox([cell_infra_map, cell_distance_bar])
+        cell_plots = widgets.VBox([
+            self._map_to_output(self.cell_infra_map),
+            self._map_to_output(self.cell_distance_bar)
+        ])
         # Cell Coverage
-        cell_coverage_map = self._map_to_output(
-            make_cellular_coverage_map(self.results.new_connected_schools)
-        )
-        coverage_plots = widgets.VBox([cell_coverage_map])
+        coverage_plots = widgets.VBox([
+            self._map_to_output(self.cell_coverage_map)
+        ])
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         # Technology Map
-        map_technology = self._map_to_output(
-            make_technology_map(self.results.new_connected_schools)
-        )
-        # Satellite Breakdown
-        satellite_breakdown = self._figure_to_output(
-            make_satellite_pie_breakdown(self.results.new_connected_schools)
-        )
         # cost maps
-        map_costs = self._map_to_output(
-            make_cost_map(
-                self.results.new_connected_schools,
-                cost_key="total_cost",
-                display_key="Per School Cost (USD)",
-                title="Average Cost Per School",
-            )
-        )
-        map_costs_per_student = self._map_to_output(
-            make_cost_map(
-                self.results.new_connected_schools,
-                cost_key="total_cost_per_student",
-                display_key="Per Student Cost (USD)",
-                title="Average Cost Per Student",
-            )
-        )
         with tab:
             display(
                 widgets.VBox(
@@ -174,11 +237,11 @@ class ResultDashboard:
                         section("Fiber Infrastructure", fiber_plots, "dark"),
                         section("Cellular Infrastructure", cell_plots, "dark"),
                         section("Cellular Coverage", coverage_plots, "dark"),
-                        section("Technology Modalities", map_technology, "dark"),
-                        section("Satellite Only Modality", satellite_breakdown, "dark"),
-                        section("Average Cost Per School", map_costs, "dark"),
+                        section("Technology Modalities", self._map_to_output(self.technology_map), "dark"),
+                        section("Satellite Only Modality", self._figure_to_output(self.satellite_pie_breakdown), "dark"),
+                        section("Average Cost Per School", self._map_to_output(self.per_school_cost_map), "dark"),
                         section(
-                            "Average Cost Per Student", map_costs_per_student, "dark"
+                            "Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"
                         ),
                     ]
                 )
@@ -186,39 +249,16 @@ class ResultDashboard:
         return tab
 
     def maps_tab(self):
-        # per school costs
-        map_costs = self._figure_to_output(
-            make_cost_map(self.results.new_connected_schools, cost_key="total_cost")
-        )
-        cost_dist = self._figure_to_output(
-            make_cost_histogram(
-                self.results.new_connected_schools, cost_key="total_cost"
-            )
-        )
-        per_school_plots = widgets.VBox([map_costs])
-        # per student costs
-        map_costs_per_student = self._figure_to_output(
-            make_cost_map(
-                self.results.new_connected_schools, cost_key="total_cost_per_student"
-            )
-        )
-        cost_dist_per_student = self._figure_to_output(
-            make_cost_histogram(
-                self.results.new_connected_schools, cost_key="total_cost_per_student"
-            )
-        )
-        per_student_plots = widgets.VBox([map_costs_per_student])
-
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         with tab:
             display(
                 widgets.VBox(
                     [
                         section(
-                            "Average Cost Per School", per_school_plots, "dark"
+                            "Average Cost Per School", widgets.VBox([self.total_cost_map]), "dark"
                         ).add_class("center"),
                         section(
-                            "Average Cost Per Student", per_student_plots, "dark"
+                            "Average Cost Per Student", widgets.VBox([self.cost_per_student_map]), "dark"
                         ).add_class("center"),
                     ]
                 )
@@ -226,64 +266,22 @@ class ResultDashboard:
         return tab
 
     def cost_tab(self):
-        # project
-        project_cost_barplot = self._figure_to_output(
-            make_project_cost_bar_plots(self.results)
-        )
-        # averages
-        average_cost_barplot = make_technology_average_cost_barplot(
-            self.results.new_connected_schools
-        )
-        total_cost_barplot = make_technology_total_cost_barplot(
-            self.results.new_connected_schools
-        )
-        # totals
-        average_cost_output = self._figure_to_output(average_cost_barplot)
-        total_cost_output = self._figure_to_output(total_cost_barplot)
-        # pies
-        to_show = self.results.new_connected_schools
-        technology_pie = self._figure_to_output(
-            px.pie(
-                to_show,
-                names="technology",
-                color="technology",
-                color_discrete_map=GIGA_TECHNOLOGY_COLORS,
-            ).update_traces(
-                textinfo="label+value+percent", hoverinfo="label+value+percent"
-            )
-        )
-        cost_pie = self._figure_to_output(
-            px.pie(
-                to_show,
-                values="total_cost",
-                names="technology",
-                color="technology",
-                color_discrete_map=GIGA_TECHNOLOGY_COLORS,
-            ).update_traces(
-                textinfo="label+value+percent", hoverinfo="label+value+percent"
-            )
-        )
-        # summary table
-        summary_table = create_summary_table(
-            self.results.output_space, self.results.data_space
-        )
-
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         with tab:
             display(
                 widgets.VBox(
                     [
-                        section("Project Costs", project_cost_barplot),
+                        section("Project Costs", self._figure_to_output(self.project_cost_barplot)),
                         section(
-                            "Average per School Technology Cost", average_cost_output
+                            "Average per School Technology Cost", self._figure_to_output(self.average_cost_barplot)
                         ),
-                        section("Total Technology Costs", total_cost_output),
+                        section("Total Technology Costs", self._figure_to_output(self.total_cost_barplot)),
                         section(
-                            "Number of Schools Connected by Tech Type", technology_pie
+                            "Number of Schools Connected by Tech Type", self._figure_to_output(self.technology_pie)
                         ),
-                        section("Total CapEx and OpEx by Tech Type", cost_pie),
+                        section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
                         section(
-                            "Total Costs by CapEx, OpEx, and Electricity", summary_table
+                            "Total Costs by CapEx, OpEx, and Electricity", self.summary_table
                         ),
                     ]
                 )
@@ -291,36 +289,26 @@ class ResultDashboard:
         return tab
 
     def unit_cost_tab(self):
-        unit_cost_plot = self._figure_to_output(make_unit_cost_bar_plot(self.results))
         tab = widgets.Output()
         with tab:
             display(
                 widgets.VBox(
                     [
-                        section("Unit Cost", unit_cost_plot),
+                        section("Unit Cost", self._figure_to_output(self.unit_cost_bar_plot)),
                     ]
                 )
             )
         return tab
 
     def technology_tab(self):
-        to_show = self.results.new_connected_schools
-        technology_pie = self._figure_to_output(px.pie(to_show, names="technology"))
-        cost_pie = self._figure_to_output(
-            px.pie(to_show, values="total_cost", names="technology")
-        )
-        feasibility_pie = self._figure_to_output(
-            px.pie(self.results.output_cost_table, names="reason")
-        )
-
         tab = widgets.Output()
         with tab:
             display(
                 widgets.VBox(
                     [
-                        section("Percent Technology", technology_pie),
-                        section("Percent Cost", cost_pie),
-                        section("Technology Feasibility", feasibility_pie),
+                        section("Percent Technology", self._figure_to_output(self.tech_pie)),
+                        section("Percent Cost", self._figure_to_output(self.tech_cost_pie)),
+                        section("Technology Feasibility", self._figure_to_output(self.feasibility_pie)),
                     ]
                 )
             )
