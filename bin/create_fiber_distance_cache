@@ -70,7 +70,7 @@ def main():
     )
     args = parser.parse_args()
 
-    if not data_store.isfile(os.path.join(args.workspace_directory, "fiber.csv")):
+    if not data_store.is_file(os.path.join(args.workspace_directory, "fiber.csv")):
         LOGGER.warning(
             f"Fiber file not found in {args.workspace_directory}, creating empty file."
         )

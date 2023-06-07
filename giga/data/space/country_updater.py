@@ -3,6 +3,7 @@ import ipywidgets as widgets
 import pandas as pd
 import os
 import json
+import subprocess
 from IPython.display import display
 from io import StringIO
 
@@ -16,6 +17,7 @@ from giga.schemas.geo import UniqueCoordinateTable
 from giga.schemas.conf.country import CountryDefaults
 from giga.app.config import get_registered_countries
 from giga.viz.notebooks.cost_estimation_parameter_input import CostEstimationParameterInput
+from giga.utils.progress_bar import progress_bar as pb
 
 GIGA_AUTH_TOKEN = os.environ.get("GIGA_AUTH_TOKEN", "")
 
@@ -210,6 +212,23 @@ class CountryUpdater:
         data_store.rmdir(dir)
         data_store.remove(CountryUpdater.conf_path(country))
         
+    @staticmethod
+    def update_cache(country: str):
+        display("Updating cache -- please stay on this page until the process is complete.")
+        out = widgets.Output()
+        after = widgets.Output()
+        display(out, after)
+        update_scripts = [
+            "bin/create_fiber_distance_cache",
+            "bin/create_cellular_distance_cache",
+            "giga/app/create_p2p_distance_cache.py"
+        ]
+        with out:
+            for script in pb(update_scripts):
+                path = os.path.join("..", "..", script)
+                with after:
+                    subprocess.run(["python", path, "-w", f"/workspace/{country}/"])
+            display("Complete!")
 
     @staticmethod
     def validate_supplemental_inputs(sup) -> str:

@@ -198,6 +198,7 @@ def main():
     )
     args: P2PCacheCreatorArgs = parser.parse_args()
     args.progress_bar = True
+    args.export_to_file = True
     P2PCacheCreator(args).run()
 
 
