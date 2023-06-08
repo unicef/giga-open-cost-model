@@ -13,6 +13,7 @@ import os
 import shutil
 import plotly
 import time
+import pickle
 from zipfile import ZipFile
 from PIL import Image
 
@@ -166,10 +167,33 @@ def make_export_zip_button(all_output_maps, title="Download Graph .zip", filenam
     out = Output()
     return VBox([button, out])
 
+def make_export_output_space(output_space, title="Results Package", filename="results_package.pkl"):
+    def on_button_clicked(b):
+        out.clear_output()
+        with out:
+            output_space_bytes = pickle.dumps(output_space)
+            payload = output_space_bytes.hex()
+            
+            # Create a download link
+            html = """
+                <a download="{filename}" href="data:text/plain;charset=utf-8,{payload}" download>
+                    <button class="custom-button">{title}</button>
+                </a>
+            """
+            html = html.format(payload=payload, title=title, filename=filename)
+            display(HTML(html))
 
-def make_export_button_row(table, inputs, all_output_maps):
+    button = Button(description=title)
+    button.on_click(on_button_clicked)
+    out = Output()
+    return VBox([button, out])
+
+def make_export_button_row(output_space, table, inputs, all_output_maps = None):
     b1 = make_export_config_button(inputs)
     b2 = make_export_cost_button(table)
-    b3 = make_export_report_button(all_output_maps)
-    b4 = make_export_zip_button(all_output_maps)
-    return VBox([b1, b2, b3, b4])
+    b3 = make_export_output_space(output_space)
+    if all_output_maps is None:
+        return VBox([b1, b2, b3])
+    b4 = make_export_report_button(all_output_maps)
+    b5 = make_export_zip_button(all_output_maps)
+    return VBox([b1, b2, b3, b4, b5])

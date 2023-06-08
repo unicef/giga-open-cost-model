@@ -232,5 +232,6 @@ class ModelDataSpace:
             "nearest_fiber",
             "nearest_cell_tower",
         ]:
-            df[k] = [lookup[sid][k] for sid in schools_ids]
+            sids = filter(lambda sid: sid in lookup, schools_ids)
+            df[k] = [lookup[sid][k] for sid in sids]
         return df
