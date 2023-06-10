@@ -28,7 +28,7 @@ CUSTOM_TEMPLATE = custom_template = {
         },
         title={
             "font": {
-                "family": "Lato",
+                "family": "Arial",
                 "size": 18,
                 "color": "#1f1f1f",
             },
@@ -81,12 +81,12 @@ def make_cost_map(
     )
     fig.update_coloraxes(
         colorbar=dict(
-            title=dict(font=dict(color="#dbd5d5")), tickfont=dict(color="#dbd5d5")
+            title=dict(font=dict(color="#dbd5d5", family="Arial")), tickfont=dict(color="#dbd5d5", family="Arial")
         )
     )
     fig.layout.title = {
-        "text": "<b>" + title + "</b>",
-        "y": 0.96,
+        "text": "<b style='color:white; background-color:black;'>" + title + "</b>",
+        "y": 0.9,
         "x": 0.5,
         "xanchor": "center",
         "yanchor": "top",
@@ -122,7 +122,7 @@ def make_technology_map(results, style="carto-positron"):
             title="Technology",
             x=0.0,
             y=1.0,
-            font=dict(size=12, family="Arial, sans-serif", color="white"),
+            font=dict(size=12, family="Arial", color="white"),
             bgcolor="#242423",
             bordercolor="black",
             borderwidth=1,
@@ -135,7 +135,7 @@ def make_technology_map(results, style="carto-positron"):
         "xanchor": "center",
         "yanchor": "top",
         "font": dict(
-            size=18, color=GIGA_BLACK, family="Verdana Bold"
+            size=18, color=GIGA_BLACK, family="Arial"
         ),  # customize font size here
     }
     return map_technology
@@ -174,7 +174,7 @@ def plot_pairwise_connections(connections, color="gold"):
             showlegend=False,
             hoverlabel=dict(
                 bgcolor="darkgray",  # Set background color
-                font=dict(color="white"),  # Set font color
+                font=dict(color="white", family="Arial"),  # Set font color
             ),
         )
         traces.append(mid_point_trace)
@@ -260,8 +260,8 @@ def make_technology_average_cost_barplot(
     fig.update_layout(
         plot_bgcolor="white",
         paper_bgcolor="#f5f5f5",
-        title=dict(x=0.5, font=dict(size=16, family="Arial, sans-serif")),
-        font=dict(size=14, family="Arial, sans-serif"),
+        title=dict(x=0.5, font=dict(size=18, family="Arial")),
+        font=dict(size=14, family="Arial"),
         bargap=0.6,
         width=1200,
     )
@@ -330,8 +330,8 @@ def make_technology_total_cost_barplot(
     fig.update_layout(
         plot_bgcolor="white",
         paper_bgcolor="#f5f5f5",
-        title=dict(x=0.5, font=dict(size=16, family="Arial, sans-serif")),
-        font=dict(size=14, family="Arial, sans-serif"),
+        title=dict(x=0.5, font=dict(size=18, family="Arial")),
+        font=dict(size=14, family="Arial"),
         bargap=0.6,
         width=1200,
     )
@@ -382,7 +382,7 @@ def make_fiber_distance_map_plot(
     )
     fig.update_coloraxes(
         colorbar=dict(
-            title=dict(font=dict(color="#474747")), tickfont=dict(color="#474747")
+            title=dict(font=dict(color="#474747", family="Arial")), tickfont=dict(color="#474747", family="Arial")
         )
     )
     fig.layout.title = {
@@ -392,7 +392,7 @@ def make_fiber_distance_map_plot(
         "xanchor": "center",
         "yanchor": "top",
         "font": dict(
-            size=18, color=GIGA_BLACK, family="Verdana Bold"
+            size=18, color=GIGA_BLACK, family="Arial"
         ),  # customize font size here
     }
     return go.FigureWidget(fig)
@@ -442,13 +442,13 @@ def make_cellular_distance_map_plot(
             "xanchor": "center",
             "yanchor": "top",
             "font": dict(
-                size=18, color=GIGA_BLACK, family="Verdana Bold"
+                size=18, color=GIGA_BLACK, family="Arial"
             ),  # customize font size here
         },
     )
     fig.update_coloraxes(
         colorbar=dict(
-            title=dict(font=dict(color="#474747")), tickfont=dict(color="#474747")
+            title=dict(font=dict(color="#474747", family="Arial")), tickfont=dict(color="#474747", family="Arial")
         )
     )
     return fig
@@ -504,7 +504,7 @@ def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
     )
     fig.update_coloraxes(
         colorbar=dict(
-            title=dict(font=dict(color="#474747")), tickfont=dict(color="#474747")
+            title=dict(font=dict(color="#474747", family="Arial")), tickfont=dict(color="#474747", family="Arial")
         )
     )
     fig.layout.title = {
@@ -514,7 +514,7 @@ def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
         "xanchor": "center",
         "yanchor": "top",
         "font": dict(
-            size=18, color=GIGA_BLACK, family="Verdana Bold"
+            size=18, color=GIGA_BLACK, family="Arial"
         ),  # customize font size here
     }
     return fig

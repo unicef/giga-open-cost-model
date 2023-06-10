@@ -111,7 +111,7 @@ def make_cost_histogram(results, num_bins=40, cost_key="total_cost"):
                     mode="text",
                     text=[str(len(bin_data))],
                     textposition="top center",
-                    textfont=dict(color="white"),
+                    textfont=dict(color="white", family="Arial"),
                     showlegend=False,
                 )
             )
@@ -125,7 +125,7 @@ def make_cost_histogram(results, num_bins=40, cost_key="total_cost"):
             "xanchor": "center",
             "yanchor": "top",
             "font": dict(
-                family="Courier New, bold",
+                family="Arial",
                 size=36,
                 color="white",
             ),
@@ -133,20 +133,20 @@ def make_cost_histogram(results, num_bins=40, cost_key="total_cost"):
         barmode="stack",
         plot_bgcolor="#2a2a2a",
         paper_bgcolor="#2a2a2a",
-        font=dict(color="white"),
+        font=dict(color="white", family="Arial"),
         autosize=True,
         width=850,
         height=600,
         xaxis_title="Total Cost (USD)",
         yaxis=dict(showgrid=False, showticklabels=False),
-        xaxis=dict(color="white", title_font=dict(color="white")),
+        xaxis=dict(color="white", title_font=dict(color="white", family="Arial")),
         showlegend=False,
     )
     return fig
 
 
 def cumulative_distance_bar_plot(
-    data, distance_key, distance_cutoff, bins, names, title
+    data, distance_key, distance_cutoff, bins, names, title, x_label=None, y_label=None
 ):
     # Use the cut function
     df = data
@@ -186,22 +186,27 @@ def cumulative_distance_bar_plot(
             "xanchor": "center",
             "yanchor": "top",
             "font": dict(
-                family="Courier New, monospace, bold",
-                size=24,
-                color="#7f7f7f",
+                family="Arial",
+                size=18,
+                color="#000000",
             ),
         },
         bargap=0.3,
         plot_bgcolor="#faf8f2",
         paper_bgcolor="#faf8f2",
         yaxis={
+            "title": y_label,
+            "title_font": dict(size=15, color="black", family="Arial"),
             "categoryorder": "array",
-            "tickfont": dict(size=13, color="black", family="Arial, bold"),
+            "tickfont": dict(size=13, color="black", family="Arial"),
             "range": [-0.5, len(cumulative_counts)],
         },
         xaxis={
+            "title": x_label,
+            "title_font": dict(size=15, color="black", family="Arial"),
             "showticklabels": False,
             "range": [0, max(cumulative_counts.values) * 1.1],
+            "title_standoff": 170,
         },
     )
     return fig
@@ -216,7 +221,9 @@ def cumulative_fiber_distance_barplot(
     title="Unconnected Schools within 10km of a Fiber Node",
 ):
     return cumulative_distance_bar_plot(
-        data, distance_key, distance_cutoff, bins, names, title
+        data, distance_key, distance_cutoff, bins, names, title,
+        x_label="Number of schools within distance to a fiber node",
+        y_label="Distance to node"
     )
 
 
@@ -229,7 +236,9 @@ def cumulative_cell_tower_distance_barplot(
     title="Unconnected Schools within 3km of a Cell Tower",
 ):
     return cumulative_distance_bar_plot(
-        data, distance_key, distance_cutoff, bins, names, title
+        data, distance_key, distance_cutoff, bins, names, title,
+        x_label="Number of schools within distance to a cell tower",
+        y_label="Distance to tower"
     )
 
 
@@ -248,7 +257,7 @@ def make_project_cost_bar_plots(stats, bar_width=0.3):
                 marker_color=COST_COLORS_TRIPLET[i],
                 text=[round(value, 2)],
                 textposition="auto",
-                width=[bar_width],
+                width=[bar_width]
             ),
             row=1,
             col=1,
@@ -270,6 +279,11 @@ def make_project_cost_bar_plots(stats, bar_width=0.3):
         )
     # Update layout
     fig.update_layout(
+        title=dict(
+            text="Total Project Costs (USD Millions) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Average Total Costs (USD)",
+            x=0.5, 
+            font=dict(size=18, family="Arial")
+        ),
         plot_bgcolor="white",
         paper_bgcolor="white",
         showlegend=False,
@@ -283,31 +297,6 @@ def make_project_cost_bar_plots(stats, bar_width=0.3):
             t=100,
             pad=20,  # increase the padding to provide more space between subplots
         ),
-    )
-    # Add individual titles for each subplot
-    fig.add_annotation(
-        dict(
-            font=dict(color="black", size=16),
-            x=0.05,
-            y=1.2,
-            showarrow=False,
-            text=f"Total Project Costs for {stats.num_project_schools} Schools (USD Millions)",
-            textangle=0,
-            xref="paper",
-            yref="paper",
-        )
-    )
-    fig.add_annotation(
-        dict(
-            font=dict(color="black", size=16),
-            x=0.9,
-            y=1.2,
-            showarrow=False,
-            text="Average Total Costs (USD)",
-            textangle=0,
-            xref="paper",
-            yref="paper",
-        )
     )
 
     # Remove y-axis tick labels from first subplot
@@ -387,39 +376,26 @@ def make_unit_cost_bar_plot(stats):
         )  # reverse y-axis to make 'Fiber' on top
         fig.update_xaxes(range=[0, max_value * 1.25], visible=False, row=1, col=idx + 1)
 
-    fig.add_annotation(
-        dict(
-            font=dict(color="black", size=16),
-            x=0.05,
-            y=1.2,
-            showarrow=False,
-            text=f"Upfront Cost by Technology ($)",
-            textangle=0,
-            xref="paper",
-            yref="paper",
-        )
-    )
-    fig.add_annotation(
-        dict(
-            font=dict(color="black", size=16),
-            x=0.9,
-            y=1.2,
-            showarrow=False,
-            text="Ongoing Costs ($/Mbps a year)",
-            textangle=0,
-            xref="paper",
-            yref="paper",
-        )
-    )
-
     fig.update_layout(
         barmode="group",
         plot_bgcolor="white",
         yaxis=dict(automargin=True),
         yaxis2=dict(automargin=True),
-        width=1000,  # adjust as needed
-        height=600,  # adjust as needed
+        width=1000,
+        height=600,
         autosize=False,
+        title={
+            'text': "Upfront cost by Technology (USD) &nbsp;&nbsp;&nbsp;  &nbsp;&nbsp;&nbsp; Ongoing Costs ($/Mbps a year)",
+            'y': 0.9,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': dict(
+                family="Arial",
+                size=18,
+                color="black"
+            )
+        }
     )
     return fig
 
@@ -452,7 +428,7 @@ def make_satellite_pie_breakdown(to_show):
             "x": 0.5,
             "xanchor": "center",
             "yanchor": "top",
-            "font": dict(size=24, color="black", family="Arial, sans-serif"),
+            "font": dict(size=24, color="black", family="Arial"),
         },
         showlegend=False,
         margin=dict(t=100),

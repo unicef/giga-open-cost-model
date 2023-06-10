@@ -22,11 +22,15 @@ display(
 )
 
 
-def show_electricity_map(data_space, location=[-1.9, 30.1], zoom_start=7):
-
+def show_electricity_map(data_space, location=[-1.9, 30.1], zoom_start=7, title="Electricity Availability by School"):
     m = folium.Map(
         tiles="cartodbpositron", zoom_start=zoom_start, location=location, width=850
     )
+
+    title_html = f"""
+        <h3 align="center" style="font-size:18px"><b>{title}</b></h3>
+    """
+    m.get_root().html.add_child(folium.Element(title_html))
 
     for s in data_space.school_entities:
         popup = f"School ID: {s.giga_id}"
@@ -63,7 +67,7 @@ def show_electricity_map(data_space, location=[-1.9, 30.1], zoom_start=7):
     return m
 
 
-def show_cost_map(data_space, output_space, location=[-1.9, 30.1], zoom_start=7):
+def show_cost_map(data_space, output_space, location=[-1.9, 30.1], zoom_start=7, title="School Cost Groups"):
     table = output_to_table(output_space)
     table = table[table["total_cost"].notna()]
     cost_lookup = {
@@ -76,6 +80,11 @@ def show_cost_map(data_space, output_space, location=[-1.9, 30.1], zoom_start=7)
         vmin=table["total_cost"].min(),
         vmax=table["total_cost"].max(),
     )
+
+    title_html = f"""
+        <h3 align="center" style="font-size:18px"><b>{title}</b></h3>
+    """
+    m.get_root().html.add_child(folium.Element(title_html))
 
     for s in data_space.school_entities:
         popup = f"School ID: {s.giga_id}"

@@ -55,7 +55,7 @@ class StaticDataMap:
                 x=self.config.legend_x,
                 y=self.config.legend_y,
                 bgcolor=self.config.legend_bgcolor,
-                font=dict(color=self.config.legend_font_color),
+                font=dict(color=self.config.legend_font_color, family="Arial"),
                 bordercolor=self.config.legend_border_color,
                 borderwidth=self.config.legend_border_width,
             ),
