@@ -7,7 +7,7 @@ import numpy as np
 from giga.schemas.geo import UniqueCoordinate
 from giga.data.store.stores import COUNTRY_DATA_STORE
 
-DEFAULT_POWER_REQUIRED_PER_SCHOOL = 18_294  # Watts
+DEFAULT_POWER_REQUIRED_PER_SCHOOL = 11_000  # Watts
 
 
 class SchoolZone(str, Enum):

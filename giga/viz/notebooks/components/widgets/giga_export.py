@@ -19,6 +19,8 @@ from PIL import Image
 
 from giga.utils.progress_bar import progress_bar as pb
 
+# Force kaleido to run in a single process, or it crashes Jupyter in Docker
+plotly.io.kaleido.scope.chromium_args += ("--single-process",) 
 
 def make_export_cost_button(df, title="Export Costs", filename="costs.csv"):
     csv = df.to_csv()
@@ -76,7 +78,9 @@ def render_screenshot(tmpfile):
     try:
         browser = webdriver.Chrome()
     except:
-        raise Exception("Error: Google Chrome must be installed in order to turn graphs into PDFs in the background.")
+        return None
+        # TODO add chromium executable to environment
+        # raise Exception("Error: Google Chrome must be installed in order to turn graphs into PDFs in the background.")
     browser.set_window_size(PAGE_WIDTH * zoom_scale, PAGE_HEIGHT * zoom_scale)
     browser.get("file://" + tmpfile)
     time.sleep(0.2)
@@ -103,6 +107,8 @@ def generate_pdf_bytes(el_list):
                                            width=PAGE_WIDTH * 2, height=PAGE_HEIGHT * 2,
                                            scale=3)
         else:
+            continue
+        if png_bytes is None:
             continue
         has_content = True
         png = Image.open(io.BytesIO(png_bytes))
