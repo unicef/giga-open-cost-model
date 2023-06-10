@@ -181,16 +181,16 @@ def make_export_zip_button(all_output_maps, title="Download Graph .zip", filenam
     return VBox([button, out])
 
 class ModelPackage():
-    config = None
-    output_space = None
+    def __init__(self, config, selected_schools, output_space):
+        self.config = config
+        self.selected_schools = selected_schools
+        self.output_space = output_space
 
-def make_export_model_package(config, output_space, title="Results Package", filename="results_package.pkl"):
+def make_export_model_package(config, selected_schools, output_space, title="Results Package", filename="results_package.pkl"):
     def on_button_clicked(b):
         out.clear_output()
         with out:
-            pkg = ModelPackage()
-            pkg.config = config
-            pkg.output_space = output_space
+            pkg = ModelPackage(config, selected_schools, output_space)
             output_space_bytes = pickle.dumps(pkg)
             display(make_payload_export("Download package", filename, output_space_bytes.hex(),
                                         "text/plain;charset=utf-8"))
@@ -200,11 +200,11 @@ def make_export_model_package(config, output_space, title="Results Package", fil
     out = Output()
     return VBox([button, out])
 
-def make_export_button_row(config, output_space, table, inputs, all_output_maps = None):
+def make_export_button_row(config, selected_schools, output_space, table, inputs, all_output_maps = None):
     hr = pw.HTML('<hr/>')
     b1 = make_export_config_button(inputs)
     b2 = make_export_cost_button(table)
-    b3 = make_export_model_package(config, output_space)
+    b3 = make_export_model_package(config, selected_schools, output_space)
     if all_output_maps is None:
         return VBox([b1, b2, hr, b3])
     b4 = make_export_report_button(all_output_maps)

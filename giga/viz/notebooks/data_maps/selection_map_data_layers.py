@@ -109,27 +109,42 @@ class SelectionMapDataLayers(MapDataLayers):
             filtered_schools = self._schools[
                 self._schools["connectivity_status"] == status
             ].reset_index()
+            values = []
             if status == self.config.first_school_data_layer:
                 # first trace in selection
-                self.school_selection_table.data[0].cells.values = [
+                values = [
                     filtered_schools.loc[point_inds][col]
                     for i, col in enumerate(self.config.table_data_columns)
                 ]
             else:
-                values = []
                 for i, col in enumerate(self.config.table_data_columns):
                     vc = self.school_selection_table.data[0].cells.values[i] + list(
                         filtered_schools.loc[point_inds][col]
                     )
                     values.append(vc)
-                self.school_selection_table.data[0].cells.values = values
-            # update selection label
-            self.selection_label.value = (
-                f"Total number of selected schools: {len(self.selected_schools)}"
-            )
+            self.school_selection_table.data[0].cells.values = values
+            self.make_selected_label()
 
         for scatter in fig.data[SCHOOL_LAYERS_IDX_START:SCHOOL_LAYERS_IDX_END]:
             scatter.on_selection(selection_fn)
+
+    @property
+    def selected_schools(self):
+        return self.school_selection_table.data[0].cells.values[0]
+
+
+    def set_selected_schools(self, school_id_list):
+        values = []
+        schools = self._schools[self._schools['giga_id'].isin(school_id_list)]
+        print(f"Setting {len(schools)} schools...")
+        for i, col in enumerate(self.config.table_data_columns):
+            values.append(list(
+                schools[col]
+            ))
+        self.school_selection_table.data[0].cells.values = values
+        print(f"Updated school_selection_table with {len(self.school_selection_table.data[0].cells.values[0])} schools.")
+        print(f"self.selected_schools is len {len(self.selected_schools)}")
+        self.make_selected_label()
 
     def make_selected_label(self):
         self.selection_label.value = (
@@ -158,7 +173,7 @@ class SelectionMapDataLayers(MapDataLayers):
             # Highlight the selected schools on the map
             for scatter in fig.data[
                 SCHOOL_LAYERS_IDX_START:SCHOOL_LAYERS_IDX_END
-            ]:  # Adjust this range according to your specific plot
+            ]:
                 scatter.selectedpoints = [
                     i
                     for i, giga_id in enumerate(scatter["customdata"])
@@ -196,7 +211,3 @@ class SelectionMapDataLayers(MapDataLayers):
                 self.cell_tower_layer_mb_empty,
             ] + self.school_layers_mb
         return self._layers_selection
-
-    @property
-    def selected_schools(self):
-        return self.school_selection_table.data[0].cells.values[0]
