@@ -542,6 +542,16 @@ class CostEstimationParameterInput:
         _, selection_layer = self._hashed_data_layers[country]
         return selection_layer.selected_schools
 
+    def set_selected_schools(self, schools):
+        country = self.data_parameters().school_data_conf.country_id
+        if country not in self._hashed_data_layers:
+            layer, selection_layer = self._make_map_layer(country)
+        else:
+            layer, selection_layer = self._hashed_data_layers[country]
+        selection_layer.set_selected_schools(schools)
+        self._hashed_data_layers[country] = layer, selection_layer
+
+
     def data_parameters_upload_input(self, sheet_name="data"):
         self._hashed_sheets[sheet_name + UPLOAD_SUFFIX] = {
             p["parameter_name"]: p["parameter_interactive"]
