@@ -26,7 +26,7 @@ class DashDashboard:
         self.app.run_server(mode="external", height=f"{self.height}px", port=self.port)
 
     def maps_tab(self, results):
-        map_costs = make_cost_map(results)
+        map_costs = make_cost_map(results, title="Connectivity Costs Map")
         map_technology = make_technology_map(results)
         return dcc.Tab(
             label="Maps",

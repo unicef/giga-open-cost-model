@@ -62,7 +62,7 @@ class ResultDashboard:
         style = """
             <style>
                 .widget-tab > .p-TabBar .p-TabBar-tab {
-                    font-family: Arial, sans-serif;
+                    font-family: Verdana Bold;
                     font-weight: bold;
                     font-size: 14px;
                     background-color: lightgrey;
@@ -98,16 +98,25 @@ class ResultDashboard:
             display_key="Per Student Cost (USD)",
             title="Average Cost Per Student",
         )
-        self.total_cost_map = make_cost_map(self.results.new_connected_schools, cost_key="total_cost")
+        self.total_cost_map = make_cost_map(
+            self.results.new_connected_schools,
+            cost_key="total_cost",
+            display_key="Total Cost (USD)",
+            title = "Total Cost Map"
+        )
         self.total_cost_histogram = make_cost_histogram(
             self.results.new_connected_schools, cost_key="total_cost"
         )
         self.cost_per_student_map = make_cost_map(
-            self.results.new_connected_schools, cost_key="total_cost_per_student"
+            self.results.new_connected_schools,
+            cost_key="total_cost_per_student",
+            display_key="Per Student Cost (USD)",
+            title="Per Student Cost"
         )
         try:
             self.cost_per_student_histogram = make_cost_histogram(
-                self.results.new_connected_schools, cost_key="total_cost_per_student"
+                self.results.new_connected_schools,
+                cost_key="total_cost_per_student"
             )
         except:
             self.cost_per_student_histogram = None
@@ -126,6 +135,19 @@ class ResultDashboard:
             color_discrete_map=GIGA_TECHNOLOGY_COLORS,
         ).update_traces(
             textinfo="label+value+percent", hoverinfo="label+value+percent"
+        ).update_layout(
+            title={
+                'text': "Number of Schools Connected by Tech Type",
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(
+                    family="Arial",
+                    size=18,
+                    color="black"
+                )
+            }
         )
         self.cost_pie = px.pie(
             to_show,
@@ -135,15 +157,80 @@ class ResultDashboard:
             color_discrete_map=GIGA_TECHNOLOGY_COLORS,
         ).update_traces(
             textinfo="label+value+percent", hoverinfo="label+value+percent"
+        ).update_layout(
+            title={
+                'text': "Total CapEx and OpEx by Tech Type",
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(
+                    family="Arial",
+                    size=18,
+                    color="black"
+                )
+            }
         )
         self.summary_table = create_summary_table(
             self.results.output_space, self.results.data_space
         )
         self.unit_cost_bar_plot = make_unit_cost_bar_plot(self.results)
-        self.tech_pie = px.pie(to_show, names="technology")
-        self.tech_cost_pie = px.pie(to_show, values="total_cost", names="technology")
-        self.feasibility_pie = px.pie(self.results.output_cost_table, names="reason")
-        self.tech_distrib_plot = technology_distribution_bar_plot(self.results.technology_counts)
+        self.tech_pie = px.pie(to_show, names="technology").update_layout(
+            title={
+                'text': "Fraction of Schools Connected by Technology",
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(
+                    family="Arial",
+                    size=18,
+                    color="black"
+                )
+            }
+        )
+        self.tech_cost_pie = px.pie(to_show, values="total_cost", names="technology").update_layout(
+            title={
+                'text': "Total Cost by Technology",
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(
+                    family="Arial",
+                    size=18,
+                    color="black"
+                )
+            }
+        )
+        self.feasibility_pie = px.pie(self.results.output_cost_table, names="reason").update_layout(
+            title={
+                'text': "School Connectivity Feasibility",
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(
+                    family="Arial",
+                    size=18,
+                    color="black"
+                )
+            }
+        )
+        self.tech_distrib_plot = technology_distribution_bar_plot(self.results.technology_counts).update_layout(
+            title={
+                'text': "Technology Distribution by School",
+                'y': 0.95,
+                'x': 0.5,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': dict(
+                    family="Arial",
+                    size=18,
+                    color="black"
+                )
+            }
+        )
 
     def get_visual_plots(self):
         # These plots will be included in downloaded reports.
@@ -177,7 +264,7 @@ class ResultDashboard:
 
     def _update_title_font(self, fig):
         fig.update_layout(
-            title_font=dict(family="Arial, sans-serif", size=16, color="black")
+            title_font=dict(size=18, family="Arial", color="black")
         )
 
     def _figure_to_output(self, fig, layout=widgets.Layout(width="100%")):

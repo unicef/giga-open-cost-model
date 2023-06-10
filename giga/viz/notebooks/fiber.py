@@ -120,7 +120,8 @@ def plot_data_map(
 
 
 def plot_fiber_connections(
-    fiber_coordinates, school_coordinates, connections, m=default_rwanda_map()
+    fiber_coordinates, school_coordinates, connections, m=default_rwanda_map(),
+    title="Current Fiber Connections"
 ):
     m = plot_coordinate_map(
         school_coordinates,
@@ -138,6 +139,11 @@ def plot_fiber_connections(
         coordinate_radius=3,
         m=m,
     )
+
+    title_html = f"""
+        <h3 align="center" style="font-size:18px"><b>{title}</b></h3>
+    """
+    m.get_root().html.add_child(folium.Element(title_html))
     return m
 
 
