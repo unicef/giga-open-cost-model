@@ -136,14 +136,11 @@ class SelectionMapDataLayers(MapDataLayers):
     def set_selected_schools(self, school_id_list):
         values = []
         schools = self._schools[self._schools['giga_id'].isin(school_id_list)]
-        print(f"Setting {len(schools)} schools...")
         for i, col in enumerate(self.config.table_data_columns):
             values.append(list(
                 schools[col]
             ))
         self.school_selection_table.data[0].cells.values = values
-        print(f"Updated school_selection_table with {len(self.school_selection_table.data[0].cells.values[0])} schools.")
-        print(f"self.selected_schools is len {len(self.selected_schools)}")
         self.make_selected_label()
 
     def make_selected_label(self):
