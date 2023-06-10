@@ -48,6 +48,8 @@ class SATMinimumCostScenario:
         self._prep()
         minimizer = self._create_minimizer()
         costs, solution = minimizer.run(self.data_space)
+        if solution is None:
+            return None
         self.output_space.fiber_costs = CostResultSpace(
             technology_results={
                 "distances": solution.solution_edge_distances.distances
