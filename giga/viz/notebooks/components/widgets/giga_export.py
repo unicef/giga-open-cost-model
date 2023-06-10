@@ -167,11 +167,18 @@ def make_export_zip_button(all_output_maps, title="Download Graph .zip", filenam
     out = Output()
     return VBox([button, out])
 
-def make_export_output_space(output_space, title="Results Package", filename="results_package.pkl"):
+class ModelPackage():
+    config = None
+    output_space = None
+
+def make_export_model_package(config, output_space, title="Results Package", filename="results_package.pkl"):
     def on_button_clicked(b):
         out.clear_output()
         with out:
-            output_space_bytes = pickle.dumps(output_space)
+            pkg = ModelPackage()
+            pkg.config = config
+            pkg.output_space = output_space
+            output_space_bytes = pickle.dumps(pkg)
             payload = output_space_bytes.hex()
             
             # Create a download link
@@ -188,10 +195,10 @@ def make_export_output_space(output_space, title="Results Package", filename="re
     out = Output()
     return VBox([button, out])
 
-def make_export_button_row(output_space, table, inputs, all_output_maps = None):
+def make_export_button_row(config, output_space, table, inputs, all_output_maps = None):
     b1 = make_export_config_button(inputs)
     b2 = make_export_cost_button(table)
-    b3 = make_export_output_space(output_space)
+    b3 = make_export_model_package(config, output_space)
     if all_output_maps is None:
         return VBox([b1, b2, b3])
     b4 = make_export_report_button(all_output_maps)
