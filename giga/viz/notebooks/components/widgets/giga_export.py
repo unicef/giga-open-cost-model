@@ -5,6 +5,7 @@ from IPython.display import HTML, display
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from ipywidgets import Output, VBox, Button, Widget
+import ipywidgets as pw
 from ipywidgets.embed import embed_minimal_html
 import io
 import base64
@@ -18,56 +19,78 @@ from zipfile import ZipFile
 from PIL import Image
 
 from giga.utils.progress_bar import progress_bar as pb
+from giga.viz.notebooks.components.widgets.giga_buttons import make_button
 
 # Force kaleido to run in a single process, or it crashes Jupyter in Docker
 plotly.io.kaleido.scope.chromium_args += ("--single-process",) 
 
+display(HTML("""
+<style>
+
+.payload-export-button {
+    border: 1px solid rgb(255, 159, 64) !important;
+    background-color: rgb(255, 227, 201);
+    height: 40px;
+    width: 200px;
+    border-radius: 6px;
+    margin: 6px;
+    box-shadow: 1px 1px 3px #ccc;
+    padding: 0 10px;
+}
+
+.payload-export-button:hover {
+    box-shadow: 2px 2px 4px #aaa;
+}
+
+.payload-export-button, .payload-export-button * {
+    cursor: pointer;
+}
+
+</style>
+
+"""))
+
+
+def export_btn(callback, **kwargs):
+    return make_button(
+            callback,
+            height="40px",
+            width="226px",
+            border_radius="2px",
+            margin="6px",
+            box_shadow="1px 1px 3px #ccc",
+            button_color="#ffe3c9", 
+            border="1px solid #ff9f40",
+            **kwargs)
+
+def make_payload_export(title, filename, data, data_format):
+    if ";base64" in data_format:
+        b64 = base64.b64encode(data)
+        data = b64.decode()
+    html = f"""
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body>
+            <a download="{filename}" href="data:{data_format},{data}" download>
+                <button class="payload-export-button">{title}</button>
+            </a>
+        </body>
+        </html>
+    """
+    out = Output()
+    with out:
+        display(HTML(html))
+    return out
+
+
 def make_export_cost_button(df, title="Export Costs", filename="costs.csv"):
-    csv = df.to_csv()
-    b64 = base64.b64encode(csv.encode())
-    payload = b64.decode()
-    html = """
-        <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-        </head>
-        <body>
-            <a download="{filename}" href="data:text/csv;base64,{payload}" download>
-                <button class="custom-button">{title}</button>
-            </a>
-        </body>
-        </html>
-    """
-    html = html.format(payload=payload, title=title, filename=filename)
-    out = Output()
-    with out:
-        display(HTML(html))
-    return out
+    return make_payload_export(title, filename, df.to_csv().encode(), "text/csv;base64")
 
 
-def make_export_config_button(
-    scenario, title="Export Configuration", filename="config.json"
-):
-    payload = scenario.config_json
-    b64 = base64.b64encode(payload.encode())
-    payload = b64.decode()
-    html = """
-        <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-        </head>
-        <body>
-            <a download="{filename}" href="data:text/csv;base64,{payload}" download>
-                <button class="custom-button">{title}</button>
-            </a>
-        </body>
-        </html>
-    """
-    html = html.format(payload=payload, title=title, filename=filename)
-    out = Output()
-    with out:
-        display(HTML(html))
-    return out
+def make_export_config_button(scenario, title="Export Configuration", filename="config.json"):
+    return make_payload_export(title, filename, scenario.config_json.encode(), "text/plain;base64")
 
 PAGE_WIDTH = 8 * inch
 PAGE_HEIGHT = 6 * inch
@@ -128,17 +151,9 @@ def make_export_report_button(all_output_maps, title="Generate Report", filename
         out.clear_output()
         with out:
             pdf_bytes = generate_pdf_bytes(all_output_maps.get_all())
-            b64 = base64.b64encode(pdf_bytes)
-            payload = b64.decode()
-            html = """
-                <a download="{filename}" href="data:application/pdf;base64,{payload}" download>
-                    <button class="custom-button">{title}</button>
-                </a>
-            """
-            html = html.format(payload=payload, title="Download Generated Report", filename=filename)
-            display(HTML(html))
+            display(make_payload_export("Download Report", filename, pdf_bytes, "text/pdf;base64"))
 
-    button = Button(description=title)
+    button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
     out = Output()
     return VBox([button, out])
@@ -158,17 +173,9 @@ def make_export_zip_button(all_output_maps, title="Download Graph .zip", filenam
                     zip_file.writestr(f"graph_{i}.pdf", pdf_bytes)
                     i += 1
             zip_buffer.seek(0)
-            b64 = base64.b64encode(zip_buffer.read())
-            payload = b64.decode()
-            html = """
-                <a download="{filename}" href="data:application/zip;base64,{payload}" download>
-                    <button class="custom-button">{title}</button>
-                </a>
-            """
-            html = html.format(payload=payload, title=title, filename=filename)
-            display(HTML(html))
+            display(make_payload_export("Download .zip", filename, zip_buffer.read(), "text/pdf;base64"))
 
-    button = Button(description=title)
+    button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
     out = Output()
     return VBox([button, out])
@@ -185,28 +192,21 @@ def make_export_model_package(config, output_space, title="Results Package", fil
             pkg.config = config
             pkg.output_space = output_space
             output_space_bytes = pickle.dumps(pkg)
-            payload = output_space_bytes.hex()
-            
-            # Create a download link
-            html = """
-                <a download="{filename}" href="data:text/plain;charset=utf-8,{payload}" download>
-                    <button class="custom-button">{title}</button>
-                </a>
-            """
-            html = html.format(payload=payload, title=title, filename=filename)
-            display(HTML(html))
+            display(make_payload_export("Download package", filename, output_space_bytes.hex(),
+                                        "text/plain;charset=utf-8"))
 
-    button = Button(description=title)
+    button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
     out = Output()
     return VBox([button, out])
 
 def make_export_button_row(config, output_space, table, inputs, all_output_maps = None):
+    hr = pw.HTML('<hr/>')
     b1 = make_export_config_button(inputs)
     b2 = make_export_cost_button(table)
     b3 = make_export_model_package(config, output_space)
     if all_output_maps is None:
-        return VBox([b1, b2, b3])
+        return VBox([b1, b2, hr, b3])
     b4 = make_export_report_button(all_output_maps)
     b5 = make_export_zip_button(all_output_maps)
-    return VBox([b1, b2, b3, b4, b5])
+    return VBox([b1, b2, hr, b3, hr, b4, hr, b5])
