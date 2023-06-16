@@ -102,7 +102,7 @@ steps:
     releaseName: $(helmReleaseName)
     valueFile: $(helmValuesFile)
     namespace: $(kubernetesNamespace)
-    arguments: '--version $(jupyterhubHelmVersion) --cleanup-on-fail --timeout 20m'
+    arguments: '--version $(jupyterhubHelmVersion) --cleanup-on-fail --timeout 40m'
 
 - task: Kubernetes@1
   displayName: Set up Ingress
