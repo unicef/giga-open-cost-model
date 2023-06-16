@@ -27,25 +27,23 @@ imagePullSecrets: []
 # the proxy pod.
 hub:
   revisionHistoryLimit:
-  config: 
-    Auth0OAuthenticator:
-      # Actual Config:
-      # Auth0 client ID and client secret need to be specified when
-      # manually starting the jupyterhub cluster 
-      client_id: test # update with client ID
-      client_secret: test # update with client secret
-      oauth_callback_url: https://giga.notebooks.actualhq.com/hub/oauth_callback
-      scope:
-        - openid
-        - profile
-        - email
-      auth0_subdomain: giga-notebooks.us
+  config:
     Authenticator:
       admin_users:
-        - max.nova@actualhq.com
-      auto_login: true
+        - karina
+        - ivan
+        - priya
+        - maria
+        - paul
+        - brian
+        - shilpa
+        - naroa
+        - chris
+        - guest
+    DummyAuthenticator:
+      password: passgbas
     JupyterHub:
-      authenticator_class: auth0
+      authenticator_class: dummy
   service:
     type: ClusterIP
     annotations: {}
@@ -102,7 +100,7 @@ hub:
   extraVolumes: []
   extraVolumeMounts: []
   image:
-    name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/k8s-hub-cds
+    name: uniappsoigiga.azurecr.io/k8s-hub-cds
     tag: "2.0.0"
     pullPolicy:
     pullSecrets: []
@@ -199,15 +197,14 @@ proxy:
     rollingUpdate:
   # service relates to the proxy-public service
   service:
-    type: LoadBalancer
+    type: NodePort
     labels: {}
     annotations: {}
     nodePorts:
       http:
-      https:
-    disableHttpPort: false
-    loadBalancerIP: 34.135.183.239
-    loadBalancerSourceRanges: []
+    # disableHttpPort: false
+    # loadBalancerIP: 34.135.183.239
+    # loadBalancerSourceRanges: []
   # chp relates to the proxy pod, which is responsible for routing traffic based
   # on dynamic configuration sent from JupyterHub to CHP's REST API.
   chp:
@@ -334,22 +331,22 @@ proxy:
     resources: {}
   labels: {}
   https:
-    enabled: true
-    type: letsencrypt
-    #type: letsencrypt, manual, offload, secret
-    letsencrypt:
-      contactEmail: ssl-certs@actualhq.com
-      # Specify custom server here (https://acme-staging-v02.api.letsencrypt.org/directory) to hit staging LE
-      acmeServer: https://acme-v02.api.letsencrypt.org/directory
-    manual:
-      key:
-      cert:
-    secret:
-      name:
-      key: tls.key
-      crt: tls.crt
-    hosts:
-      - giga.notebooks.actualhq.com
+    enabled: false
+#    type: letsencrypt
+#    #type: letsencrypt, manual, offload, secret
+#    letsencrypt:
+#      contactEmail: ssl-certs@actualhq.com
+#      # Specify custom server here (https://acme-staging-v02.api.letsencrypt.org/directory) to hit staging LE
+#      acmeServer: https://acme-v02.api.letsencrypt.org/directory
+#    manual:
+#      key:
+#      cert:
+#    secret:
+#      name:
+#      key: tls.key
+#      crt: tls.crt
+#    hosts:
+#      - giga.notebooks.actualhq.com
 
 # singleuser relates to the configuration of KubeSpawner which runs in the hub
 # pod, and its spawning of user pods such as jupyter-myusername.
@@ -420,7 +417,7 @@ singleuser:
       storageAccessModes: [ReadWriteOnce]
   image:
     # Actual config: single user image for notebook containers
-    name: us-central1-docker.pkg.dev/actual-artifacts/giga-models/notebooks
+    name: uniappsoigiga.azurecr.io/cost-model-dev
     tag: "0.3.12"
     pullPolicy: Always
     pullSecrets: []
