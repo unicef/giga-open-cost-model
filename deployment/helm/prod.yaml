@@ -397,10 +397,10 @@ singleuser:
         secretKeyRef:
           name: mapbox-secrets
           key: mapbox-token
-    - name: OBJSTORE_GCS_CREDS
-      value: ""
-    - name: GIGA_AUTH_TOKEN
-      value : ""
+#    - name: OBJSTORE_GCS_CREDS
+#      value: ""
+#    - name: GIGA_AUTH_TOKEN
+#      value : ""
   lifecycleHooks: {}
   initContainers: []
   extraContainers: []
