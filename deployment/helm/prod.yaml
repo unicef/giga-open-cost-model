@@ -391,16 +391,14 @@ singleuser:
   extraLabels:
     hub.jupyter.org/network-access-hub: "true"
   extraFiles: {}
-  extraEnv: |
-    - name: MAP_BOX_ACCESS_TOKEN
+  extraEnv:
+    MAP_BOX_ACCESS_TOKEN:
       valueFrom:
         secretKeyRef:
           name: mapbox-secrets
           key: mapbox-token
-    - name: OBJSTORE_GCS_CREDS
-      value: ""
-    - name: GIGA_AUTH_TOKEN
-      value : ""
+    OBJSTORE_GCS_CREDS: ""
+    GIGA_AUTH_TOKEN: ""
   lifecycleHooks: {}
   initContainers: []
   extraContainers: []
