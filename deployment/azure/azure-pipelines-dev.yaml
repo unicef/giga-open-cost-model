@@ -61,15 +61,15 @@ steps:
 #    tags: |
 #      $(hubImageTag)
 
-- task: Kubernetes@1
-  displayName: Create secret for Mapbox token
-  continueOnError: true
-  inputs:
-    connectionType: 'Kubernetes Service Connection'
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: create
-    arguments: "secret generic mapbox-secrets --from-literal=mapbox-token=$(mapBoxToken)"
-    namespace: $(kubernetesNamespace)
+#- task: Kubernetes@1
+#  displayName: Create secret for Mapbox token
+#  continueOnError: true
+#  inputs:
+#    connectionType: 'Kubernetes Service Connection'
+#    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+#    command: create
+#    arguments: "secret generic mapbox-secrets --from-literal=mapbox-token=$(mapBoxToken)"
+#    namespace: $(kubernetesNamespace)
 
 - task: HelmDeploy@0
   displayName: 'Delete Jupyterhub Helm'
