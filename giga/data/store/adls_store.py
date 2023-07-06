@@ -81,7 +81,7 @@ class ADLSDataStore(DataStore):
             yield (dirpath, [], [filename])
 
     @contextlib.contextmanager
-    def open(self, path: str, mode: str) -> IO:
+    def open(self, path: str, mode: str = 'r') -> IO:
         # read or write depending on operation
         if mode == 'w':
             # create file object that will be written to
