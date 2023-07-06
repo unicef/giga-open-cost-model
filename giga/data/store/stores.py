@@ -10,4 +10,4 @@ GCS_BUCKET_STORE: DataStore = None  # GCSDataStore()
 ADLS_CONTAINER_STORE: DataStore = ADLSDataStore()
 
 # Configure which storage to use for country data here.
-COUNTRY_DATA_STORE: DataStore = ADLS_CONTAINER_STORE()  # LOCAL_FS_STORE  #  GCS_BUCKET_STORE
+COUNTRY_DATA_STORE: DataStore = ADLS_CONTAINER_STORE  # LOCAL_FS_STORE  #  GCS_BUCKET_STORE
