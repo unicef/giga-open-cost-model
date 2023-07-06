@@ -28,39 +28,31 @@ variables:
 
 
 steps:
-#- script: |
-#    curl "$(SASLink)" -o workspace.zip
-#    unzip workspace
-#    rm workspace.zip
-#    echo "$(ls workspace | wc -l)"
-#  displayName: Pull workspace from Blob Storage
-#  workingDirectory: $(workspaceDirectory)
-
 - task: Docker@2
   displayName: Login to container Registry
   inputs:
     command: login
     containerRegistry: $(containerRegistryServiceConnection)
 
-#- task: Docker@2
-#  displayName: Build and push image to container registry
-#  inputs:
-#    command: buildAndPush
-#    repository: $(imageRepository)
-#    dockerfile: $(dockerfilePath)
-#    containerRegistry: $(containerRegistryServiceConnection)
-#    tags: |
-#      $(imageTag)
-#
-#- task: Docker@2
-#  displayName: Build and push hub image with extra dependencies to container registry
-#  inputs:
-#    command: buildAndPush
-#    repository: $(hubImageRepository)
-#    dockerfile: $(hubDockerfilePath)
-#    containerRegistry: $(containerRegistryServiceConnection)
-#    tags: |
-#      $(hubImageTag)
+- task: Docker@2
+  displayName: Build and push image to container registry
+  inputs:
+    command: buildAndPush
+    repository: $(imageRepository)
+    dockerfile: $(dockerfilePath)
+    containerRegistry: $(containerRegistryServiceConnection)
+    tags: |
+      $(imageTag)
+
+- task: Docker@2
+  displayName: Build and push hub image with extra dependencies to container registry
+  inputs:
+    command: buildAndPush
+    repository: $(hubImageRepository)
+    dockerfile: $(hubDockerfilePath)
+    containerRegistry: $(containerRegistryServiceConnection)
+    tags: |
+      $(hubImageTag)
 
 - task: Kubernetes@1
   displayName: Create secret for Mapbox token
