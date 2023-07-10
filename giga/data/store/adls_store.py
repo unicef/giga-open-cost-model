@@ -30,7 +30,7 @@ class ADLSDataStore(DataStore):
         :param container: The name of the container in ADLS to interact with.
         """
         self.blob_service_client = BlobServiceClient.from_connection_string(ADLS_CONNECTION_STRING, logger=logger)
-        self.container_client = self.blob_service_client.get_container_client(container=ADLS_CONTAINER)
+        self.container_client = self.blob_service_client.get_container_client(container=container)
         self.container = container
 
     def _adls_path(self, path: str) -> str:
