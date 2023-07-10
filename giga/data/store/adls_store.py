@@ -1,5 +1,6 @@
-import io
 import contextlib
+import io
+import logging
 from typing import Any, List, Generator, IO
 from azure.storage.blob import BlobServiceClient
 from .data_store import DataStore
@@ -9,9 +10,13 @@ from giga.utils.globals import COUNTRY_DEFAULT_RELATIVE_DIR
 
 COUNTRY_DATA_DIR = "workspace"
 
-# COnfigure the ADLS container and connection string for authentication
+# Configure the ADLS container and connection string for authentication
 ADLS_CONNECTION_STRING = os.environ.get("ADLS_CONNECTION_STRING", "")
 ADLS_CONTAINER = "cost-model"
+
+# We use this logger to disable logs from the blob storage module
+logger = logging.getLogger("adls_custom_logger")
+logger.disabled = True
 
 
 class ADLSDataStore(DataStore):
@@ -19,15 +24,14 @@ class ADLSDataStore(DataStore):
     An implementation of DataStore for Azure Data Lake Storage.
     """
 
-    def __init__(self):
+    def __init__(self, container=ADLS_CONTAINER):
         """
-        Create a new instance of ADLSDataStore.
-        :param bucket_name: The name of the bucket in GCS to interact with.
-        :param service_account_key_file: The path to the service account key file.
+        Create a new instance of ADLSDataStore
+        :param container: The name of the container in ADLS to interact with.
         """
-        self.blob_service_client = BlobServiceClient.from_connection_string(ADLS_CONNECTION_STRING)
+        self.blob_service_client = BlobServiceClient.from_connection_string(ADLS_CONNECTION_STRING, logger=logger)
         self.container_client = self.blob_service_client.get_container_client(container=ADLS_CONTAINER)
-        self.container = ADLS_CONTAINER
+        self.container = container
 
     def _adls_path(self, path: str) -> str:
         """
