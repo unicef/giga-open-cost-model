@@ -397,6 +397,11 @@ singleuser:
         secretKeyRef:
           name: mapbox-secrets
           key: mapbox-token
+    ADLS_CONNECTION_STRING:
+      valueFrom:
+        secretKeyRef:
+          name: azure-secrets
+          key: adls-connection-string
     OBJSTORE_GCS_CREDS: ""
     GIGA_AUTH_TOKEN: ""
   lifecycleHooks: {}
