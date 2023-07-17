@@ -8,7 +8,7 @@ variables:
   containerRegistryServiceConnection: uniappsoigiga
   imageRepository: cost-model-dev
   imageTag: 0.3.12
-  imageName: uniappsoigiga.azurecr.io/cost-model-dev:0.3.10
+  imageName: uniappsoigiga.azurecr.io/cost-model-dev:0.3.12
   hubImageRepository: k8s-hub-cds
   hubImageTag: 2.0.0
   hubImageName: uniappsoigiga.azurecr.io/k8s-hub-cds:2.0.0
@@ -28,61 +28,61 @@ variables:
 
 
 steps:
-#- task: Docker@2
-#  displayName: Login to container Registry
-#  inputs:
-#    command: login
-#    containerRegistry: $(containerRegistryServiceConnection)
+- task: Docker@2
+  displayName: Login to container Registry
+  inputs:
+    command: login
+    containerRegistry: $(containerRegistryServiceConnection)
 
-#- task: Docker@2
-#  displayName: Build and push image to container registry
-#  inputs:
-#    command: buildAndPush
-#    repository: $(imageRepository)
-#    dockerfile: $(dockerfilePath)
-#    containerRegistry: $(containerRegistryServiceConnection)
-#    tags: |
-#      $(imageTag)
-#
-#- task: Docker@2
-#  displayName: Build and push hub image with extra dependencies to container registry
-#  inputs:
-#    command: buildAndPush
-#    repository: $(hubImageRepository)
-#    dockerfile: $(hubDockerfilePath)
-#    containerRegistry: $(containerRegistryServiceConnection)
-#    tags: |
-#      $(hubImageTag)
-#
-#- task: Kubernetes@1
-#  displayName: Create secret for Mapbox token
-#  continueOnError: true
-#  inputs:
-#    connectionType: 'Kubernetes Service Connection'
-#    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-#    command: create
-#    arguments: "secret generic mapbox-secrets --from-literal=mapbox-token=$(mapBoxToken)"
-#    namespace: $(kubernetesNamespace)
-#
-#- task: Kubernetes@1
-#  displayName: Create secret for ADLS connection string
-#  continueOnError: true
-#  inputs:
-#    connectionType: 'Kubernetes Service Connection'
-#    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-#    command: create
-#    arguments: "secret generic azure-secrets --from-literal=adls-connection-string=$(adlsConnectionString)"
-#    namespace: $(kubernetesNamespace)
-#
-#- task: HelmDeploy@0
-#  displayName: 'Delete Jupyterhub Helm'
-#  continueOnError: true
-#  inputs:
-#    connectionType: Kubernetes Service Connection
-#    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-#    command: 'uninstall'
-#    arguments: 'jupyterhub'
-#    namespace: $(kubernetesNamespace)
+- task: Docker@2
+  displayName: Build and push image to container registry
+  inputs:
+    command: buildAndPush
+    repository: $(imageRepository)
+    dockerfile: $(dockerfilePath)
+    containerRegistry: $(containerRegistryServiceConnection)
+    tags: |
+      $(imageTag)
+
+- task: Docker@2
+  displayName: Build and push hub image with extra dependencies to container registry
+  inputs:
+    command: buildAndPush
+    repository: $(hubImageRepository)
+    dockerfile: $(hubDockerfilePath)
+    containerRegistry: $(containerRegistryServiceConnection)
+    tags: |
+      $(hubImageTag)
+
+- task: Kubernetes@1
+  displayName: Create secret for Mapbox token
+  continueOnError: true
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+    command: create
+    arguments: "secret generic mapbox-secrets --from-literal=mapbox-token=$(mapBoxToken)"
+    namespace: $(kubernetesNamespace)
+
+- task: Kubernetes@1
+  displayName: Create secret for ADLS connection string
+  continueOnError: true
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+    command: create
+    arguments: "secret generic azure-secrets --from-literal=adls-connection-string=$(adlsConnectionString)"
+    namespace: $(kubernetesNamespace)
+
+- task: HelmDeploy@0
+  displayName: 'Delete Jupyterhub Helm'
+  continueOnError: true
+  inputs:
+    connectionType: Kubernetes Service Connection
+    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+    command: 'uninstall'
+    arguments: 'jupyterhub'
+    namespace: $(kubernetesNamespace)
 
 - task: HelmDeploy@0
   displayName: 'Add JupyterHub Helm Repo'
