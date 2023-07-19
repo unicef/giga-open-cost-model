@@ -14,6 +14,8 @@ WORKDIR /app
 
 RUN conda install -c conda-forge gxx jupyterlab ipywidgets gdal
 
+RUN apt-get update && apt-get install -y texlive-latex-extra
+
 
 # Create a duplicate in /app
 COPY . /app

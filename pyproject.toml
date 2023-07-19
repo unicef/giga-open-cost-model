@@ -47,6 +47,7 @@ azure-storage-blob = "^12.16.0"
 reportlab = "^4.0.4"
 selenium = "^4.10.0"
 kaleido = "0.2.1"
+pylatex = "^1.4.1"
 
 [tool.poetry.scripts]
 total_cost_scenario = "giga.app.run_total_cost_scenario:main"
