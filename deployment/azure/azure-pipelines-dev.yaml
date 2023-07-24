@@ -75,16 +75,6 @@ steps:
     namespace: $(kubernetesNamespace)
 
 - task: HelmDeploy@0
-  displayName: 'Delete Jupyterhub Helm'
-  continueOnError: true
-  inputs:
-    connectionType: Kubernetes Service Connection
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: 'uninstall'
-    arguments: 'jupyterhub'
-    namespace: $(kubernetesNamespace)
-
-- task: HelmDeploy@0
   displayName: 'Add JupyterHub Helm Repo'
   enabled: true
   inputs:
