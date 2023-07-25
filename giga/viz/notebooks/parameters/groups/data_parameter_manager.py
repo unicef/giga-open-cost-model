@@ -65,3 +65,6 @@ class DataParameterManager:
         country_id = country_name_to_key(self._hash["country_name"].value)
         config = ConfigClient.from_registered_country(country_id, self.workspace)
         return config.local_workspace_data_space_config
+    
+    def get_country_id(self):
+        return country_name_to_key(self._hash["country_name"].value)

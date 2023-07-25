@@ -138,10 +138,18 @@ class CostEstimationParameterInput:
             layout=Layout(display="flex", justify_content="center")
         )
         self.workspace = local_data_workspace
-        self.defaults = {
-            k: ConfigClient.from_registered_country(k, local_data_workspace).defaults
+        #self.defaults = {
+        #    k: ConfigClient.from_registered_country(k, local_data_workspace).defaults
+        #    for k, v in get_country_defaults(workspace=local_data_workspace).items()
+        #}
+        self.all_country_configs = {
+            k: ConfigClient.from_country_defaults(v)
             for k, v in get_country_defaults(workspace=local_data_workspace).items()
         }
+        self.defaults = {
+            k: v.defaults for k,v in self.all_country_configs.items()
+        }
+
         self.data_parameter_manager: DataParameterManager = (
             DataParameterManager(workspace=local_data_workspace)
             if data_parameter_manager is None
@@ -382,9 +390,12 @@ class CostEstimationParameterInput:
     def data_parameters_input(self, sheet_name="data"):
         return self.data_parameter_manager.input_parameters()
 
-    def data_parameters(self, sheet_name="data"):
+    def data_parameters_old(self, sheet_name="data"):
         return self.data_parameter_manager.get_model_parameters()
-
+    
+    def data_parameters(self, sheet_name="data"):
+        return self.all_country_configs[self.data_parameter_manager.get_country_id()].local_workspace_data_space_config
+    
     def scenario_parameter_input(self, sheet_name="scenario"):
         return self.scenario_parameter_manager.input_parameters(self.show_defaults)
 

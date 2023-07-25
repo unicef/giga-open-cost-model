@@ -177,6 +177,9 @@ cython_debug/
 # Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
 poetry.toml
 
+# requirements for pip install
+requirements.txt
+
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 notebooks/workspace
@@ -186,3 +189,6 @@ notebooks/parameter_workspace/*
 # Do not ignore the TM_WORLD_BORDERS-0.3 directory
 !notebooks/parameter_workspace/TM_WORLD_BORDERS-0.3/
 .gcs_creds.json
+
+#ignore test notebook
+notebooks/cost-scenario-test.ipynb

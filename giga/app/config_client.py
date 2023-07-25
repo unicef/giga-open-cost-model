@@ -1,7 +1,7 @@
 import os
 import fnmatch
 import json
-from typing import List
+from typing import List, Dict
 
 from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 from giga.schemas.conf.data import DataSpaceConf
@@ -26,6 +26,11 @@ class ConfigClient:
         ), f"Country {country_name} not registered"
         all_defaults = get_country_defaults(workspace=workspace)
         defaults = CountryDefaults.from_defaults(all_defaults[country_name])
+        return ConfigClient(defaults)
+    
+    @staticmethod
+    def from_country_defaults(country_defaults: Dict):
+        defaults = CountryDefaults.from_defaults(country_defaults)
         return ConfigClient(defaults)
 
     @property
