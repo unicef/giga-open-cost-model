@@ -32,7 +32,7 @@ class SelectionMapLayersConfig(MapLayersConfig):
     table_data_columns: List[str] = [
         "giga_id",
         "name",
-        "admin_1_name",
+        "admin1",
         "has_electricity",
     ]
     table_column_widths: List[float] = [2.5, 1.5, 1, 1]

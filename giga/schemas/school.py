@@ -23,26 +23,29 @@ class GigaSchool(BaseModel):
 
     school_id: str
     name: str
-    country: str
-    country_id: int
+    #country: str
+    #country_id: int
     lat: float
     lon: float
-    admin_1_name: str
-    admin_2_name: str
-    admin_3_name: str
-    admin_4_name: str
+    admin1: str
+    admin2: str
+    admin3: str
+    admin4: str
     education_level: str
     giga_id: str = Field(..., alias="giga_id_school")
-    school_zone: SchoolZone = Field(..., alias="environment")
+    school_zone: SchoolZone = Field(..., alias="school_region")
     connected: bool = False
+    connectivity: str
+    type_connectivity: str
+    electricity: str
     connectivity_status: str = Field(
-        "Unknown", alias="connectivity_speed_status"
+        "Unknown"
     )  # 'Good', 'Moderate', 'No connection', 'Unknown'
     has_electricity: bool = False
     bandwidth_demand: float = 20.0  # Mbps
     has_fiber: bool = False  # True if the school is connected to a fiber network
     num_students: int = None
-    cell_coverage_type: str = None
+    cell_coverage_type: str = Field(..., alias="coverage_type")
     power_required_watts: float = DEFAULT_POWER_REQUIRED_PER_SCHOOL
 
     class Config:
@@ -55,6 +58,30 @@ class GigaSchool(BaseModel):
             coordinate=[self.lat, self.lon],
             properties={"has_electricity": self.has_electricity},
         )
+    
+    def process_fields(self):
+        # connected and connectivity_status
+        if self.connectivity=="Yes" or self.connectivity=="yes" or self.connectivity=="YES":
+            self.connected = True
+            self.connectivity_status = "Good" #we do not care abotu good or moderate for now - would need sql query for that
+        else:
+            self.connected = False
+            if self.connectivity=="No" or self.connectivity=="no" or self.connectivity=="NO":
+                self.connectivity_status = "No connection"
+            else:
+                self.connectivity_status = "Unknown"
+
+        #electricity
+        if self.electricity=="Yes" or self.electricity=="yes" or self.electricity=="YES":
+            self.has_electricity = True
+        else:
+            self.has_electricity = False
+
+        #fiber
+        if self.type_connectivity=="Fiber" or self.type_connectivity=="fiber" or self.type_connectivity=="FIBER":
+            self.has_fiber = True
+        else:
+            self.has_fiber = False
 
 
 class GigaSchoolTable(BaseModel):
@@ -63,10 +90,18 @@ class GigaSchoolTable(BaseModel):
     schools: List[GigaSchool] = Field(..., min_items=1)
 
     @staticmethod
-    def from_csv(file_name: str):
+    def from_csv_old(file_name: str):
         with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
             frame = pd.read_csv(file, keep_default_na=False)
         return GigaSchoolTable(schools=frame.to_dict("records"))
+    
+    @staticmethod
+    def from_csv(file_name: str):
+        with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
+            frame = pd.read_csv(file, keep_default_na=False)
+        gst = GigaSchoolTable(schools=frame.to_dict("records"))
+        gst.process_fields_all()
+        return gst
 
     @property
     def school_ids(self):
@@ -96,6 +131,14 @@ class GigaSchoolTable(BaseModel):
     def update_bw_demand_all(self, demand):
         for s in self.schools:
             s.bandwidth_demand = demand
+
+    def update_power_required_all(self, power):
+        for s in self.schools:
+            s.power_required_watts = power
+
+    def process_fields_all(self):
+        for s in self.schools:
+            s.process_fields()
 
     def to_coordinate_vector(self):
         """Transforms the school table into a numpy vector of coordinates"""

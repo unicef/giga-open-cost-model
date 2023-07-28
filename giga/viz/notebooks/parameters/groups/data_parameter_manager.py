@@ -5,7 +5,7 @@ from pydantic import parse_obj_as
 from giga.app.config_client import ConfigClient
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
 from giga.app.config import get_registered_country_names
-
+from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
 
 BASELINE_DATA_SPACE_PARAMETERS = [
     {
@@ -22,10 +22,18 @@ BASELINE_DATA_SPACE_PARAMETERS = [
 
 
 def country_name_to_key(country_name):
-    return country_name.lower().replace(" ", "_")
+    return COUNTRY_CODE_DICT[country_name]
 
 
 def country_key_to_name(country_key):
+    return CODE_COUNTRY_DICT[country_key]
+
+
+def country_name_to_key_old(country_name):
+    return country_name.lower().replace(" ", "_")
+
+
+def country_key_to_name_old(country_key):
     return country_key.replace("_", " ").title()
 
 
@@ -65,3 +73,6 @@ class DataParameterManager:
         country_id = country_name_to_key(self._hash["country_name"].value)
         config = ConfigClient.from_registered_country(country_id, self.workspace)
         return config.local_workspace_data_space_config
+    
+    def get_country_id(self):
+        return country_name_to_key(self._hash["country_name"].value)
