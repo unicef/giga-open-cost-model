@@ -28,6 +28,18 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "show_default": True,
         },
     },
+    {
+        "parameter_name": "required_power_per_school",
+        "parameter_input_name": "Required power per school (Watts)",
+        "parameter_interactive": {
+            "parameter_type": "float_slider",
+            "value": 11000.0,
+            "min": 0,
+            "max": 100000,
+            "step": 1000.0,
+            "show_default": True,
+        },
+    },
 ]
 
 
@@ -50,6 +62,9 @@ class ElectricityParameterManager:
         self.sheet.update_parameter(
             "solar_cost_per_watt", config["capex"]["solar_cost_per_watt"]
         )
+        self.sheet.update_parameter(
+            "required_power_per_school", config["constraints"]["required_power_per_school"]
+        )
 
     def input_parameters(self, show_defaults = True):
         return self.sheet.input_parameters(show_defaults)
@@ -66,9 +81,11 @@ class ElectricityParameterManager:
     def get_model_parameters(self):
         cost_per_kwh = float(self.get_parameter_from_sheet("per_kwh_cost"))
         solar_cost_per_watt = float(self.get_parameter_from_sheet("solar_cost_per_watt"))
+        required_power_per_school = float(self.get_parameter_from_sheet("solar_cost_per_watt"))
         return ElectricityCostConf(
             capex={
                 "solar_cost_per_watt": solar_cost_per_watt
             },
             opex={"cost_per_kwh": cost_per_kwh},
+            constraints={"required_power_per_school": required_power_per_school},
         )

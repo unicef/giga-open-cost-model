@@ -14,12 +14,15 @@ class ElectricityOpexConf(BaseModel):
 
     cost_per_kwh: float  # USD
 
+class ElectricityConstraints(BaseModel):
+
+    required_power_per_school: float #Watts
 
 class ElectricityCostConf(BaseModel):
 
     capex: ElectricityCapexConf
     opex: ElectricityOpexConf
-
+    constraints: ElectricityConstraints
 
 class BandwidthCost(BaseModel):
 

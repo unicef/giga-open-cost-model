@@ -7,6 +7,9 @@ from .data_store import DataStore
 import os
 
 from giga.utils.globals import COUNTRY_DEFAULT_RELATIVE_DIR
+from giga.utils.globals import SCHOOLS_DEFAULT_PATH
+from giga.utils.globals import COSTS_DEFAULT_PATH
+from giga.utils.globals import COUNTRY_CODE_DEFAULT_PATH
 
 COUNTRY_DATA_DIR = "workspace"
 
@@ -45,6 +48,8 @@ class ADLSDataStore(DataStore):
         elif COUNTRY_DATA_DIR in path:
             start_idx = path.index(COUNTRY_DATA_DIR) + len(COUNTRY_DATA_DIR)
             path = f"/data{path[start_idx:]}"
+        elif SCHOOLS_DEFAULT_PATH in path or COUNTRY_CODE_DEFAULT_PATH in path or COSTS_DEFAULT_PATH in path:
+            path = path
         else:
             raise ValueError(f"Path {path} is not configured to be stored in ADLS.")
         return path

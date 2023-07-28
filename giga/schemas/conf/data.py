@@ -16,8 +16,8 @@ from giga.schemas.distance_cache import (
 )
 from giga.utils.logging import LOGGER
 
-REGISTERED_COUNTRIES = tuple(get_registered_countries(COUNTRY_DEFAULT_WORKSPACE))
-
+#REGISTERED_COUNTRIES = tuple(get_registered_countries(COUNTRY_DEFAULT_WORKSPACE))
+REGISTERED_COUNTRIES = tuple(get_registered_countries())
 
 class CoordinateMapConf(BaseModel):
     """Configuration for loading a local coordinate data map"""
@@ -48,9 +48,9 @@ class SchoolCountryConf(BaseModel):
     manual_entries: List[ManualSchoolDataEntry] = []
 
     # allow any capitalization on country IDs
-    @validator("country_id", pre=True)
-    def to_lowercase(cls, value):
-        return value.lower()
+    #@validator("country_id", pre=True)
+    #def to_lowercase(cls, value):
+    #    return value.lower()
 
     def load(self):
         return self.data.load()  # loads data from the configured pipeline

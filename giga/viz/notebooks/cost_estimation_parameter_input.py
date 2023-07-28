@@ -26,6 +26,7 @@ from giga.schemas.conf.models import (
 from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config_client import ConfigClient
 from giga.app.config import get_country_defaults
+from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
 
 from giga.viz.notebooks.parameters.groups.data_parameter_manager import (
     DataParameterManager,
@@ -102,9 +103,11 @@ SHOW_MAP = False  # temporary flag to show/hide map
 SCHOOL_SELECTION = False
 
 
-def country_name_to_key(country_name):
+def country_name_to_key_old(country_name):
     return country_name.lower().replace(" ", "_")
 
+def country_name_to_key(country_name):
+    return COUNTRY_CODE_DICT[country_name]
 
 class CostEstimationParameterInput:
     """
@@ -222,7 +225,7 @@ class CostEstimationParameterInput:
             if country not in self._hashed_data_layers:
                 self._hashed_data_layers[country] = self._make_map_layer(country)
             map_layers, _ = self._hashed_data_layers[country]
-            if country == "brazil":
+            if country == "BRA":
                 # handle brazil as a one off for now
                 config_map = DataMapConfig(zoom=3)
                 data_map = StaticDataMap(config_map)
@@ -244,7 +247,7 @@ class CostEstimationParameterInput:
             country = country_name_to_key(change["new"])
             if country not in self._hashed_data_layers:
                 self._hashed_data_layers[country] = self._make_map_layer(country)
-            if country == "brazil":
+            if country == "BRA":
                 config_map = DataMapConfig(zoom=3, no_cell=True)
             else:
                 config_map = DataMapConfig()
@@ -595,7 +598,7 @@ class CostEstimationParameterInput:
         )
 
     def _make_map_layer(self, country):
-        country_key = country_name_to_key(country)
+        country_key = country #country_name_to_key(country)
         config_client = ConfigClient(self.defaults[country_key])
         data_space = ModelDataSpace(config_client.local_workspace_data_space_config)
         config_layers = MapLayersConfig()
@@ -611,7 +614,7 @@ class CostEstimationParameterInput:
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
         map_layers, _ = self._hashed_data_layers[country]
-        if country == "brazil":
+        if country == "BRA":
             # handle brazil as a one off for now
             config_map = DataMapConfig(zoom=3)
             data_map = StaticDataMap(config_map)
@@ -632,7 +635,7 @@ class CostEstimationParameterInput:
         country = self.data_parameters().school_data_conf.country_id
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
-        if country == "brazil":
+        if country == "BRA":
             config_map = DataMapConfig(zoom=3, no_cell=True)
         else:
             config_map = DataMapConfig()
