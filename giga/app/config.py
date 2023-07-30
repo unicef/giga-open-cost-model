@@ -18,17 +18,20 @@ skip_in_deployment_str = os.getenv("SKIP_COUNTRIES_IN_DEPLOYMENT", "sample")
 SKIP_IN_DEPLOYMENT = skip_in_deployment_str.split(",") if skip_in_deployment_str else []
 
 #maybe move to a different file?
+empty_single_cache = {"lookup": {}, "cache_type": "one-to-one"}
+empty_multiple_cache = {"lookup": {},"n_neighbors":0,"cache_type":"one-to-many"}
+
 empty_default_dict = {
     "data": {
         "country": "",
         "country_code": 0,
         "workspace": "workspace",
-        "school_file": "schools.csv",
-        "fiber_file": "",
-        "cellular_file": "",
-        "fiber_distance_cache_file":"",
-        "cellular_distance_cache_file": "",
-        "p2p_distance_cache_file": "",
+        "school_file": SCHOOLS_FILE,
+        "fiber_file":FIBER_FILE,
+        "cellular_file": CELL_FILE,
+        "fiber_distance_cache_file":FIBER_CACHE_FILE,
+        "cellular_distance_cache_file": CELL_CACHE_FILE,
+        "p2p_distance_cache_file": P2P_CACHE_FILE,
         "country_center": {
             "lat": 0,
             "lon": 0
@@ -164,177 +167,223 @@ def get_country_defaults_old(
         defaults[country] = default
     return defaults
 
+def create_empty_tech_files(country_dir):
+    data_store.write_file(os.path.join(country_dir,CELL_FILE),"")
+    data_store.write_file(os.path.join(country_dir,FIBER_FILE),"")
+
+def create_empty_caches(country_dir):
+     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE), "w") as f:
+        json.dump(empty_multiple_cache, f)
+
+     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE), "w") as f:
+        json.dump(empty_single_cache, f)
+
+     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE), "w") as f:
+        json.dump(empty_single_cache, f)
+
+     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE), "w") as f:
+        json.dump(empty_single_cache, f)
+
+
+def copy_caches_to_backup(country_dir):
+    #schools cache
+    with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
+        js = json.load(f)
+
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE), "w") as f:
+        json.dump(js, f)
+
+    #fiber cache
+    with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
+        js = json.load(f)
+
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE), "w") as f:
+        json.dump(js, f)
+
+    #cell cache
+    with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
+        js = json.load(f)
+
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE), "w") as f:
+        json.dump(js, f)
+
+    #p2p cache
+    with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
+        js = json.load(f)
+
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE), "w") as f:
+        json.dump(js, f)
+    
+
+
+def get_country_default(country,workspace, schools_dir, costs_dir):
+    default = copy.deepcopy(empty_default_dict)
+    
+    default['data']['country'] = country
+    default['data']['workspace'] = workspace
+    #school master file
+    master_file = os.path.join(schools_dir, country + MASTER_DEFAULT_NAME)
+    with schools_data_store.open(master_file) as f:
+        df = pd.read_csv(f)
+    df.dropna(subset=['giga_id_school'], inplace=True) #AIA has some nan giga_ids...
+
+    country_dir = os.path.join(workspace,country)
+    #if schools file does not exist copy it and create empty files
+    if not data_store.file_exists(os.path.join(country_dir,SCHOOLS_FILE)):
+        data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df.to_csv(index=False))
+        create_empty_tech_files(country_dir)
+        create_empty_caches(country_dir)
+    else:
+        with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
+            df2 = pd.read_csv(f)
+        if not df.equals(df2):
+            #if the schools are the same then the caches are ok otherwise ko
+            if not df[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
+                # we save the old schools file in backup, might be useful to recalculate caches
+                data_store.write_file(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_FILE),df2.to_csv(index=False))
+                copy_caches_to_backup(country_dir)
+                create_empty_caches(country_dir)
+            #in any case we save the new schools file
+            data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df.to_csv(index=False))
+
+    #get center coordinates
+    lats = list(df['lat'])
+    lons = list(df['lon'])
+    c_lat = sum(lats)/len(lats)
+    c_lon = sum(lons)/len(lons)
+    default["data"]["country_center"]["lat"] = c_lat
+    default["data"]["country_center"]["lon"] = c_lon
+
+    #add costs
+    ### cell
+    if schools_data_store.file_exists(os.path.join(costs_dir, CELL_CAPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, CELL_CAPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['cellular']["capex"]["fixed_costs"] = desired_row["Setup cost"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, CELL_OPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, CELL_OPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['cellular']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
+            default["model_defaults"]['cellular']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, CELL_CSTRS_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, CELL_CSTRS_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['cellular']["constraints"]["maximum_range"] = desired_row["Max length"]
+            default["model_defaults"]['cellular']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
+
+    ### p2p
+    if schools_data_store.file_exists(os.path.join(costs_dir, P2P_CAPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, P2P_CAPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['p2p']["capex"]["fixed_costs"] = desired_row["Setup cost - school"]
+            default["model_defaults"]['p2p']["capex"]["tower_fixed_costs"] = desired_row["Setup cost - tower"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, P2P_OPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, P2P_OPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['p2p']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
+            default["model_defaults"]['p2p']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, P2P_CSTRS_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, P2P_CSTRS_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['p2p']["constraints"]["maximum_range"] = desired_row["Max length"]
+            default["model_defaults"]['p2p']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
+
+    ### fiber
+    if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_CAPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, FIBER_CAPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['fiber']["capex"]["fixed_costs"] = desired_row["Setup cost"]
+            default["model_defaults"]['fiber']["capex"]["cost_per_km"] = desired_row["Cost per km"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_OPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, FIBER_OPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            #defaults['fiber']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"] --> Not in original code - we should add it
+            default["model_defaults"]['fiber']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
+            default["model_defaults"]['fiber']["opex"]["cost_per_km"] = desired_row["Maintenance per km"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_CSTRS_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, FIBER_CSTRS_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['fiber']["constraints"]["maximum_connection_length"] = desired_row["Max length"]
+            default["model_defaults"]['fiber']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
+
+    ### satellite
+    if schools_data_store.file_exists(os.path.join(costs_dir, SAT_CAPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, SAT_CAPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['satellite']["capex"]["fixed_costs"] = desired_row["Setup cost"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, SAT_OPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, SAT_OPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['satellite']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
+            default["model_defaults"]['satellite']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, SAT_CSTRS_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, SAT_CSTRS_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['satellite']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
+                
+    ### electricity
+    if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['electricity']["capex"]["solar_cost_per_watt"] = desired_row["Solar cost (USD/Watt)"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['electricity']["opex"]["cost_per_kwh"] = desired_row["Cost per kWh"]
+
+    if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)): 
+        with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)) as f:
+            dfc = pd.read_csv(f)
+        if country in dfc['Country'].values:
+            desired_row = dfc[dfc['Country'] == country].iloc[0]
+            default["model_defaults"]['electricity']["constraints"]["required_power_per_school"] = desired_row["Power required per school (Watts)"]
+
+    return default
+
+
 def get_country_defaults(workspace="workspace", schools_dir=SCHOOLS_DEFAULT_PATH, costs_dir= COSTS_DEFAULT_PATH):
     defaults = {}
     for root, _, filenames in schools_data_store.walk(schools_dir):
         for filename in fnmatch.filter(filenames, "*.csv"):
-            default = copy.deepcopy(empty_default_dict)
             country = filename.split("_")[0]
-            default['data']['country'] = country
-            default['data']['workspace'] = workspace
-            #school master file
-            master_file = os.path.join(schools_dir, country + MASTER_DEFAULT_NAME)
-            with schools_data_store.open(master_file) as f:
-                df = pd.read_csv(f)
-            df.dropna(subset=['giga_id_school'], inplace=True)
-            #if not data_store.dir_exists(os.path.join(workspace,country)):
-            #    data_store.mkdir(os.path.join(workspace,country))
-            country_dir = os.path.join(workspace,country)
-            status = 'OK'
-            if not data_store.file_exists(os.path.join(country_dir,SCHOOLS_FILE)):
-                data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df.to_csv(index=False))
-            else:
-                with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
-                    df2 = pd.read_csv(f)
-                if not df.equals(df2):
-                    #if the schools are the same then the caches are ok otherwise ko
-                    if not df[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
-                        status = 'KO'
-                    data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE_OLD),df2.to_csv(index=False))
-                    data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df.to_csv(index=False))
-
-
-            #center coordinates
-            lats = list(df['lat'])
-            lons = list(df['lon'])
-            c_lat = sum(lats)/len(lats)
-            c_lon = sum(lons)/len(lons)
-            default["data"]["country_center"]["lat"] = c_lat
-            default["data"]["country_center"]["lon"] = c_lon
-
-            # add extra files if they exist
-            if status=='OK':
-                if data_store.file_exists(os.path.join(country_dir,CELL_FILE)):
-                    default["data"]["cellular_file"] = CELL_FILE
-                if data_store.file_exists(os.path.join(country_dir,CELL_CACHE_FILE)):
-                    default["data"]["cellular_distance_cache_file"] = CELL_CACHE_FILE
-                if data_store.file_exists(os.path.join(country_dir,FIBER_FILE)):
-                    default["data"]["fiber_file"] = FIBER_FILE
-                if data_store.file_exists(os.path.join(country_dir,FIBER_CACHE_FILE)):
-                    default["data"]["fiber_distance_cache_file"] = FIBER_CACHE_FILE
-                if data_store.file_exists(os.path.join(country_dir,P2P_CACHE_FILE)):
-                    default["data"]["p2p_distance_cache_file"] = P2P_CACHE_FILE    
-            # add costs
-            ### cell
-            if schools_data_store.file_exists(os.path.join(costs_dir, CELL_CAPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, CELL_CAPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['cellular']["capex"]["fixed_costs"] = desired_row["Setup cost"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, CELL_OPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, CELL_OPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['cellular']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
-                    default["model_defaults"]['cellular']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, CELL_CSTRS_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, CELL_CSTRS_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['cellular']["constraints"]["maximum_range"] = desired_row["Max length"]
-                    default["model_defaults"]['cellular']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
-
-            ### p2p
-            if schools_data_store.file_exists(os.path.join(costs_dir, P2P_CAPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, P2P_CAPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['p2p']["capex"]["fixed_costs"] = desired_row["Setup cost - school"]
-                    default["model_defaults"]['p2p']["capex"]["tower_fixed_costs"] = desired_row["Setup cost - tower"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, P2P_OPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, P2P_OPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['p2p']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
-                    default["model_defaults"]['p2p']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, P2P_CSTRS_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, P2P_CSTRS_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['p2p']["constraints"]["maximum_range"] = desired_row["Max length"]
-                    default["model_defaults"]['p2p']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
-
-            ### fiber
-            if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_CAPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, FIBER_CAPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['fiber']["capex"]["fixed_costs"] = desired_row["Setup cost"]
-                    default["model_defaults"]['fiber']["capex"]["cost_per_km"] = desired_row["Cost per km"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_OPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, FIBER_OPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    #defaults['fiber']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"] --> Not in original code - we should add it
-                    default["model_defaults"]['fiber']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
-                    default["model_defaults"]['fiber']["opex"]["cost_per_km"] = desired_row["Maintenance per km"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_CSTRS_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, FIBER_CSTRS_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['fiber']["constraints"]["maximum_connection_length"] = desired_row["Max length"]
-                    default["model_defaults"]['fiber']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
-
-            ### satellite
-            if schools_data_store.file_exists(os.path.join(costs_dir, SAT_CAPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, SAT_CAPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['satellite']["capex"]["fixed_costs"] = desired_row["Setup cost"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, SAT_OPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, SAT_OPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['satellite']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
-                    default["model_defaults"]['satellite']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, SAT_CSTRS_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, SAT_CSTRS_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['satellite']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
-                
-            ### electricity
-            if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['electricity']["capex"]["solar_cost_per_watt"] = desired_row["Solar cost (USD/Watt)"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['electricity']["opex"]["cost_per_kwh"] = desired_row["Cost per kWh"]
-
-            if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)): 
-                with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)) as f:
-                    dfc = pd.read_csv(f)
-                if country in dfc['Country'].values:
-                    desired_row = dfc[dfc['Country'] == country].iloc[0]
-                    default["model_defaults"]['electricity']["constraints"]["required_power_per_school"] = desired_row["Power required per school (Watts)"]
-
+            default = get_country_default(country,workspace,schools_dir,costs_dir)
             defaults[country] = default
 
     return defaults

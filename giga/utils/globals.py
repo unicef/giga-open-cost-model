@@ -22,15 +22,17 @@ SCHOOLS_DEFAULT_PATH = "gold/school_data/"
 #master files name
 MASTER_DEFAULT_NAME = "_school_geolocation_coverage_master.csv" 
 
+#backup dir
+BACKUP_DIR = "backup"
+
 #file names of extra file
 SCHOOLS_FILE = "schools.csv"
-SCHOOLS_FILE_OLD = "schools_old.csv"
 CELL_FILE = "cellular.csv"
 CELL_CACHE_FILE = "cellular_cache.json"
 FIBER_FILE = "fiber.csv"
 FIBER_CACHE_FILE = "fiber_cache.json"
 P2P_CACHE_FILE = "p2p_cache.json"
-
+SCHOOLS_CACHE_FILE = "school_cache.json"
 
 #file names of cost files
 CELL_CAPEX_FILE = "cell_capex.csv"
