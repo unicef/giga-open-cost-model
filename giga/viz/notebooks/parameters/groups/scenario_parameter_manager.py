@@ -10,7 +10,7 @@ from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
 DEFAULT_BUDGET_MILLIONS = 1
 
-SCENARIO_BASE_PARAMETERS = [
+SCENARIO_BASE_PARAMETERS_OLD = [
     {
         "parameter_name": "scenario_type",
         "parameter_input_name": "Cost Scenario",
@@ -29,7 +29,105 @@ SCENARIO_BASE_PARAMETERS = [
     },
 ]
 
+SCENARIO_BASE_PARAMETERS = [
+    {
+        "parameter_name": "scenario_type",
+        "parameter_input_name": "Cost Scenario",
+        "parameter_interactive": {
+            "parameter_type": "categorical_dropdown",
+            "value": "Lowest Cost",
+            "options": [
+                "Lowest Cost",
+                "Priorities",
+            ],
+            "description": "Cost Scenario:",
+        },
+    },
+]
+
+SCENARIO_SHEET_PARAMETERS_OLD = [
+    {
+        "parameter_name": "years_opex",
+        "parameter_input_name": "OpEx Years",
+        "parameter_interactive": {
+            "parameter_type": "int_slider",
+            "value": 5,
+            "min": 0,
+            "max": 10,
+            "step": 1,
+            "show_default": True,
+        },
+    },
+    {
+        "parameter_name": "bandwidth_demand",
+        "parameter_input_name": "Bandwidth Demand (Mbps)",
+        "parameter_interactive": {
+            "parameter_type": "int_slider",
+            "value": 20,
+            "min": 0,
+            "max": 500,
+            "step": 5,
+            "show_default": True,
+        },
+    },
+    {
+        "parameter_name": "use_budget_constraint",
+        "parameter_input_name": "Use Budget Constraint",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": False,
+            "description": "",
+        },
+    },
+    {
+        "parameter_name": "budget_constraint",
+        "parameter_input_name": "Project Budget (Millions USD)",
+        "parameter_interactive": {
+            "parameter_type": "float_slider",
+            "value": DEFAULT_BUDGET_MILLIONS,
+            "min": 0,
+            "max": 500,
+            "step": 0.01,
+        },
+    },
+]
+
 SCENARIO_SHEET_PARAMETERS = [
+    {
+        "parameter_name": "fiber",
+        "parameter_input_name": "Allow fiber",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },
+    {
+        "parameter_name": "cell",
+        "parameter_input_name": "Allow cellular",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },{
+        "parameter_name": "p2p",
+        "parameter_input_name": "Allow P2P",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },
+    {
+        "parameter_name": "sat",
+        "parameter_input_name": "Allow satellite",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },
     {
         "parameter_name": "years_opex",
         "parameter_input_name": "OpEx Years",
