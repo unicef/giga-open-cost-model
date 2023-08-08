@@ -172,6 +172,10 @@ class BoolCheckboxParameter(BaseParameter):
             self.checkbox = Checkbox(value=self.value, description=self.description)
         return self.checkbox
 
+    def update(self, value: bool):
+        self.value = value
+        self.parameter.value = value
+
     def freeze(self):
         self.parameter.disabled = True
 

@@ -76,6 +76,16 @@ class ModelDataSpace:
         electricity availability, connectivity quality, etc.
         """
         return self.schools.schools
+    
+    @property
+    def all_school_entities(self):
+        """
+        Accessor for school entities - includes coordinates, school ids, and other metadata such as
+        electricity availability, connectivity quality, etc.
+        """
+        if self._all_schools is None:
+            self._all_schools = self.config.school_data_conf.load()
+        return self.all_schools.schools
 
     @property
     def fiber_map(self):

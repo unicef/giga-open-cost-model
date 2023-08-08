@@ -243,6 +243,29 @@ class OutputSpace(BaseModel):
                 )
                 min_costs[school_id] = valid_costs[min_idx]
         return min_costs
+    
+    def priority_cost_lookup(self):
+        """
+        Returns a dictionary of school_id: priority cost for connectivity
+        for schools that have at least one feasible connection
+        """
+        min_costs = {}
+        for school_id in self.aggregated_costs:
+            costs = self.aggregated_costs[school_id]
+            if 'cellular' in costs:
+                if costs['cellular'].feasible:
+                    min_costs[school_id] = costs['cellular']
+                    continue
+            if 'p2p' in costs:
+                if costs['p2p'].feasible:
+                    min_costs[school_id] = costs['p2p']
+                    continue
+            if 'satellite' in costs:
+                if costs['satellite'].feasible:
+                    min_costs[school_id] = costs['satellite']
+                    continue
+            
+        return min_costs
 
     def infeasible_connections(self):
         connections = []

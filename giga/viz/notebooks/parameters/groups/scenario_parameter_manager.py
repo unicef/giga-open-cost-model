@@ -177,7 +177,7 @@ SCENARIO_SHEET_PARAMETERS = [
 MILLION_DOLLARS = 1_000_000
 
 
-def get_scenario_type(config):
+def get_scenario_type_old(config):
     if config["scenario_id"] == "minimum_cost":
         return "Lowest Cost"
     elif (
@@ -199,7 +199,14 @@ def get_scenario_type(config):
     else:
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
 
-
+def get_scenario_type(config):
+    if config["scenario_id"] == "minimum_cost":
+        return "Lowest Cost"
+    elif config["scenario_id"] == "priority_cost":
+        return "Priorities"
+    else:
+        raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
+    
 def constraint_disabled_transform(budget_cosntraint_on):
     return not budget_cosntraint_on
 
@@ -232,7 +239,7 @@ class ScenarioParameterManager:
             constraint_disabled_transform,
         )
 
-    def update_parameters(self, config):
+    def update_parameters_old(self, config):
         self._hash["scenario_type"].value = get_scenario_type(config)
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
@@ -249,9 +256,53 @@ class ScenarioParameterManager:
             )
             self.sheet.update_parameter("use_budget_constraint", False)
 
+    def update_parameters(self, config):
+        self._hash["scenario_type"].value = get_scenario_type(config)
+        self.sheet.update_parameter("years_opex", config["years_opex"])
+        self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
+        if config["cost_minimizer_config"]["budget_constraint"]==math.inf:
+            self.sheet.update_parameter(
+                "budget_constraint",
+                DEFAULT_BUDGET_MILLIONS,
+            )
+            self.sheet.update_parameter("use_budget_constraint", False)
+        else:
+            self.sheet.update_parameter(
+                "budget_constraint",
+                config["cost_minimizer_config"]["budget_constraint"] / MILLION_DOLLARS,
+            )
+            self.sheet.update_parameter("use_budget_constraint", True)
+
     def update_country_parameters(self, config):
         self.sheet.update_parameter("years_opex", config["years_opex"])
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
+
+    def update_techs_parameters(self, config):
+
+        self.sheet.update_parameter("fiber", config["fiber"])
+        if config['fiber']:
+            self.sheet.get_interactive_parameter('fiber').disabled = False
+        else:
+            self.sheet.get_interactive_parameter('fiber').disabled = True
+
+        self.sheet.update_parameter("cell", config["cellular"])
+        if config['cellular']:
+            self.sheet.get_interactive_parameter('cell').disabled = False
+        else:
+            self.sheet.get_interactive_parameter('cell').disabled = True
+
+        self.sheet.update_parameter("p2p", config["p2p"])
+        if config['p2p']:
+            self.sheet.get_interactive_parameter('p2p').disabled = False
+        else:
+            self.sheet.get_interactive_parameter('p2p').disabled = True
+
+        self.sheet.update_parameter("sat", config["satellite"])
+        if config['satellite']:
+            self.sheet.get_interactive_parameter('sat').disabled = False
+        else:
+            self.sheet.get_interactive_parameter('sat').disabled = True
+        
 
     def input_parameters(self, show_defaults = True):
         # specaial handling for scenario type in base parameters

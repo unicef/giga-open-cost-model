@@ -3,22 +3,23 @@ import numpy as np
 
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.output import OutputSpace, SchoolConnectionCosts
-from giga.schemas.conf.models import MinimumCostScenarioConf
+from giga.schemas.conf.models import PriorityScenarioConf
 from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
 from giga.models.components.p2p_cost_model import P2PCostModel
-from giga.models.components.optimizers.economies_of_scale_minimizer import (
-    EconomiesOfScaleMinimizer,
+
+from giga.models.components.optimizers.priority_minimizer import (
+    PriorityMinimizer,
 )
-from giga.models.components.optimizers.constrained_economies_of_scale_minimizer import (
-    ConstrainedEconomiesOfScaleMinimizer,
+from giga.models.components.optimizers.constrained_priority_minimizer import (
+    ConstrainedPriorityMinimizer,
 )
 from giga.models.components.optimizers.baseline_minimizer import BaselineMinimizer
 from giga.utils.logging import LOGGER
 
 
-class MinimumCostScenario:
+class PriorityScenario:
     """
     Estimates the cost of connecting a collection of schools to the internet
     using the technologies specified in the configuration
@@ -28,7 +29,7 @@ class MinimumCostScenario:
 
     def __init__(
         self,
-        config: MinimumCostScenarioConf,
+        config: PriorityScenarioConf,
         data_space: ModelDataSpace,
         output_space: OutputSpace,
     ):
@@ -44,9 +45,9 @@ class MinimumCostScenario:
     def _create_minimizer(self):
         if self.config.cost_minimizer_config.economies_of_scale:
             if self.config.cost_minimizer_config.budget_constraint == math.inf:
-                return EconomiesOfScaleMinimizer(self.config.cost_minimizer_config)
+                return PriorityMinimizer(self.config.cost_minimizer_config)
             else:
-                return ConstrainedEconomiesOfScaleMinimizer(
+                return ConstrainedPriorityMinimizer(
                     self.config.cost_minimizer_config
                 )
         else:
@@ -96,8 +97,8 @@ class MinimumCostScenario:
 
     def run(self, progress_bar: bool = False):
         """
-        Runs the minimum cost scenario by computing the cost of each technology
-        and then applying a minimizer to find the minimum cost solution.
+        Runs the priority scenario by computing the cost of each technology
+        and then following a priority of fiber-4G-P2P-Satellite independent of cost
 
         :param progress_bar, wether or not to show the progress bar when running the scenario
         :return output space that contains costs of each technology considered as well as the minimum costs for each school
@@ -113,7 +114,8 @@ class MinimumCostScenario:
         self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
             aggregated
         )
-        # find the minimum cost for each school using the minimizer
+
+        # find the priorities cost for each school using the minimizer
         minimizer = self._create_minimizer()
         self.output_space.minimum_cost_result = minimizer.run(self.output_space)
         return self.output_space

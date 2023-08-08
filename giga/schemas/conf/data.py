@@ -92,7 +92,7 @@ class P2PDistanceCacheConf(BaseModel):
     p2p_cache_file: str
     data: LocalConnectCachePipeline
 
-    def load(self, hot_load: bool = True):
+    def load(self, hot_load: bool = False):
         cache: GreedyConnectCache = self.data.load(
             connected_file=self.p2p_cache_file, unconnected_file=None
         )  # loads data from the configured pipeline

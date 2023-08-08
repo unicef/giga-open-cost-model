@@ -17,6 +17,12 @@ class ScenarioDefaults(BaseModel):
     years_opex: int
     bandwidth_demand: float
 
+class AvailableTechDefaults(BaseModel):
+    fiber: bool
+    cellular: bool
+    p2p: bool
+    satellite: bool
+
 
 class GigaDefaults(BaseModel):
     scenario: ScenarioDefaults
@@ -25,6 +31,7 @@ class GigaDefaults(BaseModel):
     cellular: CellularTechnologyCostConf
     electricity: ElectricityCostConf
     p2p: P2PTechnologyCostConf
+    available_tech: AvailableTechDefaults
 
 
 class DataDefaults(BaseModel):

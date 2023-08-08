@@ -114,6 +114,12 @@ empty_default_dict = {
             "constraints": {
                 "required_power_per_school":0.0
             }
+        },
+        "available_tech": {
+            "fiber": True,
+            "cellular": True,
+            "p2p": True,
+            "satellite": True,
         }
     }
 }
@@ -167,6 +173,43 @@ def get_country_defaults_old(
         defaults[country] = default
     return defaults
 
+def check_avail_techs(country_dir,df_schools):
+    fiber = True
+    cell = True
+    p2p = True
+
+    f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
+    if len(f)==0:
+        fiber = False
+    else:
+
+        with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
+            jsf = json.load(f)
+
+        with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
+            jss = json.load(f)
+
+        if len(jsf["lookup"])==0 or len(jss["lookup"])==0:
+            fiber = False
+
+    f = data_store.read_file(os.path.join(country_dir,CELL_FILE))
+    if len(f)==0:
+        cell = df_schools["coverage_type"].notnull().any()
+        p2p = False
+    else:
+        with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
+            jsc = json.load(f)
+        if len(jsc["lookup"])==0:
+            cell = False
+
+        with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
+            jsp = json.load(f)
+        if len(jsp["lookup"])==0:
+            p2p = False
+
+    return fiber,cell,p2p
+
+    
 def create_empty_tech_files(country_dir):
     data_store.write_file(os.path.join(country_dir,CELL_FILE),"")
     data_store.write_file(os.path.join(country_dir,FIBER_FILE),"")
@@ -213,8 +256,34 @@ def copy_caches_to_backup(country_dir):
 
     with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE), "w") as f:
         json.dump(js, f)
-    
 
+# This could be a call to GigaSchoolTable at some point...    
+def fix_schools(df):
+    df_new = df.copy()
+    df_new.dropna(subset=['giga_id_school'], inplace=True) #AIA has some nan giga_ids...
+
+    ####num_students####
+    your_column = 'num_students'
+
+    # Step 1: Replace empty values with NaN
+    #df_new[your_column].replace('', pd.NA, inplace=True)
+    df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
+    df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
+
+    if df[your_column].notna().any():
+        # Step 2: Calculate the average of the non-empty values
+        average = int(df_new[your_column].dropna().mean())
+
+        # Step 3: Replace NaN values with average (if not all values are empty) or with DEFAULT_VALUE
+        df_new[your_column].fillna(average, inplace=True)
+    else:
+        df_new[your_column].fillna(DEFAULT_NUM_STUDENTS, inplace=True)
+
+    # Step 4: Convert the column to integers
+    df_new[your_column] = df_new[your_column].astype(int)
+    #####################
+
+    return df_new
 
 def get_country_default(country,workspace, schools_dir, costs_dir):
     default = copy.deepcopy(empty_default_dict)
@@ -225,30 +294,44 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
     master_file = os.path.join(schools_dir, country + MASTER_DEFAULT_NAME)
     with schools_data_store.open(master_file) as f:
         df = pd.read_csv(f)
-    df.dropna(subset=['giga_id_school'], inplace=True) #AIA has some nan giga_ids...
+
+    df_fixed = fix_schools(df)
+    
 
     country_dir = os.path.join(workspace,country)
     #if schools file does not exist copy it and create empty files
     if not data_store.file_exists(os.path.join(country_dir,SCHOOLS_FILE)):
-        data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df.to_csv(index=False))
+        data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df_fixed.to_csv(index=False))
         create_empty_tech_files(country_dir)
         create_empty_caches(country_dir)
+        #in this case, only sat is available and maybe cell
+        default["model_defaults"]["available_tech"]["fiber"] = False
+        default["model_defaults"]["available_tech"]["cellular"] = df_fixed["coverage_type"].notnull().any()
+        default["model_defaults"]["available_tech"]["p2p"] = False
     else:
         with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
             df2 = pd.read_csv(f)
-        if not df.equals(df2):
+        if not df_fixed.equals(df2):
             #if the schools are the same then the caches are ok otherwise ko
-            if not df[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
+            if not df_fixed[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
                 # we save the old schools file in backup, might be useful to recalculate caches
                 data_store.write_file(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_FILE),df2.to_csv(index=False))
                 copy_caches_to_backup(country_dir)
                 create_empty_caches(country_dir)
+            
             #in any case we save the new schools file
-            data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df.to_csv(index=False))
+            data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df_fixed.to_csv(index=False))
+
+        #check tech availability
+        fiber,cell,p2p = check_avail_techs(country_dir,df_fixed)
+        default["model_defaults"]["available_tech"]["fiber"] = fiber
+        default["model_defaults"]["available_tech"]["cellular"] = cell
+        default["model_defaults"]["available_tech"]["p2p"] = p2p
 
     #get center coordinates
-    lats = list(df['lat'])
-    lons = list(df['lon'])
+    df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
+    lats = list(df_filtered['lat'])
+    lons = list(df_filtered['lon'])
     c_lat = sum(lats)/len(lats)
     c_lon = sum(lons)/len(lons)
     default["data"]["country_center"]["lat"] = c_lat

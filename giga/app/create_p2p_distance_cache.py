@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-
+from dotenv import load_dotenv
+load_dotenv()
 import os
 import argparse
 import math
@@ -10,7 +11,7 @@ from typing import List, Dict
 from giga.models.nodes.elevation.elevation_profile_generator import (
     ElevationProfileGenerator,
 )
-from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
+#from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
 from giga.schemas.school import GigaSchoolTable
 from giga.schemas.cellular import CellTowerTable, CellularTower
 from giga.schemas.geo import (

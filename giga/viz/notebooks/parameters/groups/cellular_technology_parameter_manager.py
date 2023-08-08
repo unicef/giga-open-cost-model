@@ -76,7 +76,7 @@ class CellularTechnologyParameterManager:
             "required_power", config["constraints"]["required_power"]
         )
         self.sheet.update_parameter(
-            "maximum_range", config["constraints"]["maximum_range"] / METERS_PER_KM
+            "maximum_range", config["constraints"]["maximum_range"] #/ METERS_PER_KM
         )
 
     def input_parameters(self, show_defaults = True):

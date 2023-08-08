@@ -26,8 +26,8 @@ FIBER_MODEL_PARAMETERS = [
             "parameter_type": "int_slider",
             "value": 8_900,
             "min": 0,
-            "max": 50_000,
-            "step": 100,
+            "max": 60000,
+            "step": 1,
             "show_default": True,
         },
     },
@@ -99,7 +99,7 @@ class FiberTechnologyParameterManager:
         )
         self.sheet.update_parameter(
             "maximum_connection_length",
-            config["constraints"]["maximum_connection_length"] / METERS_IN_KM,
+            config["constraints"]["maximum_connection_length"] #/ METERS_IN_KM,
         )
         self.sheet.update_parameter(
             "required_power", config["constraints"]["required_power"]

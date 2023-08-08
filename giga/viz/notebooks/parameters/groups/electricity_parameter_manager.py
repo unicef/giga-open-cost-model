@@ -81,7 +81,7 @@ class ElectricityParameterManager:
     def get_model_parameters(self):
         cost_per_kwh = float(self.get_parameter_from_sheet("per_kwh_cost"))
         solar_cost_per_watt = float(self.get_parameter_from_sheet("solar_cost_per_watt"))
-        required_power_per_school = float(self.get_parameter_from_sheet("solar_cost_per_watt"))
+        required_power_per_school = float(self.get_parameter_from_sheet("required_power_per_school"))
         return ElectricityCostConf(
             capex={
                 "solar_cost_per_watt": solar_cost_per_watt

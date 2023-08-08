@@ -52,12 +52,13 @@ class SelectionMapDataLayers(MapDataLayers):
             self.data_space.all_schools.to_data_frame()
             if config.allow_connected_schools
             else GigaSchoolTable(
-                schools=self.data_space.school_entities
+                schools=self.data_space.all_school_entities
             ).to_data_frame()
         )
-        self._schools["has_electricity"] = self._schools["has_electricity"].apply(
-            lambda x: "Yes" if x else "No"
-        )
+        if not self._schools.empty:
+            self._schools["has_electricity"] = self._schools["has_electricity"].apply(
+                lambda x: "Yes" if x else "No"
+            )
         self._school_table_selector = None
         self._layers_selection = None
         self._layers_selection_no_cell = None

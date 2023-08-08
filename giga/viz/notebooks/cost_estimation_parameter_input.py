@@ -20,6 +20,7 @@ from giga.schemas.conf.country import GigaDefaults
 
 from giga.schemas.conf.models import (
     MinimumCostScenarioConf,
+    PriorityScenarioConf,
     SingleTechnologyScenarioConf,
     ElectricityCostConf,
 )
@@ -59,6 +60,7 @@ from giga.viz.notebooks.data_maps.selection_map_data_layers import (
     SelectionMapDataLayers,
     SelectionMapLayersConfig,
 )
+from traitlets import directional_link
 
 
 # NOTE: Interface is a work in progress - this will be updated as UX use cases solidify
@@ -101,6 +103,11 @@ UPLOADED_DATA_SPACE_PARAMETERS = [
 UPLOAD_SUFFIX = "_upload"
 SHOW_MAP = False  # temporary flag to show/hide map
 SCHOOL_SELECTION = False
+
+def constraint_freeze_transform(value):
+    if value:
+        return False
+    return True
 
 
 def country_name_to_key_old(country_name):
@@ -202,6 +209,38 @@ class CostEstimationParameterInput:
                 self.electricity_parameter_manager,
             ],
         }
+        #link techs to their parameters
+        #for p in self.scenario_parameter_manager.sheet.interactive_parameters:
+        #    if p['parameter_name'] == 'fiber':
+        p_fiber = self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber')
+        for p in self.fiber_parameter_manager.sheet.interactive_parameters:
+            directional_link(
+                (p_fiber, "value"),
+                (p.parameter,"disabled"),
+                constraint_freeze_transform,
+            )
+        p_cell = self.scenario_parameter_manager.sheet.get_interactive_parameter('cell')
+        for p in self.cellular_parameter_manager.sheet.interactive_parameters:
+            directional_link(
+                (p_cell, "value"),
+                (p.parameter,"disabled"),
+                constraint_freeze_transform,
+            )
+        p_p2p = self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p')
+        for p in self.p2p_parameter_manager.sheet.interactive_parameters:
+            directional_link(
+                (p_p2p, "value"),
+                (p.parameter,"disabled"),
+                constraint_freeze_transform,
+            )
+        p_sat = self.scenario_parameter_manager.sheet.get_interactive_parameter('sat')
+        for p in self.satellite_parameter_manager.sheet.interactive_parameters:
+            directional_link(
+                (p_sat, "value"),
+                (p.parameter,"disabled"),
+                constraint_freeze_transform,
+            )
+
         # link country selection to default parameters for that country
         def update_country_defaults(change):
             country = country_name_to_key(change["new"])
@@ -279,6 +318,9 @@ class CostEstimationParameterInput:
         defaults = new_defaults
         self.scenario_parameter_manager.update_country_parameters(
             defaults.scenario.dict()
+        )
+        self.scenario_parameter_manager.update_techs_parameters(
+            defaults.available_tech.dict()
         )
         self.fiber_parameter_manager.update_parameters(defaults.fiber.dict())
         self.satellite_parameter_manager.update_parameters(
@@ -360,7 +402,7 @@ class CostEstimationParameterInput:
         sp = config["scenario_parameters"]
         if ("scenario_id" in sp and 
             sp["scenario_id"] != "minimum_cost"
-            and sp["scenario_id"] != "single_tech_cost"
+            and sp["scenario_id"] != "priority_cost"
         ):
             raise ValueError(
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
@@ -476,8 +518,8 @@ class CostEstimationParameterInput:
             ]
             conf.scenario_id = "budget_constrained"
         return conf
-
-    def scenario_parameters(self, sheet_name="scenario"):
+    
+    def scenario_parameters_old(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()
         if p["scenario_type"] == "Fiber Only":
             tech_params = self.fiber_parameters()
@@ -545,6 +587,38 @@ class CostEstimationParameterInput:
             )
             conf.technologies[2] = cellular_params
             conf.technologies[3] = p2p_params
+        if p["use_budget_constraint"]:
+            conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"][
+                "budget_constraint"
+            ]
+        return conf
+
+    def scenario_parameters(self, sheet_name="scenario"):
+        p = self.scenario_parameter_manager.get_model_parameters()
+        if p["scenario_type"] == "Lowest Cost":
+            conf = MinimumCostScenarioConf(**p)
+        else: # priorities scenario
+            conf = PriorityScenarioConf(**p)
+        techs = []
+        if self.scenario_parameter_manager.sheet.get_parameter_value('fiber'):
+            fiber_params = self.fiber_parameters()
+            fiber_params.electricity_config = self.electricity_parameters()
+            techs.append(fiber_params)
+        if self.scenario_parameter_manager.sheet.get_parameter_value('cell'):
+            cellular_params = self.cellular_parameters()
+            cellular_params.electricity_config = self.electricity_parameters()
+            techs.append(cellular_params)
+        if self.scenario_parameter_manager.sheet.get_parameter_value('p2p'):
+            p2p_params = self.p2p_parameters()
+            p2p_params.electricity_config = self.electricity_parameters()
+            techs.append(p2p_params)
+        if self.scenario_parameter_manager.sheet.get_parameter_value('sat'):
+            satellite_params = self.satellite_parameters()
+            satellite_params.electricity_config = self.electricity_parameters()
+            techs.append(satellite_params)
+        
+        conf.technologies = techs
+        conf.required_power_per_school = self.electricity_parameter_manager.sheet.get_parameter_value("required_power_per_school")
         if p["use_budget_constraint"]:
             conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"][
                 "budget_constraint"

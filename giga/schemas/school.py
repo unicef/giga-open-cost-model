@@ -33,7 +33,7 @@ class GigaSchool(BaseModel):
     admin4: str
     education_level: str
     giga_id: str = Field(..., alias="giga_id_school")
-    school_zone: SchoolZone = Field(..., alias="school_region")
+    school_zone: str =  Field(..., alias="school_region") #SchoolZone = Field(..., alias="school_region")
     connected: bool = False
     connectivity: str
     type_connectivity: str
@@ -132,7 +132,7 @@ class GigaSchoolTable(BaseModel):
         for s in self.schools:
             s.bandwidth_demand = demand
 
-    def update_power_required_all(self, power):
+    def update_required_power_all(self, power):
         for s in self.schools:
             s.power_required_watts = power
 

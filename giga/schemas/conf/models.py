@@ -187,12 +187,50 @@ class MinimumCostScenarioConf(BaseModel):
     """
 
     scenario_id: Literal["minimum_cost", "single_tech_cost"] = "minimum_cost"
-    technologies: List[TechnologyConfiguration]
+    technologies: List[TechnologyConfiguration] = None
     years_opex: int = 5  # the number of opex years to consider in the estimate
     opex_responsible: Literal[
         "Provider", "Consumer", "Both"
     ]  # type of opex costs to consider
     bandwidth_demand: float  # Mbps
+    required_power_per_school: float = 0 #Watts
+    single_tech: Literal[
+        "Fiber", "Cellular", "Satellite", "P2P"
+    ] = None  # if not None, only consider this technology
+    cost_minimizer_config: CostMinimizerConf = None
+    sat_solver_config: SATSolverConf = SATSolverConf()
+
+    class Config:
+        case_sensitive = False
+
+    @validator("cost_minimizer_config", always=True)
+    def validate_minimizer_conf(cls, value, values):
+        return CostMinimizerConf(years_opex=values["years_opex"])
+
+    @property
+    def maximum_bandwidths(self):
+        return {
+            t.technology: t.constraints.maximum_bandwithd for t in self.technologies
+        }
+
+    @property
+    def includes_fiber(self):
+        return any([t.technology == "Fiber" for t in self.technologies])
+    
+class PriorityScenarioConf(BaseModel):
+    """
+    Configuration for a model scenario that estimates minimum budget
+    necessary to connect schools with the cheapest technology when available
+    """
+
+    scenario_id: str = "priority_cost"
+    technologies: List[TechnologyConfiguration] = None
+    years_opex: int = 5  # the number of opex years to consider in the estimate
+    opex_responsible: Literal[
+        "Provider", "Consumer", "Both"
+    ]  # type of opex costs to consider
+    bandwidth_demand: float  # Mbps
+    required_power_per_school: float = 0 #Watts
     single_tech: Literal[
         "Fiber", "Cellular", "Satellite", "P2P"
     ] = None  # if not None, only consider this technology
