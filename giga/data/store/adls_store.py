@@ -38,7 +38,7 @@ class ADLSDataStore(DataStore):
 
     def _adls_path(self, path: str) -> str:
         """
-        Internally, we remap absolute filepaths to nicer-looking GCS buckets
+        Internally, we remap absolute filepaths to nicer-looking ADLS buckets
         under /conf and /data directories. This also helps enforce the upload
         interface as we fail when encountering unexpected paths.
         """
@@ -55,19 +55,23 @@ class ADLSDataStore(DataStore):
         return path
 
     def read_file(self, path: str) -> Any:
-        # blob = self.bucket.blob(self._adls_path(path))
         blob_file_path = self._adls_path(path)
         blob_client = self.blob_service_client.get_blob_client(container=self.container, blob=blob_file_path,
                                                                snapshot=None)
         return blob_client.download_blob(encoding='UTF-8').readall()
 
     def write_file(self, path: str, data: Any) -> None:
-        # blob = self.bucket.blob(self._adls_path(path))
         blob_file_path = self._adls_path(path)
         blob_client = self.blob_service_client.get_blob_client(container=self.container, blob=blob_file_path,
                                                                snapshot=None)
-        # blob.upload_from_string(data)
-        binary_data = data.encode()
+
+        if type(data) == str:
+            binary_data = data.encode()
+        elif type(data) == bytes:
+            binary_data = data
+        else:
+            raise Exception(f'Unsupported data type. Only "bytes" or "string" accepted')
+
         blob_client.upload_blob(binary_data, overwrite=True)
 
     def file_exists(self, path: str) -> bool:
