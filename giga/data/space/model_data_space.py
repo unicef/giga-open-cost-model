@@ -38,7 +38,10 @@ class ModelDataSpace:
             # make schools
             self._all_schools = self.config.school_data_conf.load()
             unconnected = [s for s in self._all_schools.schools if not s.connected]
-            self._schools = GigaSchoolTable(schools=unconnected)
+            if len(unconnected)==0:
+                self._schools = self._all_schools
+            else:
+                self._schools = GigaSchoolTable(schools=unconnected)
         return self._schools
 
     @property
@@ -182,6 +185,14 @@ class ModelDataSpace:
         _ = self.schools
         new_space = ModelDataSpace(self.config)
         new_space._schools = self._schools.filter_schools_by_id(school_ids)
+        ####
+        filtered_schools = self._all_schools.filter_schools_by_id(school_ids)
+        fiber_schools = [s for s in filtered_schools.schools if s.has_fiber]
+        if len(fiber_schools) > 0:
+            new_space._fiber_schools = GigaSchoolTable(schools=fiber_schools).to_coordinates()
+        else:
+             new_space._fiber_schools = []
+        ####
         new_space._all_schools = self._schools
         new_space._fiber_map = self._fiber_map
         new_space._cell_tower_map = self._cell_tower_map

@@ -802,9 +802,9 @@ class CostEstimationParameterInput:
                     selection_map,
                     "dark",
                 )
-                .add_class("center")
-                .add_class("expander")
-                .add_class("footer"),
+                .add_class("center"),
+                #.add_class("expander")
+                #.add_class("footer"),
                 giga_sections.section(
                     "Scenario Selection", self.scenario_parameter_input()
                 ),

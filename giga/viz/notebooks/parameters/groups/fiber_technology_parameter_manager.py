@@ -76,6 +76,15 @@ FIBER_MODEL_PARAMETERS = [
             "description": "ON",
         },
     },
+    {
+        "parameter_name": "schools_as_fiber_nodes",
+        "parameter_input_name": "Schools as fiber nodes",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "ON",
+        },
+    },
 ]
 
 
@@ -91,6 +100,9 @@ class FiberTechnologyParameterManager:
         self.sheet.update_parameter("cost_per_km", config["capex"]["cost_per_km"])
         self.sheet.update_parameter(
             "economies_of_scale", config["capex"]["economies_of_scale"]
+        )
+        self.sheet.update_parameter(
+            "schools_as_fiber_nodes", config["capex"]["schools_as_fiber_nodes"]
         )
         self.sheet.update_parameter("opex_cost_per_km", config["opex"]["cost_per_km"])
         self.sheet.update_parameter(
@@ -125,6 +137,9 @@ class FiberTechnologyParameterManager:
         economies_of_scale = bool(
             float(self.get_parameter_from_sheet("economies_of_scale"))
         )
+        schools_as_fiber_nodes = bool(
+            float(self.get_parameter_from_sheet("schools_as_fiber_nodes"))
+        )
         opex_per_km = float(self.get_parameter_from_sheet("opex_cost_per_km"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         maximum_connection_length = (
@@ -134,6 +149,7 @@ class FiberTechnologyParameterManager:
             capex={
                 "cost_per_km": cost_per_km,
                 "economies_of_scale": economies_of_scale,
+                "schools_as_fiber_nodes": schools_as_fiber_nodes,
             },
             opex={
                 "cost_per_km": opex_per_km,

@@ -124,14 +124,24 @@ class FiberCostModel:
         :return CostResultSpace, that contains the cost of fiber connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting Fiber Cost Model")
-        conection_model = GreedyDistanceConnector(
-            data_space.fiber_coordinates,
-            dynamic_connect=self.config.capex.economies_of_scale,
-            progress_bar=progress_bar,
-            maximum_connection_length_m=self.config.constraints.maximum_connection_length,
-            distance_model=distance_model,
-            distance_cache=data_space.fiber_cache,
-        )
+        if self.config.capex.schools_as_fiber_nodes:
+            conection_model = GreedyDistanceConnector(
+                data_space.fiber_coordinates + data_space._fiber_schools,
+                dynamic_connect=self.config.capex.economies_of_scale,
+                progress_bar=progress_bar,
+                maximum_connection_length_m=self.config.constraints.maximum_connection_length,
+                distance_model=distance_model,
+                distance_cache=data_space.fiber_cache,
+            )
+        else:
+            conection_model = GreedyDistanceConnector(
+                data_space.fiber_coordinates,
+                dynamic_connect=self.config.capex.economies_of_scale,
+                progress_bar=progress_bar,
+                maximum_connection_length_m=self.config.constraints.maximum_connection_length,
+                distance_model=distance_model,
+                distance_cache=data_space.fiber_cache,
+            )
         # determine which schools can be connected and their distances
         distances = conection_model.run(data_space.school_coordinates)
         costs = self.compute_costs(distances, data_space)

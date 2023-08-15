@@ -59,6 +59,7 @@ class FiberCapex(BaseModel):
     cost_per_km: float  # USD
     fixed_costs: float = 0.0  # USD
     economies_of_scale: bool = True
+    schools_as_fiber_nodes: bool = True
 
 
 class FiberConstraints(BaseModel):

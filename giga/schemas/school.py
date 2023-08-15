@@ -78,7 +78,7 @@ class GigaSchool(BaseModel):
             self.has_electricity = False
 
         #fiber
-        if self.type_connectivity=="Fiber" or self.type_connectivity=="fiber" or self.type_connectivity=="FIBER":
+        if self.type_connectivity=="Fiber" or self.type_connectivity=="fiber" or self.type_connectivity=="FIBER" or self.type_connectivity=="Fibre" or self.type_connectivity=="fibre" or self.type_connectivity=="FIBRE":
             self.has_fiber = True
         else:
             self.has_fiber = False

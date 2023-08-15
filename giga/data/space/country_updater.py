@@ -222,7 +222,7 @@ class CountryUpdater:
         update_scripts = [
             "bin/create_fiber_distance_cache",
             "bin/create_cellular_distance_cache",
-            #"giga/app/create_p2p_distance_cache.py"
+            "giga/app/create_p2p_distance_cache.py"
         ]
         with out:
             for script in pb(update_scripts):

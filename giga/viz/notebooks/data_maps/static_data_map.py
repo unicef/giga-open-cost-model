@@ -16,6 +16,7 @@ from giga.viz.plot_configs import (
     SELECTION_MAP_MODEBAR_BUTTON_CONFIG,
     SELECTION_MAP_MODEBAR_GLOBAL_CONFIG,
 )
+from giga.viz.notebooks.parameters.input_parameter import CategoricalDropdownParameter
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
@@ -169,11 +170,13 @@ class StaticDataMap:
         m._config = {**m._config, **SELECTION_MAP_MODEBAR_GLOBAL_CONFIG}
         layers.connect_school_layer_selection(m)
         upload_button = layers.make_upload_button(m)
+        drop_admins = CategoricalDropdownParameter(options=["None","adminA","adminB"],value="None",description="Dropdown to select admins", parameter_type = "categorical_dropdown").parameter
         selected_label = layers.make_selected_label()
         layout = Layout()  # add centering and other formatting here
         return VBox(
             [
                 upload_button,
+                drop_admins,
                 HTML("<br>"),
                 m,
                 selected_label,

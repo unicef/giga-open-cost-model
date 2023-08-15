@@ -21,21 +21,23 @@ SCHOOL_LAYERS_IDX_END = 6
 class SelectionMapLayersConfig(MapLayersConfig):
 
     allow_connected_schools: bool = (
-        False  # wether schools that are already connected can be selected
+        True  # wether schools that are already connected can be selected
     )
     table_headers: List[str] = [
         "Project Connect Identifier",
         "School Name",
-        "District",
+        "Connected",
         "Electricity",
+        "Fiber",
     ]
     table_data_columns: List[str] = [
         "giga_id",
         "name",
-        "admin1",
+        "connected",
         "has_electricity",
+        "has_fiber",
     ]
-    table_column_widths: List[float] = [2.5, 1.5, 1, 1]
+    table_column_widths: List[float] = [2.5, 1.5, 1, 1, 1]
     first_school_data_layer: str = "Good"  # connectivity quality
 
 
@@ -52,7 +54,7 @@ class SelectionMapDataLayers(MapDataLayers):
             self.data_space.all_schools.to_data_frame()
             if config.allow_connected_schools
             else GigaSchoolTable(
-                schools=self.data_space.all_school_entities
+                schools=self.data_space.school_entities
             ).to_data_frame()
         )
         if not self._schools.empty:
