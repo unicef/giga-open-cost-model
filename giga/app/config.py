@@ -4,6 +4,7 @@ import json
 from typing import List
 import pandas as pd
 import copy
+import numpy as np
 
 #from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 #from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
@@ -293,7 +294,7 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
     #school master file
     master_file = os.path.join(schools_dir, country + MASTER_DEFAULT_NAME)
     with schools_data_store.open(master_file) as f:
-        df = pd.read_csv(f)
+        df = pd.read_csv(f, dtype={"lat": "float64", "lon": "float64"})
 
     df_fixed = fix_schools(df)
     
@@ -310,7 +311,7 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
         default["model_defaults"]["available_tech"]["p2p"] = False
     else:
         with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
-            df2 = pd.read_csv(f)
+            df2 = pd.read_csv(f, dtype={"lat": "float64", "lon": "float64"})
         if not df_fixed.equals(df2):
             #if the schools are the same then the caches are ok otherwise ko
             if not df_fixed[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
