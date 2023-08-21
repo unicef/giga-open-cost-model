@@ -194,6 +194,7 @@ notebooks/parameter_workspace/*
 notebooks/cost-scenario-test.ipynb
 notebooks/cost-scenario-test-dep.ipynb
 notebooks/results-drilldown-dep-ipynb
+notebooks/results-drilldown-test.ipynb
 notebooks/dev/update-objstore-test.ipynb
 notebooks/dev/update-objstore-test-dep.ipynb
 notebooks/dev/update-objstore-old.ipynb

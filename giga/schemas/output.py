@@ -10,27 +10,60 @@ from giga.schemas.tech import ConnectivityTechnology
 from giga.viz.notebooks.helpers import output_to_table
 
 
-def results_to_complete_table(results: List, n_years: int, attribution):
-    df = pd.DataFrame([dict(x) for x in results])
-    electricity_capex = list(
-        map(
+def results_to_complete_table(results: List, n_years: int, attribution, school_ids):
+    if school_ids==None:
+        df = pd.DataFrame([dict(x) for x in results])
+    
+        electricity_capex = list(
+            map(
             lambda x: x.electricity.electricity_capex if x.feasible else math.nan,
             results,
+            )
         )
-    )
-    electricity_opex = list(
-        map(
+        electricity_opex = list(
+            map(
             lambda x: x.electricity.electricity_opex if x.feasible else math.nan,
             results,
+            )
         )
-    )
-    electricity_type = list(
-        map(lambda x: x.electricity.cost_type if x.feasible else math.nan, results)
-    )
-    total_cost = [
-        r.technology_connectivity_cost(n_years, attribution=attribution)
-        for r in results
-    ]
+        electricity_type = list(
+            map(lambda x: x.electricity.cost_type if x.feasible else math.nan, results)
+        )
+        total_cost = [
+            r.technology_connectivity_cost(n_years, attribution=attribution)
+            for r in results
+        ]
+    else:
+        df = pd.DataFrame([dict(x) for x in results if x.school_id in school_ids])
+        electricity_capex = []
+        for r in results:
+            if r.school_id in school_ids:
+                if r.feasible:
+                    electricity_capex.append(r.electricity.electricity_capex)
+                else:
+                    electricity_capex.append(math.nan)
+        
+        electricity_opex = []
+        for r in results:
+            if r.school_id in school_ids:
+                if r.feasible:
+                    electricity_opex.append(r.electricity.electricity_opex)
+                else:
+                    electricity_opex.append(math.nan)
+
+        electricity_type = []
+        for r in results:
+            if r.school_id in school_ids:
+                if r.feasible:
+                    electricity_type.append(r.electricity.cost_type)
+                else:
+                    electricity_type.append(math.nan)
+
+        total_cost = [
+            r.technology_connectivity_cost(n_years, attribution=attribution)
+            for r in results if r.school_id in school_ids
+        ]
+
     df["electricity_capex"] = electricity_capex
     df["electricity_opex"] = electricity_opex
     df["electricity_type"] = electricity_type
@@ -199,12 +232,71 @@ class OutputSpace(BaseModel):
         else:
             return []
 
-    def full_results_table(self, n_years: int, attribution="both"):
+    def filter_schools(self, school_ids: List[str]):
+        """
+        Filters and returns the school entities with the specified ids
+        This will return a new data space that includes any downstream dependencies on school entities
+        Such as caches and coordinates
+
+        :param school_ids: The school ids to keep in the data space, all others will be removed
+        :return: The updated OutputSpace with the filtered schools
+        """
+        if self.fiber_costs != None:
+            fiber_costs = CostResultSpace(technology_results=self.fiber_costs.technology_results,cost_results=[])
+        
+            for sc in self.fiber_costs.cost_results:
+                if sc.school_id in school_ids:
+                    fiber_costs.cost_results.append(sc)
+        else:
+            fiber_costs = None
+
+        if self.satellite_costs != None:
+            satellite_costs = CostResultSpace(technology_results=self.satellite_costs.technology_results,cost_results=[])
+        
+            for sc in self.satellite_costs.cost_results:
+                if sc.school_id in school_ids:
+                    satellite_costs.cost_results.append(sc)
+        else:
+            satellite_costs = None
+
+        if self.cellular_costs != None:
+            cellular_costs = CostResultSpace(technology_results=self.cellular_costs.technology_results,cost_results=[])
+        
+            for sc in self.cellular_costs.cost_results:
+                if sc.school_id in school_ids:
+                    cellular_costs.cost_results.append(sc)
+        else:
+            cellular_costs = None
+
+        if self.p2p_costs != None:
+            p2p_costs = CostResultSpace(technology_results=self.p2p_costs.technology_results,cost_results=[])
+        
+            for sc in self.p2p_costs.cost_results:
+                if sc.school_id in school_ids:
+                    p2p_costs.cost_results.append(sc)
+        else:
+            p2p_costs = None
+        
+        aggregated_costs = {}
+        for sid in school_ids:
+            if sid in self.aggregated_costs:
+                aggregated_costs[sid] = self.aggregated_costs[sid]
+
+        minimum_cost_result = []
+        for sc in self.minimum_cost_result:
+            if sc.school_id in school_ids:
+                minimum_cost_result.append(sc)
+
+        new_space = OutputSpace(fiber_costs = fiber_costs, satellite_costs = satellite_costs, cellular_costs = cellular_costs, p2p_costs = p2p_costs, aggregated_costs = aggregated_costs, minimum_cost_result = minimum_cost_result)
+
+        return new_space
+
+    def full_results_table(self, n_years: int, attribution="both", school_ids = None):
         if self.minimum_cost_result:
             results = self.minimum_cost_result
         else:
             results = self.technology_outputs[0].cost_results
-        return results_to_complete_table(results, n_years, attribution)
+        return results_to_complete_table(results, n_years, attribution, school_ids)
 
     def get_technology_cost_by_school(self, school_id: str, technology: str):
         assert (

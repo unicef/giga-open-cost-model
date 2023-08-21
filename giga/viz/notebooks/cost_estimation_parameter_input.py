@@ -491,7 +491,7 @@ class CostEstimationParameterInput:
             for m in manager_collection:
                 m.unfreeze()
 
-    def all_tech_config(self):
+    def all_tech_config_old(self):
         p = self.scenario_parameter_manager.get_model_parameters()
         fiber_params = self.fiber_parameters()
         satellite_params = self.satellite_parameters()
@@ -517,6 +517,38 @@ class CostEstimationParameterInput:
                 "budget_constraint"
             ]
             conf.scenario_id = "budget_constrained"
+        return conf
+    
+    def all_tech_config(self):
+        p = self.scenario_parameter_manager.get_model_parameters()
+        if p["scenario_type"] == "Lowest Cost":
+            conf = MinimumCostScenarioConf(**p)
+        else: # priorities scenario
+            conf = PriorityScenarioConf(**p)
+        techs = []
+        
+        fiber_params = self.fiber_parameters()
+        fiber_params.electricity_config = self.electricity_parameters()
+        techs.append(fiber_params)
+        
+        cellular_params = self.cellular_parameters()
+        cellular_params.electricity_config = self.electricity_parameters()
+        techs.append(cellular_params)
+
+        p2p_params = self.p2p_parameters()
+        p2p_params.electricity_config = self.electricity_parameters()
+        techs.append(p2p_params)
+
+        satellite_params = self.satellite_parameters()
+        satellite_params.electricity_config = self.electricity_parameters()
+        techs.append(satellite_params)
+        
+        conf.technologies = techs
+        conf.required_power_per_school = self.electricity_parameter_manager.sheet.get_parameter_value("required_power_per_school")
+        if p["use_budget_constraint"]:
+            conf.cost_minimizer_config.budget_constraint = p["cost_minimizer_config"][
+                "budget_constraint"
+            ]
         return conf
     
     def scenario_parameters_old(self, sheet_name="scenario"):

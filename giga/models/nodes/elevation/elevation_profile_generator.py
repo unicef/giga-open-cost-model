@@ -76,7 +76,7 @@ class ElevationProfileGenerator:
                 elevation_profile_list.append(ele_profile)
                 # TODO: This is added to avoid rate-limiting failures (1/sec).
                 #       We should batch the requests better (it supports <=100 locations/req).
-                time.sleep(0.9)
+                time.sleep(1.2)
         return elevation_profile_list
 
     @validate_arguments
