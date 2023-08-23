@@ -11,6 +11,7 @@ from giga.viz.notebooks.data_maps.result_maps import (
     make_fiber_distance_map_plot,
     make_cellular_distance_map_plot,
     make_cellular_coverage_map,
+    make_p2p_distance_map_plot,
 )
 from giga.viz.notebooks.tables import create_summary_table
 from giga.viz.notebooks.components.charts.overview import (
@@ -22,6 +23,7 @@ from giga.viz.notebooks.components.charts.plotters import (
     technology_distribution_bar_plot,
     cumulative_fiber_distance_barplot,
     cumulative_cell_tower_distance_barplot,
+    cumulative_visible_cell_tower_distance_barplot,
     make_cost_histogram,
     make_project_cost_bar_plots,
     make_unit_cost_bar_plot,
@@ -84,6 +86,8 @@ class ResultDashboard:
         self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools)
         self.cell_distance_bar = cumulative_cell_tower_distance_barplot(self.results.output_cost_table)
         self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools)
+        self.p2p_infra_map = make_p2p_distance_map_plot(self.results.new_connected_schools)
+        self.p2p_distance_bar = cumulative_visible_cell_tower_distance_barplot(self.results.output_cost_table)
         self.technology_map = make_technology_map(self.results.new_connected_schools)
         self.satellite_pie_breakdown = make_satellite_pie_breakdown(self.results.new_connected_schools)
         self.per_school_cost_map = make_cost_map(
@@ -241,6 +245,8 @@ class ResultDashboard:
             self.cell_infra_map,
             self.cell_distance_bar,
             self.cell_coverage_map,
+            self.p2p_infra_map,
+            self.p2p_distance_bar,
             self.technology_map,
             self.satellite_pie_breakdown,
             self.per_school_cost_map,
@@ -299,11 +305,11 @@ class ResultDashboard:
             )
         return tab
 
-    def infrastructure_tab(self):
+    def infrastructure_tab_old(self):
         # Fiber Infra
         fiber_plots = widgets.VBox([
             self._map_to_output(self.fiber_infra_map),
-            self._figure_to_output(self.cell_infra_map)
+            self._figure_to_output(self.fiber_distance_bar)
         ])
         # Cell Infra
         cell_plots = widgets.VBox([
@@ -334,6 +340,42 @@ class ResultDashboard:
                 )
             )
         return tab
+    
+    def infrastructure_tab(self):
+        # Fiber Infra
+        fiber_plots = widgets.VBox([
+            self._map_to_output(self.fiber_infra_map),
+            self._figure_to_output(self.fiber_distance_bar)
+        ])
+        # Cell Infra
+        cell_plots = widgets.VBox([
+            self._map_to_output(self.cell_infra_map),
+            self._map_to_output(self.cell_distance_bar)
+        ])
+        # Cell Coverage
+        coverage_plots = widgets.VBox([
+            self._map_to_output(self.cell_coverage_map)
+        ])
+         # P2P Infra
+        p2p_plots = widgets.VBox([
+            self._map_to_output(self.p2p_infra_map),
+            self._map_to_output(self.p2p_distance_bar)
+        ])
+        tab = widgets.Output(layout=widgets.Layout(width="100%"))
+        # Technology Map
+        # cost maps
+        with tab:
+            display(
+                widgets.VBox(
+                    [
+                        section("Fiber Infrastructure", fiber_plots, "dark"),
+                        section("Cellular Infrastructure", cell_plots, "dark"),
+                        section("Cellular Coverage", coverage_plots, "dark"),
+                        section("Visibility P2P Infrastructure", p2p_plots, "dark"),
+                    ]
+                )
+            )
+        return tab
 
     def maps_tab(self):
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
@@ -352,6 +394,29 @@ class ResultDashboard:
             )
         return tab
 
+    def cost_tab_old(self):
+        tab = widgets.Output(layout=widgets.Layout(width="100%"))
+        with tab:
+            display(
+                widgets.VBox(
+                    [
+                        section("Project Costs", self._figure_to_output(self.project_cost_barplot)),
+                        section(
+                            "Average per School Technology Cost", self._figure_to_output(self.average_cost_barplot)
+                        ),
+                        section("Total Technology Costs", self._figure_to_output(self.total_cost_barplot)),
+                        section(
+                            "Number of Schools Connected by Tech Type", self._figure_to_output(self.technology_pie)
+                        ),
+                        section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
+                        section(
+                            "Total Costs by CapEx, OpEx, and Electricity", self.summary_table
+                        ),
+                    ]
+                )
+            )
+        return tab
+    
     def cost_tab(self):
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         with tab:
@@ -365,6 +430,11 @@ class ResultDashboard:
                         section("Total Technology Costs", self._figure_to_output(self.total_cost_barplot)),
                         section(
                             "Number of Schools Connected by Tech Type", self._figure_to_output(self.technology_pie)
+                        ),
+                        section("Technology Modalities", self._map_to_output(self.technology_map), "dark"),
+                        section("Average Cost Per School", self._map_to_output(self.per_school_cost_map), "dark"),
+                        section(
+                            "Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"
                         ),
                         section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
                         section(

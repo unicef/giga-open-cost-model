@@ -237,6 +237,11 @@ class ModelDataSpace:
                 )
                 if self.cellular_cache.connected_cache is not None
                 else math.inf,
+                "nearest_visible_cell_tower": self.p2p_cache.connected_cache.get_distance(
+                    c.giga_id
+                )
+                if self.p2p_cache.connected_cache is not None
+                else math.inf,
             }
             for c in self.school_entities
         }
@@ -252,6 +257,7 @@ class ModelDataSpace:
             "bandwidth_demand",
             "nearest_fiber",
             "nearest_cell_tower",
+            "nearest_visible_cell_tower",
         ]:
             sids = filter(lambda sid: sid in lookup, schools_ids)
             df[k] = [lookup[sid][k] for sid in sids]

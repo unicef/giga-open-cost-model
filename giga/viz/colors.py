@@ -33,10 +33,18 @@ GIGA_CONNECTIVITY_COLORS = {
 }
 
 # for cellular coverage map
-CELL_COVERAGE_COLOR_MAP = OrderedDict({
+CELL_COVERAGE_COLOR_MAP_OLD = OrderedDict({
         "None": "#e8ffff",
         "2G": "#bfe6ff",
         "3G": "#8cd3ff",
+        "4G": "#009dff",
+        "LTE": "#009dff", # same as 4G
+    })
+
+CELL_COVERAGE_COLOR_MAP = OrderedDict({
+        "None": "#ff1e00",
+        "2G": "#ffff00",
+        "3G": "#00ff77",
         "4G": "#009dff",
         "LTE": "#009dff", # same as 4G
     })

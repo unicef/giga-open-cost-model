@@ -453,6 +453,61 @@ def make_cellular_distance_map_plot(
     )
     return fig
 
+def make_p2p_distance_map_plot(
+    results, distance_lower=CELLULAR_COLORBAR_MIN, distance_upper=CELLULAR_COLORBAR_MAX
+):
+    style = "carto-positron"
+    df = results.rename(columns={"nearest_visible_cell_tower": "Nearest Visible Cell Tower (km)"})
+    df["Nearest Visible Cell Tower (km)"] = np.round(df["Nearest Visible Cell Tower (km)"] / 1_000, 2)
+    df["size"] = np.ones(len(df))
+    fig = px.scatter_mapbox(
+        df,
+        lat="lat",
+        lon="lon",
+        color="Nearest Visible Cell Tower (km)",
+        color_continuous_scale="Bluered",
+        size="size",
+        zoom=7,
+        size_max=3,
+        mapbox_style=style,
+        range_color=[distance_lower, distance_upper],
+        hover_data={
+            "lat": False,
+            "lon": False,
+            "size": False,
+            "school_id": True,
+            "Nearest Visible Cell Tower (km)": True,
+        },
+    )
+    # Move colorbar to top left
+    fig.update_layout(
+        coloraxis_colorbar=dict(
+            xanchor="left",
+            yanchor="top",
+            x=-0.4,
+            y=1.2,
+        ),
+        autosize=True,
+        width=850,
+        height=600,
+        title={
+            "text": "<b>Unconnected School Proximity to Visible Cell Towers</b>",
+            "y": 0.96,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(
+                size=18, color=GIGA_BLACK, family="Arial"
+            ),  # customize font size here
+        },
+    )
+    fig.update_coloraxes(
+        colorbar=dict(
+            title=dict(font=dict(color="#474747", family="Arial")), tickfont=dict(color="#474747", family="Arial")
+        )
+    )
+    return fig
+
 
 def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
     categories_order = [

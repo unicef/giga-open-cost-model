@@ -206,7 +206,7 @@ def cumulative_distance_bar_plot(
             "title_font": dict(size=15, color="black", family="Arial"),
             "showticklabels": False,
             "range": [0, max(cumulative_counts.values) * 1.1],
-            "title_standoff": 170,
+            #"title_standoff": 170,
         },
     )
     return fig
@@ -239,6 +239,20 @@ def cumulative_cell_tower_distance_barplot(
         data, distance_key, distance_cutoff, bins, names, title,
         x_label="Number of schools within distance to a cell tower",
         y_label="Distance to tower"
+    )
+
+def cumulative_visible_cell_tower_distance_barplot(
+    data,
+    distance_key="nearest_visible_cell_tower",
+    distance_cutoff=3_000,
+    bins=DEFAULT_CELL_BINS,
+    names=DEFAULT_CELL_NAMES,
+    title="Unconnected Schools within 3km of a Visible Cell Tower",
+):
+    return cumulative_distance_bar_plot(
+        data, distance_key, distance_cutoff, bins, names, title,
+        x_label="Number of schools within distance to a visible cell tower",
+        y_label="Distance to visible tower"
     )
 
 
