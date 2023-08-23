@@ -27,7 +27,8 @@ from giga.schemas.distance_cache import (
     MultiLookupDistanceCache,
 )
 from giga.utils.progress_bar import progress_bar as pb
-
+import json
+import pickle
 
 class P2PCacheCreatorArgs:
     workspace_directory: str = None
@@ -116,12 +117,15 @@ class P2PCacheCreator:
         dists_towers: MultiLookupDistanceCache = (
             MultiLookupDistanceCache.from_distances(self.closest_towers())
         )
+        with open("aux_dists_towers.json", "w") as f:
+            json.dump(dists_towers.dict(), f)
 
         # Accumulate list of closest visible towers for each school.
         closest_visible_towers: List[PairwiseDistance] = []
         iterable = (
             pb(self.school_coords) if self.args.progress_bar else self.school_coords
         )
+        i = 0
         for school_coord in iterable:
             if school_coord.coordinate_id not in dists_towers.lookup:
                 continue
@@ -131,6 +135,11 @@ class P2PCacheCreator:
             closest_visible_towers += self.prune_obstructed_towers(
                 school_coord, closest_pairs
             )
+            i += 1
+            if i%1000==0:
+                to_save = {"index":i,"closest_visible_towers":closest_visible_towers}
+                with open("aux_closest_visible_towers.pkl", "w") as f:
+                    pickle.dump(to_save, f)
 
         # Build and return the final cache.
         dist_cache = [p.reversed() for p in closest_visible_towers]
