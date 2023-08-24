@@ -10,7 +10,7 @@ from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.school import GigaSchoolTable
 from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
 from giga.viz.notebooks.components.widgets.giga_file_upload import GigaFileUpload
-
+from giga.viz.notebooks.parameters.input_parameter import CategoricalDropdownParameter
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
 
@@ -193,6 +193,43 @@ class SelectionMapDataLayers(MapDataLayers):
         )
         upload_button.observe(handle_upload, "value")
         return upload_button
+    
+    def make_admin_dropdown(self,fig):
+        def handle_select(change):
+            if change['new']!='None' and change['new']!='---Admin 1---' and change['new']!='---Admin 2---':
+                # Filter the _schools DataFrame to include only the uploaded giga_school_id
+                filtered_schools = self._schools[(
+                    (self._schools["admin1"].astype(str) == change["new"]) | (self._schools["admin2"].astype(str) == change["new"])
+                )]
+                self.school_selection_table.data[0].cells.values = [
+                    filtered_schools[col]
+                    for i, col in enumerate(self.config.table_data_columns)
+                ]
+                # Highlight the selected schools on the map
+                for scatter in fig.data[
+                    SCHOOL_LAYERS_IDX_START:SCHOOL_LAYERS_IDX_END
+                ]:
+                    scatter.selectedpoints = [
+                        i
+                        for i, giga_id in enumerate(scatter["customdata"])
+                        if giga_id in list(filtered_schools['giga_id'])
+                    ]
+                # Update the selection label
+                self.selection_label.value = (
+                    f"Total number of selected schools: {len(self.selected_schools)}"
+                )
+
+        options = ["None"]
+        admins1 = list(set(obj.admin1 for obj in self.data_space.all_school_entities if obj.admin1!=''))
+        if len(admins1)>0:
+            options += ["---Admin 1---"] + admins1
+        admins2 = list(set(obj.admin2 for obj in self.data_space.all_school_entities if obj.admin2!=''))
+        if len(admins2)>0:    
+            options += ["---Admin 2---"] + admins2
+        admin_dropdown = CategoricalDropdownParameter(options=options,value="None",description="Dropdown to select admins", parameter_type = "categorical_dropdown").parameter
+        admin_dropdown.observe(handle_select,"value")
+
+        return admin_dropdown
 
     @property
     def layers_selection(self):

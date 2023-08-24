@@ -716,6 +716,7 @@ class CostEstimationParameterInput:
 
     def data_map(self):
         # TODO (max): this is a placeholder for a static map in the notebook that will be refactored out once the UI implementation is complete
+        self.map_output.clear_output()
         country = self.data_parameters().school_data_conf.country_id
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
@@ -738,6 +739,7 @@ class CostEstimationParameterInput:
         return self.map_output
 
     def selection_map(self):
+        self.selection_map_output.clear_output()
         country = self.data_parameters().school_data_conf.country_id
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)

@@ -83,6 +83,17 @@ class GigaSchool(BaseModel):
         else:
             self.has_fiber = False
 
+        #admins
+        if pd.isnull(self.admin1):
+            self.admin1 = ''
+        if pd.isnull(self.admin2):
+            self.admin2 = ''
+        if pd.isnull(self.admin3):
+            self.admin3 = ''
+        if pd.isnull(self.admin4):
+            self.admin4 = ''
+        
+
 
 class GigaSchoolTable(BaseModel):
     """A table or collection of schools"""

@@ -170,7 +170,7 @@ class StaticDataMap:
         m._config = {**m._config, **SELECTION_MAP_MODEBAR_GLOBAL_CONFIG}
         layers.connect_school_layer_selection(m)
         upload_button = layers.make_upload_button(m)
-        drop_admins = CategoricalDropdownParameter(options=["None","adminA","adminB"],value="None",description="Dropdown to select admins", parameter_type = "categorical_dropdown").parameter
+        drop_admins = layers.make_admin_dropdown(m)
         selected_label = layers.make_selected_label()
         layout = Layout()  # add centering and other formatting here
         return VBox(
