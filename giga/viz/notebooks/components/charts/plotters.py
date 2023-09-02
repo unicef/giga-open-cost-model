@@ -448,3 +448,31 @@ def make_satellite_pie_breakdown(to_show):
         margin=dict(t=100),
     )  # Adjust top margin to fit title)
     return fig
+
+def make_tech_pie_chart(df):
+    # Calculate value counts and percentages
+    value_counts = df['type_connectivity'].value_counts()
+    percentages = (value_counts / value_counts.sum()) * 100
+    
+        # Create a Pie chart using plotly.graph_objects.Pie
+    fig = go.Figure(
+        go.Pie(
+            labels=percentages.index,
+            values=percentages.values,
+            text=percentages.index,
+        )
+    )
+    # Add title to the plot
+    fig.update_layout(
+        title={
+            "text": "<b>Current technology distribution</b>",
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(size=24, color="black", family="Arial"),
+        },
+        showlegend=False,
+        margin=dict(t=100),
+    )  # Adjust top margin to fit title)
+    return fig

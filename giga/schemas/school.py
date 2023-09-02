@@ -76,12 +76,16 @@ class GigaSchool(BaseModel):
             self.has_electricity = True
         else:
             self.has_electricity = False
+            if self.electricity!="No" and self.electricity!="no" and self.electricity!="NO":
+                self.electricity = "Unknown"
 
         #fiber
         if self.type_connectivity=="Fiber" or self.type_connectivity=="fiber" or self.type_connectivity=="FIBER" or self.type_connectivity=="Fibre" or self.type_connectivity=="fibre" or self.type_connectivity=="FIBRE":
             self.has_fiber = True
         else:
             self.has_fiber = False
+            if pd.isnull(self.type_connectivity):
+                self.type_connectivity = "Unknown"
 
         #admins
         if pd.isnull(self.admin1):

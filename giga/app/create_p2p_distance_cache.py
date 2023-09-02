@@ -114,32 +114,46 @@ class P2PCacheCreator:
 
     def run(self) -> SingleLookupDistanceCache:
         # Temporary distance cache used to as input for LOS calculation.
-        dists_towers: MultiLookupDistanceCache = (
-            MultiLookupDistanceCache.from_distances(self.closest_towers())
-        )
-        with open("aux_dists_towers.json", "w") as f:
-            json.dump(dists_towers.dict(), f)
+        if self.args.file_closest_towers == "":
+            dists_towers: MultiLookupDistanceCache = (
+                MultiLookupDistanceCache.from_distances(self.closest_towers())
+            )
+            with open("aux_dists_towers.json", "w") as f:
+                json.dump(dists_towers.dict(), f)
+        else:
+            with open(self.args.file_closest_towers, "r") as f:
+                d = json.load(f)
+            dists_towers = MultiLookupDistanceCache(**d)
 
         # Accumulate list of closest visible towers for each school.
-        closest_visible_towers: List[PairwiseDistance] = []
+        if self.args.file_visible_towers == "":
+            closest_visible_towers: List[PairwiseDistance] = []
+            j = -1
+        else:
+            with open(self.args.file_visible_towers, "rb") as f:
+                state = pickle.load(f)
+            j = state["index"]
+            closest_visible_towers = state["closest_visible_towers"]
         iterable = (
             pb(self.school_coords) if self.args.progress_bar else self.school_coords
         )
         i = 0
         for school_coord in iterable:
-            if school_coord.coordinate_id not in dists_towers.lookup:
-                continue
-            closest_pairs: List[PairwiseDistance] = dists_towers.lookup[
-                school_coord.coordinate_id
-            ]
-            closest_visible_towers += self.prune_obstructed_towers(
-                school_coord, closest_pairs
-            )
+            if i>j:
+                if school_coord.coordinate_id not in dists_towers.lookup:
+                    continue
+                closest_pairs: List[PairwiseDistance] = dists_towers.lookup[
+                    school_coord.coordinate_id
+                ]
+                closest_visible_towers += self.prune_obstructed_towers(
+                    school_coord, closest_pairs
+                )
+            
+                if i%1000==0:
+                    to_save = {"index":i,"closest_visible_towers":closest_visible_towers}
+                    with open("aux_closest_visible_towers.pkl", "wb") as f:
+                        pickle.dump(to_save, f)
             i += 1
-            if i%1000==0:
-                to_save = {"index":i,"closest_visible_towers":closest_visible_towers}
-                with open("aux_closest_visible_towers.pkl", "w") as f:
-                    pickle.dump(to_save, f)
 
         # Build and return the final cache.
         dist_cache = [p.reversed() for p in closest_visible_towers]
@@ -205,6 +219,20 @@ def main():
         type=float,
         default=5,
         help="Specifies the height of the school-side receiver in meters",
+    )
+    optional.add_argument(
+        "--file-closest-towers",
+        "-fct",
+        type=str,
+        default="",
+        help="Specifies the intermediate file with closest towers",
+    )
+    optional.add_argument(
+        "--file-visible-towers",
+        "-fvt",
+        type=str,
+        default="",
+        help="Specifies the intermediate file with closest visible towers",
     )
     args: P2PCacheCreatorArgs = parser.parse_args()
     args.progress_bar = True

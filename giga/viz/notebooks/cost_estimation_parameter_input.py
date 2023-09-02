@@ -734,6 +734,7 @@ class CostEstimationParameterInput:
             data_map = StaticDataMap(config_map)
             data_map.add_layers(map_layers.layers)
             m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+        self.data_map_m = m
         with self.map_output:
             data_map.make_static_map_figure(m)
         return self.map_output

@@ -27,6 +27,9 @@ class ModelDataSpace:
         self._fiber_cache = None
         self._cellular_cache = None
         self._p2p_cache = None
+        self._for_infra_fiber_cache = None
+        self._for_infra_unconnected_schools = None
+        self._for_infra_connected_schools = None
 
     @property
     def schools(self):
@@ -261,4 +264,39 @@ class ModelDataSpace:
         ]:
             sids = filter(lambda sid: sid in lookup, schools_ids)
             df[k] = [lookup[sid][k] for sid in sids]
+        return df
+
+    def schools_to_frame(self):
+        lookup = [
+                {"school_id" : c.giga_id,
+                "lat": c.lat,
+                "lon": c.lon,
+                "num_students": c.num_students,
+                "has_electricity": c.has_electricity,
+                "has_fiber": c.has_fiber,
+                "connected": c.connected,
+                "type_connectivity": c.type_connectivity,
+                "cell_coverage_type": c.cell_coverage_type,
+                "electricity": c.electricity,
+                "connectivity_status": c.connectivity_status,
+                "bandwidth_demand": c.bandwidth_demand,
+                "nearest_fiber": self.fiber_cache.connected_cache.get_distance(
+                    c.giga_id
+                )
+                if self.fiber_cache.connected_cache is not None
+                else math.inf,
+                "nearest_cell_tower": self.cellular_cache.connected_cache.get_distance(
+                    c.giga_id
+                )
+                if self.cellular_cache.connected_cache is not None
+                else math.inf,
+                "nearest_visible_cell_tower": self.p2p_cache.connected_cache.get_distance(
+                    c.giga_id
+                )
+                if self.p2p_cache.connected_cache is not None
+                else math.inf,
+            }
+            for c in self.all_school_entities
+        ]
+        df = pd.DataFrame(lookup)
         return df

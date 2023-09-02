@@ -395,7 +395,7 @@ def make_fiber_distance_map_plot(
             size=18, color=GIGA_BLACK, family="Arial"
         ),  # customize font size here
     }
-    return go.FigureWidget(fig)
+    return fig#go.FigureWidget(fig)
 
 
 def make_cellular_distance_map_plot(

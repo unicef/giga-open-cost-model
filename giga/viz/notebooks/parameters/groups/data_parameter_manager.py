@@ -76,3 +76,6 @@ class DataParameterManager:
     
     def get_country_id(self):
         return country_name_to_key(self._hash["country_name"].value)
+    
+    def get_country_name(self):
+        return self._hash["country_name"].value
