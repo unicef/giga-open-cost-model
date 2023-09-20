@@ -206,7 +206,7 @@ def generate_infra_zip_bytes(country,data_space,m):
     with ZipFile(zip_buffer, "w") as zip_file:
         for filename in os.listdir(tmpdir):
             file_ext = os.path.splitext(filename)[1].lower()
-            if file_ext in ['.png','.tex','.pdf']:
+            if file_ext in ['.png','.tex','.pdf','.log']:
                 file_path = os.path.join(tmpdir, filename)
                 arcname = os.path.basename(file_path)
                 zip_file.write(file_path, arcname)        

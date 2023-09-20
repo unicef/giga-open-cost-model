@@ -5,7 +5,8 @@ from pydantic import parse_obj_as
 from giga.app.config_client import ConfigClient
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
 from giga.app.config import get_registered_country_names
-from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
+#from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
+import country_converter as coco
 
 BASELINE_DATA_SPACE_PARAMETERS = [
     {
@@ -22,12 +23,13 @@ BASELINE_DATA_SPACE_PARAMETERS = [
 
 
 def country_name_to_key(country_name):
-    return COUNTRY_CODE_DICT[country_name]
+    #return COUNTRY_CODE_DICT[country_name]
+    return coco.convert(country_name, to='ISO3')
 
 
 def country_key_to_name(country_key):
-    return CODE_COUNTRY_DICT[country_key]
-
+    #return CODE_COUNTRY_DICT[country_key]
+    return coco.convert(country_key, to='name_short')
 
 def country_name_to_key_old(country_name):
     return country_name.lower().replace(" ", "_")

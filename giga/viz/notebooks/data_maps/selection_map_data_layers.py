@@ -218,6 +218,25 @@ class SelectionMapDataLayers(MapDataLayers):
                 self.selection_label.value = (
                     f"Total number of selected schools: {len(self.selected_schools)}"
                 )
+            elif change['new']=='None':
+                filtered_schools = self._schools
+                self.school_selection_table.data[0].cells.values = [
+                    filtered_schools[col]
+                    for i, col in enumerate(self.config.table_data_columns)
+                ]
+                # Highlight the selected schools on the map
+                for scatter in fig.data[
+                    SCHOOL_LAYERS_IDX_START:SCHOOL_LAYERS_IDX_END
+                ]:
+                    scatter.selectedpoints = [
+                        i
+                        for i, giga_id in enumerate(scatter["customdata"])
+                        #if giga_id in list(filtered_schools['giga_id'])
+                    ]
+                # Update the selection label
+                self.selection_label.value = (
+                    f"Total number of selected schools: {len(self.selected_schools)}"
+                )
 
         options = ["None"]
         admins1 = list(set(obj.admin1 for obj in self.data_space.all_school_entities if obj.admin1!=''))

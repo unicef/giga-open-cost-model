@@ -27,10 +27,11 @@ from giga.schemas.conf.models import (
 from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config_client import ConfigClient
 from giga.app.config import get_country_defaults
-from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
+#from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
 
 from giga.viz.notebooks.parameters.groups.data_parameter_manager import (
     DataParameterManager,
+    country_name_to_key,
 )
 from giga.viz.notebooks.parameters.groups.scenario_parameter_manager import (
     ScenarioParameterManager,
@@ -113,8 +114,8 @@ def constraint_freeze_transform(value):
 def country_name_to_key_old(country_name):
     return country_name.lower().replace(" ", "_")
 
-def country_name_to_key(country_name):
-    return COUNTRY_CODE_DICT[country_name]
+#def country_name_to_key(country_name):
+#    return COUNTRY_CODE_DICT[country_name]
 
 class CostEstimationParameterInput:
     """

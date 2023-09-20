@@ -73,7 +73,7 @@ nbclassic = "1.0.0"
 nbclient = "0.7.4"
 nbconvert = "7.4.0"
 nbformat = "5.9.0"
-
+country_converter = "1.0.0"
 
 
 [tool.poetry.scripts]

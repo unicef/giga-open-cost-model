@@ -66,8 +66,8 @@ class IntSliderParameter(BaseParameter):
         return f"[default: {int(value)}]"
 
     def update(self, value: int):
-        self.value = value
-        self.parameter.value = value
+        self.value = int(value)
+        self.parameter.value = int(value)
         self.default_label.value = self.make_default_label(value)
 
     def set_off_default_css_style(self, style_class: str):

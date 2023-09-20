@@ -18,7 +18,7 @@ def output_to_school_stats(output_table, data_space):
     dfs = pd.DataFrame(
         [
             {
-                "Total Number of Schools": len(data_space.schools.schools),
+                "Total Number of Schools": len(data_space.all_schools.schools),
                 "Total Number of Unconnected Schools": len(output_table),
                 "Schools that can be connected": sum(output_table["feasible"]),
                 "Schools requiring electricity": len(

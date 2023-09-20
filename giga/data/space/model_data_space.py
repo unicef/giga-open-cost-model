@@ -187,9 +187,14 @@ class ModelDataSpace:
         """
         _ = self.schools
         new_space = ModelDataSpace(self.config)
-        new_space._schools = self._schools.filter_schools_by_id(school_ids)
         ####
-        filtered_schools = self._all_schools.filter_schools_by_id(school_ids)
+        if len(school_ids)==len(self._all_schools.school_ids):
+            new_space._schools = self._schools
+            filtered_schools = self.all_schools
+        else:
+            new_space._schools = self._schools.filter_schools_by_id(school_ids)
+            filtered_schools = self._all_schools.filter_schools_by_id(school_ids)
+            
         fiber_schools = [s for s in filtered_schools.schools if s.has_fiber]
         if len(fiber_schools) > 0:
             new_space._fiber_schools = GigaSchoolTable(schools=fiber_schools).to_coordinates()

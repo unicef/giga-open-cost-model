@@ -350,7 +350,7 @@ class ResultDashboard:
         # Cell Infra
         cell_plots = widgets.VBox([
             self._map_to_output(self.cell_infra_map),
-            self._map_to_output(self.cell_distance_bar)
+            self._figure_to_output(self.cell_distance_bar)
         ])
         # Cell Coverage
         coverage_plots = widgets.VBox([
@@ -359,7 +359,7 @@ class ResultDashboard:
          # P2P Infra
         p2p_plots = widgets.VBox([
             self._map_to_output(self.p2p_infra_map),
-            self._map_to_output(self.p2p_distance_bar)
+            self._figure_to_output(self.p2p_distance_bar)
         ])
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         # Technology Map
@@ -423,6 +423,9 @@ class ResultDashboard:
             display(
                 widgets.VBox(
                     [
+                        section(
+                            "Total Costs by CapEx, OpEx, and Electricity", self.summary_table
+                        ),
                         section("Project Costs", self._figure_to_output(self.project_cost_barplot)),
                         section(
                             "Average per School Technology Cost", self._figure_to_output(self.average_cost_barplot)
@@ -437,9 +440,7 @@ class ResultDashboard:
                             "Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"
                         ),
                         section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
-                        section(
-                            "Total Costs by CapEx, OpEx, and Electricity", self.summary_table
-                        ),
+                        
                     ]
                 )
             )
