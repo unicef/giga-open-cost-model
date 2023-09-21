@@ -17,6 +17,7 @@ class ElectricityOpexConf(BaseModel):
 class ElectricityConstraints(BaseModel):
 
     required_power_per_school: float #Watts
+    allow_new_electricity: bool = True
 
 class ElectricityCostConf(BaseModel):
 

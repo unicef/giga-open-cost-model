@@ -74,6 +74,17 @@ class ModelDataSpace:
         Accessor for school coordinates - id, lat, lot information
         """
         return self.schools.to_coordinates()
+    
+    @property
+    def school_with_electricity_coordinates(self):
+        """
+        Accessor for school with electricity coordinates - id, lat, lot information
+        """
+        electricity_schools = [s for s in self.all_schools.schools if s.has_electricity]
+        if len(electricity_schools) > 0:
+            return GigaSchoolTable(schools=electricity_schools).to_coordinates()
+        else:
+            return []
 
     @property
     def school_entities(self):
@@ -230,6 +241,7 @@ class ModelDataSpace:
             c.giga_id: {
                 "lat": c.lat,
                 "lon": c.lon,
+                "admin1": c.admin1,
                 "num_students": c.num_students,
                 "has_electricity": c.has_electricity,
                 "has_fiber": c.has_fiber,
@@ -258,6 +270,7 @@ class ModelDataSpace:
         for k in [
             "lat",
             "lon",
+            "admin1",
             "num_students",
             "has_electricity",
             "has_fiber",

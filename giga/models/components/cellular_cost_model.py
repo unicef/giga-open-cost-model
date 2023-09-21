@@ -49,6 +49,7 @@ class CellularCostModel:
         :param data_space: ModelDataSpace, that contains school entities
         :return: List of SchoolConnectionCosts, that contains the cost of cellular connectivity for each school
         """
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         electricity_model = ElectricityCostModel(self.config)
         connected_set = set([x.coordinate1.coordinate_id for x in distances])
         capex_consumer = self._cost_of_setup()
@@ -58,6 +59,10 @@ class CellularCostModel:
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts.infeasible_cost(
                     sid, "Cellular", "CELLULAR_BW_THRESHOLD"
+                )
+            elif not school.has_electricity and not new_electricity:
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Cellular", "NO_ELECTRICITY"
                 )
             elif sid in connected_set or self._existing_cell_coverage(school):
                 # either school is in range of a cell tower or school has coverage information from supplemental data
@@ -101,8 +106,12 @@ class CellularCostModel:
             maximum_connection_length_m=self.config.constraints.maximum_range,
             distance_cache=data_space.cellular_cache,
         )
-        # determine which schools are in range of cell towers
-        distances = connection_model.run(data_space.school_coordinates)
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
+        # determine which schools can be connected and their distances
+        if new_electricity:
+            distances = connection_model.run(data_space.school_coordinates)
+        else:
+            distances = connection_model.run(data_space.school_with_electricity_coordinates)
         costs = self.compute_costs(distances, data_space)
         return CostResultSpace(
             technology_results={"distances": distances}, cost_results=costs

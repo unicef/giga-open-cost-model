@@ -46,6 +46,7 @@ class P2PCostModel:
         :param data_space: a data space containing school entities and tower infrastructure
         :return: a list of school connection costs for p2p technology
         """
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         electricity_model = ElectricityCostModel(self.config)
         connected_set = set([x.coordinate1.coordinate_id for x in distances])
         capex_provider = self._cost_of_setup_provider()
@@ -56,6 +57,10 @@ class P2PCostModel:
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts.infeasible_cost(
                     sid, "P2P", "P2P_BW_THRESHOLD"
+                )
+            elif not school.has_electricity and not new_electricity:
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "P2P", "NO_ELECTRICITY"
                 )
             elif sid in connected_set:
                 opex_consumer = self._cost_of_operation(school)
@@ -88,15 +93,20 @@ class P2PCostModel:
         :return CostResultSpace, that contains the cost of p2p connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting P2P Cost Model")
-        connect_model = GreedyDistanceConnector(
+        connection_model = GreedyDistanceConnector(
             data_space.cell_tower_coordinates,
             dynamic_connect=False,  # this will create closest distance pairs
             progress_bar=progress_bar,
             maximum_connection_length_m=self.config.constraints.maximum_range,
             distance_cache=data_space.p2p_cache,
         )
-        # determine which schools are in range of cell towers
-        distances = connect_model.run(data_space.school_coordinates)
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
+        # determine which schools can be connected and their distances
+        if new_electricity:
+            distances = connection_model.run(data_space.school_coordinates)
+        else:
+            distances = connection_model.run(data_space.school_with_electricity_coordinates)
+       
         costs = self.compute_costs(distances, data_space)
         return CostResultSpace(
             technology_results={"distances": distances}, cost_results=costs

@@ -34,6 +34,7 @@ class SatelliteCostModel:
         :param data_space: a data space containing school entities
         :return: a list of school connection costs for satellite technology
         """
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         electricity_model = ElectricityCostModel(self.config)
         capex_consumer = self._cost_of_setup()
         costs = []
@@ -57,6 +58,10 @@ class SatelliteCostModel:
                     reason="SATELLITE_BW_THRESHOLD",
                 )
                 """
+            elif not school.has_electricity and not new_electricity:
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Satellite", "NO_ELECTRICITY"
+                )
             else:
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(

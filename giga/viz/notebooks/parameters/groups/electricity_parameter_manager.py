@@ -40,6 +40,15 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "show_default": True,
         },
     },
+    {
+        "parameter_name": "allow_new_electricity",
+        "parameter_input_name": "Allow providing new electricity source to schools",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "ON",
+        },
+    },
 ]
 
 
@@ -82,10 +91,12 @@ class ElectricityParameterManager:
         cost_per_kwh = float(self.get_parameter_from_sheet("per_kwh_cost"))
         solar_cost_per_watt = float(self.get_parameter_from_sheet("solar_cost_per_watt"))
         required_power_per_school = float(self.get_parameter_from_sheet("required_power_per_school"))
+        allow_new_electricity = bool(float(self.get_parameter_from_sheet("allow_new_electricity")))
         return ElectricityCostConf(
             capex={
                 "solar_cost_per_watt": solar_cost_per_watt
             },
             opex={"cost_per_kwh": cost_per_kwh},
-            constraints={"required_power_per_school": required_power_per_school},
+            constraints={"required_power_per_school": required_power_per_school,
+                         "allow_new_electricity":allow_new_electricity},
         )

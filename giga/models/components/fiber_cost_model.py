@@ -64,7 +64,7 @@ class FiberCostModel:
             + self.config.opex.fixed_costs
         )
 
-    def _cost_of_setup(self, schoold):
+    def _cost_of_setup(self, school):
         return self.config.capex.fixed_costs
 
     def compute_costs(
@@ -76,6 +76,7 @@ class FiberCostModel:
         :param data_space: a data space containing school entities and fiber infrastructure
         :return: a list of school connection costs for fiber technology
         """
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         electricity_model = ElectricityCostModel(self.config)
         capex_costs_provider = self._distance_to_capex(distances)
         opex_costs_provider = self._distance_to_opex(distances)
@@ -85,6 +86,10 @@ class FiberCostModel:
             if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts.infeasible_cost(
                     sid, "Fiber", "FIBER_BW_THRESHOLD"
+                )
+            elif not school.has_electricity and not new_electricity:
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Fiber", "NO_ELECTRICITY"
                 )
             elif sid in capex_costs_provider:
                 capex_provider = capex_costs_provider[sid]["capex"]
@@ -125,7 +130,7 @@ class FiberCostModel:
         """
         LOGGER.info(f"Starting Fiber Cost Model")
         if self.config.capex.schools_as_fiber_nodes:
-            conection_model = GreedyDistanceConnector(
+            connection_model = GreedyDistanceConnector(
                 data_space.fiber_coordinates + data_space._fiber_schools,
                 dynamic_connect=self.config.capex.economies_of_scale,
                 progress_bar=progress_bar,
@@ -134,7 +139,7 @@ class FiberCostModel:
                 distance_cache=data_space.fiber_cache,
             )
         else:
-            conection_model = GreedyDistanceConnector(
+            connection_model = GreedyDistanceConnector(
                 data_space.fiber_coordinates,
                 dynamic_connect=self.config.capex.economies_of_scale,
                 progress_bar=progress_bar,
@@ -142,8 +147,12 @@ class FiberCostModel:
                 distance_model=distance_model,
                 distance_cache=data_space.fiber_cache,
             )
+        new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         # determine which schools can be connected and their distances
-        distances = conection_model.run(data_space.school_coordinates)
+        if new_electricity:
+            distances = connection_model.run(data_space.school_coordinates)
+        else:
+            distances = connection_model.run(data_space.school_with_electricity_coordinates)
         costs = self.compute_costs(distances, data_space)
         return CostResultSpace(
             technology_results={"distances": distances}, cost_results=costs

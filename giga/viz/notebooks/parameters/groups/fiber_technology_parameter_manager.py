@@ -20,6 +20,18 @@ FIBER_MODEL_PARAMETERS = [
         },
     },
     {
+        "parameter_name": "setup_cost",
+        "parameter_input_name": "Setup Cost (USD)",
+        "parameter_interactive": {
+            "parameter_type": "int_slider",
+            "value": 1_000,
+            "min": 0,
+            "max": 10000,
+            "step": 1,
+            "show_default": True,
+        },
+    },
+    {
         "parameter_name": "cost_per_km",
         "parameter_input_name": "Cost Per km (USD)",
         "parameter_interactive": {
@@ -97,6 +109,7 @@ class FiberTechnologyParameterManager:
     def update_parameters(self, config):
         if len(config) == 0:
             return
+        self.sheet.update_parameter("setup_cost", config["capex"]["fixed_costs"])
         self.sheet.update_parameter("cost_per_km", config["capex"]["cost_per_km"])
         self.sheet.update_parameter(
             "economies_of_scale", config["capex"]["economies_of_scale"]
@@ -130,6 +143,7 @@ class FiberTechnologyParameterManager:
         self.sheet.unfreeze()
 
     def get_model_parameters(self):
+        setup_cost = float(self.get_parameter_from_sheet("setup_cost"))
         cost_per_km = float(self.get_parameter_from_sheet("cost_per_km"))
         annual_cost_per_mbps = float(
             self.get_parameter_from_sheet("annual_bandwidth_cost_per_mbps")
@@ -147,6 +161,7 @@ class FiberTechnologyParameterManager:
         )  # meters
         return FiberTechnologyCostConf(
             capex={
+                "fixed_costs": setup_cost,
                 "cost_per_km": cost_per_km,
                 "economies_of_scale": economies_of_scale,
                 "schools_as_fiber_nodes": schools_as_fiber_nodes,

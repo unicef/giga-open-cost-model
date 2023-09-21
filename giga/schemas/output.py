@@ -94,6 +94,7 @@ class NonConnectionReason(str, Enum):
     p2p_bw_threshold_exceeded = "P2P_BW_THRESHOLD"
     p2p_range_threshold_exceeded = "P2P_RANGE_THRESHOLD"
     budget_exceeded = "BUDGET_EXCEEDED"
+    no_electricity = "NO_ELECTRICITY"
 
 
 class SchoolConnectionCosts(BaseModel):
