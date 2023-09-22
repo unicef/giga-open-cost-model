@@ -157,7 +157,7 @@ class FiberTechnologyParameterManager:
         opex_per_km = float(self.get_parameter_from_sheet("opex_cost_per_km"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         maximum_connection_length = (
-            float(self.get_parameter_from_sheet("maximum_connection_length")) * 1_000.0
+            float(self.get_parameter_from_sheet("maximum_connection_length"))# * 1_000.0
         )  # meters
         return FiberTechnologyCostConf(
             capex={

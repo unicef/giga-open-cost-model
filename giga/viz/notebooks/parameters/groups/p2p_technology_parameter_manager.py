@@ -114,7 +114,7 @@ class P2PTechnologyParameterManager:
         tower_install_cost = float(self.get_parameter_from_sheet("tower_install_costs"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         maximum_range = (
-            float(self.get_parameter_from_sheet("maximum_range")) * METERS_PER_KM
+            float(self.get_parameter_from_sheet("maximum_range")) #* METERS_PER_KM
         )
         return P2PTechnologyCostConf(
             capex={

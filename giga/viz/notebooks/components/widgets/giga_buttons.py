@@ -77,11 +77,12 @@ def create_event_button(callback, title="Click Me"):
     return button
 
 
-def make_run_again_button(inputs, outputs, run_model_button):
+def make_run_again_button(inputs, outputs, run_model_button, infra_report_button):
     def update_to_runnable(event):
         inputs.unfreeze()
         for o in outputs:
             o.clear_output()
         run_model_button.disabled = False
+        infra_report_button.disabled = False
 
     return create_event_button(update_to_runnable, title="Run Model Again")

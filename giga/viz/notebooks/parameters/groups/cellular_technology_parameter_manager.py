@@ -98,7 +98,7 @@ class CellularTechnologyParameterManager:
         install_cost = float(self.get_parameter_from_sheet("install_costs"))
         required_power = float(self.get_parameter_from_sheet("required_power"))
         maximum_range = (
-            float(self.get_parameter_from_sheet("maximum_range")) * METERS_PER_KM
+            float(self.get_parameter_from_sheet("maximum_range")) #* METERS_PER_KM
         )
         return CellularTechnologyCostConf(
             capex={"fixed_costs": install_cost},

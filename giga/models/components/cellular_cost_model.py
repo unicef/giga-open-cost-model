@@ -103,7 +103,7 @@ class CellularCostModel:
             tower_coordinates,
             dynamic_connect=False,  # this will create closest distance pairs
             progress_bar=progress_bar,
-            maximum_connection_length_m=self.config.constraints.maximum_range,
+            maximum_connection_length_m=self.config.constraints.maximum_range * METERS_IN_KM,
             distance_cache=data_space.cellular_cache,
         )
         new_electricity = self.config.electricity_config.constraints.allow_new_electricity

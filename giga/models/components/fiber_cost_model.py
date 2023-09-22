@@ -134,7 +134,7 @@ class FiberCostModel:
                 data_space.fiber_coordinates + data_space._fiber_schools,
                 dynamic_connect=self.config.capex.economies_of_scale,
                 progress_bar=progress_bar,
-                maximum_connection_length_m=self.config.constraints.maximum_connection_length,
+                maximum_connection_length_m=self.config.constraints.maximum_connection_length * METERS_IN_KM,
                 distance_model=distance_model,
                 distance_cache=data_space.fiber_cache,
             )
