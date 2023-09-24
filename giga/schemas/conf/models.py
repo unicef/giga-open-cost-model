@@ -68,6 +68,7 @@ class FiberConstraints(BaseModel):
     maximum_connection_length: float = math.inf  # meters
     maximum_bandwithd: float = 2_000  # Mbps
     required_power: float = 500  # annual kWh
+    correction_coeficient: float = 1.2 #correction coeficient for LoS
 
 
 class CellularConstraints(BaseModel):

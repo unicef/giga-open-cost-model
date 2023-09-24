@@ -9,6 +9,21 @@ from giga.data.store.stores import COUNTRY_DATA_STORE
 
 DEFAULT_POWER_REQUIRED_PER_SCHOOL = 11_000  # Watts
 
+def parse_connectivity(s):
+    if pd.isnull(s) or s=='':
+        return "Unknown"
+    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s:
+        return "Fiber"
+    if "cell" in s or "Cell" in s or "Cellular" in s or "cellular" in s or "Celular" in s or "G" in s:
+        return "Cellular"
+    if "Satellite" in s or "satellite" in s or "SATELLITE" in s or "SATELITE" in s:
+        return "Satellite"
+    if "unknow" in s or "Unknown" in s:
+        return "Unknown"
+    if "P2P" in s or "radio" in s or "Radio" in s or "Microwave" in s or "microwave" in s:
+        return "Microwave"
+    
+    return "Other"
 
 class SchoolZone(str, Enum):
     """Valid school zone environment"""
@@ -63,7 +78,7 @@ class GigaSchool(BaseModel):
         # connected and connectivity_status
         if self.connectivity=="Yes" or self.connectivity=="yes" or self.connectivity=="YES":
             self.connected = True
-            self.connectivity_status = "Good" #we do not care abotu good or moderate for now - would need sql query for that
+            self.connectivity_status = "Good" #we do not care about good or moderate for now - would need sql query for that
         else:
             self.connected = False
             if self.connectivity=="No" or self.connectivity=="no" or self.connectivity=="NO":
@@ -80,12 +95,11 @@ class GigaSchool(BaseModel):
                 self.electricity = "Unknown"
 
         #fiber
-        if self.type_connectivity=="Fiber" or self.type_connectivity=="fiber" or self.type_connectivity=="FIBER" or self.type_connectivity=="Fibre" or self.type_connectivity=="fibre" or self.type_connectivity=="FIBRE":
+        self.type_connectivity = parse_connectivity(self.type_connectivity)
+        if self.type_connectivity=="Fiber":
             self.has_fiber = True
         else:
             self.has_fiber = False
-            if pd.isnull(self.type_connectivity):
-                self.type_connectivity = "Unknown"
 
         #admins
         if pd.isnull(self.admin1):

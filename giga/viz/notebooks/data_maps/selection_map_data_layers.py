@@ -50,6 +50,10 @@ class SelectionMapDataLayers(MapDataLayers):
         super().__init__(
             data_space, config
         )  # if the parent class has an __init__ method
+
+        if data_space.config.school_data_conf.country_id=='BRA':
+            config.allow_connected_schools = False
+            
         self._schools = (
             self.data_space.all_schools.to_data_frame()
             if config.allow_connected_schools

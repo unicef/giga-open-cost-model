@@ -5,18 +5,6 @@ from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 
 ELECTRICITY_MODEL_PARAMETERS = [
     {
-        "parameter_name": "per_kwh_cost",
-        "parameter_input_name": "Cost per kWh (USD)",
-        "parameter_interactive": {
-            "parameter_type": "float_slider",
-            "value": 0.10,
-            "min": 0,
-            "max": 1,
-            "step": 0.001,
-            "show_default": True,
-        },
-    },
-    {
         "parameter_name": "solar_cost_per_watt",
         "parameter_input_name": "Solar Total Cost (USD/Watt)",
         "parameter_interactive": {
@@ -25,6 +13,18 @@ ELECTRICITY_MODEL_PARAMETERS = [
             "min": 0,
             "max": 10,
             "step": 0.01,
+            "show_default": True,
+        },
+    },
+    {
+        "parameter_name": "per_kwh_cost",
+        "parameter_input_name": "Cost per kWh (USD)",
+        "parameter_interactive": {
+            "parameter_type": "float_slider",
+            "value": 0.10,
+            "min": 0,
+            "max": 1,
+            "step": 0.001,
             "show_default": True,
         },
     },
@@ -62,7 +62,7 @@ class ElectricityParameterManager:
     ):
         self.sheet_name = sheet_name
         self.parameters = {p["parameter_name"]: p for p in parameters}
-        self.sheet = ParameterSheet(sheet_name, parameters)
+        self.sheet = ParameterSheet(sheet_name, parameters,[0,1,2,3])
 
     def update_parameters(self, config):
         if len(config) == 0:

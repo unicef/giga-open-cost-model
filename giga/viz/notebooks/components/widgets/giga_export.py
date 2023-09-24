@@ -38,6 +38,7 @@ from giga.data.space.model_data_space import ModelDataSpace
 
 from giga.utils.progress_bar import progress_bar as pb
 from giga.viz.notebooks.components.widgets.giga_buttons import make_button
+from giga.viz.notebooks.parameters.groups.data_parameter_manager import country_name_to_key
 
 # Force kaleido to run in a single process, or it crashes Jupyter in Docker
 plotly.io.kaleido.scope.chromium_args += ("--single-process",) 
@@ -156,6 +157,7 @@ def generate_infra_zip_bytes(country,data_space,m):
     # Create a scratch temp file
     tmpdir = tempfile.mkdtemp()
     tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
+    country_id = country_name_to_key(country)
 
     #complete school data
     schools_complete_table = data_space.schools_to_frame()
@@ -165,12 +167,12 @@ def generate_infra_zip_bytes(country,data_space,m):
     #create all images
     images = [m]
     images.append(make_tech_pie_chart(schools_connected))
-    images.append(make_fiber_distance_map_plot(schools_unconnected))
+    images.append(make_fiber_distance_map_plot(schools_unconnected,country_id))
     images.append(cumulative_fiber_distance_barplot(schools_unconnected))
-    images.append(make_cellular_distance_map_plot(schools_unconnected))
+    images.append(make_cellular_distance_map_plot(schools_unconnected,country_id))
     images.append(cumulative_cell_tower_distance_barplot(schools_unconnected))
-    images.append(make_cellular_coverage_map(schools_unconnected))
-    images.append(make_p2p_distance_map_plot(schools_unconnected))
+    images.append(make_cellular_coverage_map(schools_unconnected,country_id))
+    images.append(make_p2p_distance_map_plot(schools_unconnected,country_id))
     images.append(cumulative_visible_cell_tower_distance_barplot(schools_unconnected))
 
     #save images

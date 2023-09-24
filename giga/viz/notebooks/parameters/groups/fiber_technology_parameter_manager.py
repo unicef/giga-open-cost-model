@@ -7,18 +7,7 @@ from giga.viz.notebooks.parameters.parameter_sheet import ParameterSheet
 METERS_IN_KM = 1_000.0
 
 FIBER_MODEL_PARAMETERS = [
-    {
-        "parameter_name": "annual_bandwidth_cost_per_mbps",
-        "parameter_input_name": "Annual cost per Mbps (USD)",
-        "parameter_interactive": {
-            "parameter_type": "float_slider",
-            "value": 1,
-            "min": 0,
-            "max": 1800,
-            "step": 0.01,
-            "show_default": True,
-        },
-    },
+    
     {
         "parameter_name": "setup_cost",
         "parameter_input_name": "Setup Cost (USD)",
@@ -40,6 +29,18 @@ FIBER_MODEL_PARAMETERS = [
             "min": 0,
             "max": 60000,
             "step": 1,
+            "show_default": True,
+        },
+    },
+    {
+        "parameter_name": "annual_bandwidth_cost_per_mbps",
+        "parameter_input_name": "Annual cost per Mbps (USD)",
+        "parameter_interactive": {
+            "parameter_type": "float_slider",
+            "value": 1,
+            "min": 0,
+            "max": 1800,
+            "step": 0.01,
             "show_default": True,
         },
     },
@@ -97,6 +98,18 @@ FIBER_MODEL_PARAMETERS = [
             "description": "ON",
         },
     },
+    {
+        "parameter_name": "correction_coeficient",
+        "parameter_input_name": "Correction Coeficient (only for LoS)",
+        "parameter_interactive": {
+            "parameter_type": "float_slider",
+            "value": 1.2,
+            "min": 1,
+            "max": 2,
+            "step": 0.01,
+            "show_default": True,
+        },
+    },
 ]
 
 
@@ -104,7 +117,7 @@ class FiberTechnologyParameterManager:
     def __init__(self, sheet_name="fiber", parameters=FIBER_MODEL_PARAMETERS):
         self.sheet_name = sheet_name
         self.parameters = {p["parameter_name"]: p for p in parameters}
-        self.sheet = ParameterSheet(sheet_name, parameters)
+        self.sheet = ParameterSheet(sheet_name, parameters,[0,2,4,6])
 
     def update_parameters(self, config):
         if len(config) == 0:
@@ -159,6 +172,7 @@ class FiberTechnologyParameterManager:
         maximum_connection_length = (
             float(self.get_parameter_from_sheet("maximum_connection_length"))# * 1_000.0
         )  # meters
+        correction_coef = float(self.get_parameter_from_sheet("correction_coeficient"))
         return FiberTechnologyCostConf(
             capex={
                 "fixed_costs": setup_cost,
@@ -174,5 +188,6 @@ class FiberTechnologyParameterManager:
                 "maximum_connection_length": maximum_connection_length,
                 "required_power": required_power,
                 "maximum_bandwithd": 2_000.0,
+                "correction_coeficient":correction_coef,
             },
         )

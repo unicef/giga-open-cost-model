@@ -42,18 +42,6 @@ P2P_MODEL_PARAMETERS = [
         },
     },
     {
-        "parameter_name": "required_power",
-        "parameter_input_name": "Annual Power Required (kWh)",
-        "parameter_interactive": {
-            "parameter_type": "int_slider",
-            "value": 10,
-            "min": 0,
-            "max": 100,
-            "step": 10,
-            "show_default": True,
-        },
-    },
-    {
         "parameter_name": "maximum_range",
         "parameter_input_name": "Maximum Cell Tower Range (km)",
         "parameter_interactive": {
@@ -65,6 +53,19 @@ P2P_MODEL_PARAMETERS = [
             "show_default": True,
         },
     },
+    {
+        "parameter_name": "required_power",
+        "parameter_input_name": "Annual Power Required (kWh)",
+        "parameter_interactive": {
+            "parameter_type": "int_slider",
+            "value": 10,
+            "min": 0,
+            "max": 100,
+            "step": 10,
+            "show_default": True,
+        },
+    },
+    
 ]
 
 METERS_PER_KM = 1000.0
@@ -74,7 +75,7 @@ class P2PTechnologyParameterManager:
     def __init__(self, sheet_name="p2p", parameters=P2P_MODEL_PARAMETERS):
         self.sheet_name = sheet_name
         self.parameters = {p["parameter_name"]: p for p in parameters}
-        self.sheet = ParameterSheet(sheet_name, parameters)
+        self.sheet = ParameterSheet(sheet_name, parameters,[0,2,3])
 
     def update_parameters(self, config):
         if len(config) == 0:

@@ -48,7 +48,7 @@ class SatelliteTechnologyParameterManager:
     def __init__(self, sheet_name="satellite", parameters=SATELLITE_MODEL_PARAMETERS):
         self.sheet_name = sheet_name
         self.parameters = {p["parameter_name"]: p for p in parameters}
-        self.sheet = ParameterSheet(sheet_name, parameters)
+        self.sheet = ParameterSheet(sheet_name, parameters, [0,1,2])
 
     def update_parameters(self, config):
         if len(config) == 0:

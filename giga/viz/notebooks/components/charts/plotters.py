@@ -455,6 +455,21 @@ def make_tech_pie_chart(df):
     value_counts = df['type_connectivity'].value_counts()
     percentages = (value_counts / value_counts.sum()) * 100
     
+    #Let's remove small percentages otherwise it plots ugly
+    mask = percentages < 1
+    mask['Other'] = False
+    # Compute the sum of these values
+    sum_others = percentages[mask].sum()
+
+    # Drop these entries from the series
+    percentages = percentages[~mask]
+
+    # Add a new entry "others"
+    if 'Other' in percentages:
+        percentages['Other'] += sum_others
+    else:
+        percentages['Other'] = sum_others
+
         # Create a Pie chart using plotly.graph_objects.Pie
     fig = go.Figure(
         go.Pie(

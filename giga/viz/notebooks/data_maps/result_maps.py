@@ -349,8 +349,11 @@ def make_technology_total_cost_barplot(
 
 
 def make_fiber_distance_map_plot(
-    results, distance_lower=FIBER_COLORBAR_MIN, distance_upper=FIBER_COLORBAR_MAX
+    results, country_id, distance_lower=FIBER_COLORBAR_MIN, distance_upper=FIBER_COLORBAR_MAX
 ):
+    zoom = 7
+    if country_id=='BRA':
+        zoom = 3
     style = "carto-positron"
     df = results.rename(columns={"nearest_fiber": "Nearest Fiber (km)"})
     df["Nearest Fiber (km)"] = np.round(df["Nearest Fiber (km)"] / 1_000, 2)
@@ -362,7 +365,7 @@ def make_fiber_distance_map_plot(
         color="Nearest Fiber (km)",
         color_continuous_scale="Bluered",
         size="size",
-        zoom=7,
+        zoom=zoom,
         size_max=3,
         mapbox_style=style,
         range_color=[distance_lower, distance_upper],
@@ -399,8 +402,11 @@ def make_fiber_distance_map_plot(
 
 
 def make_cellular_distance_map_plot(
-    results, distance_lower=CELLULAR_COLORBAR_MIN, distance_upper=CELLULAR_COLORBAR_MAX
+    results, country_id, distance_lower=CELLULAR_COLORBAR_MIN, distance_upper=CELLULAR_COLORBAR_MAX
 ):
+    zoom = 7
+    if country_id=='BRA':
+        zoom = 3
     style = "carto-positron"
     df = results.rename(columns={"nearest_cell_tower": "Nearest Cell Tower (km)"})
     df["Nearest Cell Tower (km)"] = np.round(df["Nearest Cell Tower (km)"] / 1_000, 2)
@@ -412,7 +418,7 @@ def make_cellular_distance_map_plot(
         color="Nearest Cell Tower (km)",
         color_continuous_scale="Bluered",
         size="size",
-        zoom=7,
+        zoom=zoom,
         size_max=3,
         mapbox_style=style,
         range_color=[distance_lower, distance_upper],
@@ -454,8 +460,11 @@ def make_cellular_distance_map_plot(
     return fig
 
 def make_p2p_distance_map_plot(
-    results, distance_lower=CELLULAR_COLORBAR_MIN, distance_upper=CELLULAR_COLORBAR_MAX
+    results, country_id, distance_lower=CELLULAR_COLORBAR_MIN, distance_upper=CELLULAR_COLORBAR_MAX
 ):
+    zoom = 7
+    if country_id=='BRA':
+        zoom = 3
     style = "carto-positron"
     df = results.rename(columns={"nearest_visible_cell_tower": "Nearest Visible Cell Tower (km)"})
     df["Nearest Visible Cell Tower (km)"] = np.round(df["Nearest Visible Cell Tower (km)"] / 1_000, 2)
@@ -467,7 +476,7 @@ def make_p2p_distance_map_plot(
         color="Nearest Visible Cell Tower (km)",
         color_continuous_scale="Bluered",
         size="size",
-        zoom=7,
+        zoom=zoom,
         size_max=3,
         mapbox_style=style,
         range_color=[distance_lower, distance_upper],
@@ -509,7 +518,10 @@ def make_p2p_distance_map_plot(
     return fig
 
 
-def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
+def make_cellular_coverage_map(results, country_id, new_cell_key="Cell Coverage  "):
+    zoom = 7
+    if country_id=='BRA':
+        zoom = 3
     categories_order = [
         t
         for t in list(reversed(CELL_COVERAGE_COLOR_MAP.keys()))
@@ -538,7 +550,7 @@ def make_cellular_coverage_map(results, new_cell_key="Cell Coverage  "):
         color=new_cell_key,
         color_discrete_map=CELL_COVERAGE_COLOR_MAP,
         size="size",
-        zoom=7,
+        zoom=zoom,
         size_max=4,
         opacity=0.5,
         mapbox_style=style,

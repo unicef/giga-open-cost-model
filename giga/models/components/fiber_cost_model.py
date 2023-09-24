@@ -32,11 +32,11 @@ class FiberCostModel:
 
     def _cost_of_connection(self, distance_km):
         return (
-            distance_km * self.config.capex.cost_per_km
+            distance_km * self.config.capex.cost_per_km * self.config.constraints.correction_coeficient
         )
 
     def _cost_of_maintenance(self, distance_km):
-        return distance_km * self.config.opex.cost_per_km
+        return distance_km * self.config.constraints.correction_coeficient * self.config.opex.cost_per_km
 
     def _distance_to_capex(self, distances: List[PairwiseDistance]):
         by_school = {

@@ -80,13 +80,14 @@ class ResultDashboard:
         display(tabs)
 
     def populate_outputs(self):
+        country_id = self.results.data_space.config.school_data_conf.country_id
         self.overview_grid = project_overview_grid(self.results.output_project_overview)
-        self.fiber_infra_map = make_fiber_distance_map_plot(self.results.new_connected_schools)
+        self.fiber_infra_map = make_fiber_distance_map_plot(self.results.new_connected_schools,country_id)
         self.fiber_distance_bar = cumulative_fiber_distance_barplot(self.results.output_cost_table)
-        self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools)
+        self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools,country_id)
         self.cell_distance_bar = cumulative_cell_tower_distance_barplot(self.results.output_cost_table)
-        self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools)
-        self.p2p_infra_map = make_p2p_distance_map_plot(self.results.new_connected_schools)
+        self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools,country_id)
+        self.p2p_infra_map = make_p2p_distance_map_plot(self.results.new_connected_schools,country_id)
         self.p2p_distance_bar = cumulative_visible_cell_tower_distance_barplot(self.results.output_cost_table)
         self.technology_map = make_technology_map(self.results.new_connected_schools)
         self.satellite_pie_breakdown = make_satellite_pie_breakdown(self.results.new_connected_schools)

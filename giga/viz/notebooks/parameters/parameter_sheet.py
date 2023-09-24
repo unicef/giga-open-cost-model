@@ -5,6 +5,7 @@ from pydantic import parse_obj_as
 
 from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
+LABELS = ["<b>Capex:</b>","<b>Opex:</b>","<b>Constraints:</b>","<b>Options:</b>"]
 
 CELL_STYLE_UPDATED_DEFAULT = """
 .off-default-cell-background-color {
@@ -31,7 +32,7 @@ class ParameterSheet:
     a Jupyter widget input.
     """
 
-    def __init__(self, sheet_name, parameters: List[Dict], columns=2, width="1000px"):
+    def __init__(self, sheet_name, parameters: List[Dict], label_pos = [], columns=2, width="1000px"):
         """
         sheet_name: Name of the sheet
         parameters: list of dictionaries containing
@@ -42,6 +43,7 @@ class ParameterSheet:
         self.columns = columns
         self.width = width
         self.parameters = parameters
+        self.label_pos = label_pos
         self.interactive_parameters = [
             parse_obj_as(InputParameter, p["parameter_interactive"])
             for p in self.parameters
@@ -96,8 +98,14 @@ class ParameterSheet:
                     param,
                 ]
             ).add_class("param-row")
-
-        return widgets.VBox([_create_row(i, p) for i, p in enumerate(self.parameters)])
+        
+        params = [_create_row(i, p) for i, p in enumerate(self.parameters)]
+        if len(self.label_pos)==0:
+            return widgets.VBox(params)
+        
+        for i in range(len(self.label_pos)):
+            params.insert(self.label_pos[i]+i,widgets.HTML(value=LABELS[i]))
+        return widgets.VBox(params)
 
     def input_parameters(self, show_defaults = True):
         """
