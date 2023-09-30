@@ -66,6 +66,12 @@ class FiberDistanceCacheConf(BaseModel):
 
     def load(self):
         return self.data.load()  # loads data from the configured pipeline
+    
+    def redo_meta(connected,schools):
+        return None
+    
+    def redo_schools(connected,k):
+        return None
 
 
 class CellularDistanceCacheConf(BaseModel):

@@ -492,6 +492,35 @@ class CostEstimationParameterInput:
             for m in manager_collection:
                 m.unfreeze()
 
+        # some things need to remain frozen
+        p_fiber = self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').value
+        if not p_fiber:
+            for p in self.fiber_parameter_manager.sheet.interactive_parameters:
+                p.parameter.disabled = True
+        p_cell = self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').value
+        if not p_cell:
+            for p in self.cellular_parameter_manager.sheet.interactive_parameters:
+                p.parameter.disabled = True
+        p_p2p = self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').value
+        if not p_p2p:
+            for p in self.p2p_parameter_manager.sheet.interactive_parameters:
+                p.parameter.disabled = True
+        p_sat = self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').value
+        if not p_sat:
+            for p in self.satellite_parameter_manager.sheet.interactive_parameters:
+                p.parameter.disabled = True
+        
+        country_id = self.data_parameters().school_data_conf.country_id
+        avail_tech = self.defaults[country_id].model_defaults.available_tech
+        if not avail_tech.fiber:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').disabled = True
+        if not avail_tech.cellular:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').disabled = True
+        if not avail_tech.p2p:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').disabled = True
+        if not avail_tech.satellite:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').disabled = True
+
     def all_tech_config_old(self):
         p = self.scenario_parameter_manager.get_model_parameters()
         fiber_params = self.fiber_parameters()

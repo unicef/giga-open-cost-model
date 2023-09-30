@@ -3,6 +3,7 @@ from typing import List
 from pydantic import BaseModel, Field
 import pandas as pd
 import numpy as np
+import math
 
 from giga.schemas.geo import UniqueCoordinate
 from giga.data.store.stores import COUNTRY_DATA_STORE
@@ -12,9 +13,9 @@ DEFAULT_POWER_REQUIRED_PER_SCHOOL = 11_000  # Watts
 def parse_connectivity(s):
     if pd.isnull(s) or s=='':
         return "Unknown"
-    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s:
+    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s or "FTT" in s:
         return "Fiber"
-    if "cell" in s or "Cell" in s or "Cellular" in s or "cellular" in s or "Celular" in s or "G" in s:
+    if "cell" in s or "Cell" in s or "Cellular" in s or "cellular" in s or "Celular" in s or "G" in s or "Mobile" in s:
         return "Cellular"
     if "Satellite" in s or "satellite" in s or "SATELLITE" in s or "SATELITE" in s:
         return "Satellite"
@@ -61,6 +62,7 @@ class GigaSchool(BaseModel):
     has_fiber: bool = False  # True if the school is connected to a fiber network
     num_students: int = None
     cell_coverage_type: str = Field(..., alias="coverage_type")
+    fiber_node_distance: float = math.inf
     power_required_watts: float = DEFAULT_POWER_REQUIRED_PER_SCHOOL
 
     class Config:
@@ -100,6 +102,12 @@ class GigaSchool(BaseModel):
             self.has_fiber = True
         else:
             self.has_fiber = False
+
+        #distance to fiber node
+        if pd.isnull(self.fiber_node_distance) or self.fiber_node_distance=='':
+            self.fiber_node_distance = math.inf
+        else:
+            self.fiber_node_distance = self.fiber_node_distance * 1000 #kms to meters
 
         #admins
         if pd.isnull(self.admin1):

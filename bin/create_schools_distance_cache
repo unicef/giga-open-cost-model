@@ -38,7 +38,7 @@ def main():
         "-ic",
         action="store_true",
         help="Specifies whether to include already connected schools in the cache",
-        default=False,
+        default=True,
     )
     optional.add_argument(
         "--n-chunks",
@@ -70,6 +70,7 @@ def main():
     )
     args = parser.parse_args()
 
+    """
     if not data_store.is_file(os.path.join(args.workspace_directory, "fiber.csv")):
         LOGGER.warning(
             f"Fiber file not found in {args.workspace_directory}, creating empty file."
@@ -80,6 +81,8 @@ def main():
     fiber_coordinates = UniqueCoordinateTable.from_csv(
         os.path.join(args.workspace_directory, "fiber.csv")
     )
+    """
+
     school_coords = GigaSchoolTable.from_csv(
         os.path.join(args.workspace_directory, "schools.csv")
     )
@@ -97,7 +100,7 @@ def main():
             schools=[s for s in school_coords.schools if not s.has_fiber]
         )
     """
-    
+
     # consider only schools that are not already connected if boolean configured
     if not args.include_connected:
         # Remove schools that are already connected
@@ -106,6 +109,7 @@ def main():
             schools=[s for s in school_coords.schools if not s.connected]
         )
 
+    """
     LOGGER.info(f"Creating fiber distance cache in {args.workspace_directory}")
     model = VectorizedDistanceModel(
         progress_bar=True,
@@ -119,8 +123,8 @@ def main():
     fiber_cache.to_json(
         os.path.join(args.workspace_directory, f"fiber{args.file_suffix}.json")
     )
-
     """
+
     LOGGER.info(f"Creating school distance cache in {args.workspace_directory}")
     model = VectorizedDistanceModel(
         progress_bar=True,
@@ -137,7 +141,6 @@ def main():
     school_cache.to_json(
         os.path.join(args.workspace_directory, f"school{args.file_suffix}.json")
     )
-    """
 
 
 if __name__ == "__main__":

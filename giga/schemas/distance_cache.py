@@ -11,7 +11,7 @@ except ImportError:
 
 from giga.schemas.geo import PairwiseDistance, UniqueCoordinate
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
-
+from giga.models.nodes.graph.pairwise_distance_model import DEFAULT_DISTANCE_FN
 
 def encode_coord(coord):
     # turn tuple to list
@@ -145,6 +145,68 @@ class GreedyConnectCache(BaseModel):
         return GreedyConnectCache(
             connected_cache=connected_cache, unconnected_cache=unconnected_cache
         )
+
+    def redo_meta(self,connected,schools):
+        meta = connected[0]
+        lookup = {}
+        for s in schools:
+            if not s.connected:
+                lookup[s.giga_id] = PairwiseDistance(
+                    pair_ids = (s.giga_id,meta.coordinate_id),
+                    distance = s.fiber_node_distance,
+                    distance_type = "euclidean",
+                    coordinate1 = s.to_coordinates(),
+                    coordinate2 = meta,
+                )
+        if len(connected)==1:
+            self.connected_cache.lookup = lookup
+            return
+
+        for s in schools:
+            if not s.connected:
+                for i in range(1,len(connected)):
+                    d = DEFAULT_DISTANCE_FN(s.to_coordinates().coordinate,connected[i].coordinate)
+                    if s.giga_id not in lookup:
+                        lookup[s.giga_id] = PairwiseDistance(
+                            pair_ids = (s.giga_id,connected[i].coordinate_id),
+                            distance = d,
+                            distance_type = "euclidean",
+                            coordinate1 = s.to_coordinates(),
+                            coordinate2 = connected[i],
+                        )
+                    elif d < lookup[s.giga_id].distance:
+                        lookup[s.giga_id] = PairwiseDistance(
+                            pair_ids = (s.giga_id,connected[i].coordinate_id),
+                            distance = d,
+                            distance_type = "euclidean",
+                            coordinate1 = s.to_coordinates(),
+                            coordinate2 = connected[i],
+                        )
+        self.connected_cache.lookup = lookup
+    
+    def redo_schools(self,connected,k,schools):
+        #lookup = {}
+        for s in schools:
+            if not s.connected:
+                for i in range(k,len(connected)):
+                    d = DEFAULT_DISTANCE_FN(s.to_coordinates().coordinate,connected[i].coordinate)
+                    if s.giga_id not in self.connected_cache.lookup:
+                        self.connected_cache.lookup[s.giga_id] = PairwiseDistance(
+                            pair_ids = (s.giga_id,connected[i].coordinate_id),
+                            distance = d,
+                            distance_type = "euclidean",
+                            coordinate1 = s.to_coordinates(),
+                            coordinate2 = connected[i],
+                        )
+                    elif d < self.connected_cache.lookup[s.giga_id].distance:
+                        self.connected_cache.lookup[s.giga_id] = PairwiseDistance(
+                            pair_ids = (s.giga_id,connected[i].coordinate_id),
+                            distance = d,
+                            distance_type = "euclidean",
+                            coordinate1 = s.to_coordinates(),
+                            coordinate2 = connected[i],
+                        )
+        #self.connected_cache.lookup = lookup
 
     def __len__(self):
         return len(self.connected_cache or []) + len(self.unconnected_cache or [])

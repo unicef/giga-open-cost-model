@@ -5,6 +5,7 @@ from typing import List
 import pandas as pd
 import copy
 import numpy as np
+import math
 
 #from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
 #from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
@@ -49,7 +50,8 @@ empty_default_dict = {
             "capex": {
                 "cost_per_km": 0.0,
                 "fixed_costs": 0.0,
-                "economies_of_scale": ECONOMIES_OF_SCALE
+                "economies_of_scale": ECONOMIES_OF_SCALE,
+                "schools_as_fiber_nodes": True,
             },
             "opex": {
                 "cost_per_km": 0.0,
@@ -58,7 +60,7 @@ empty_default_dict = {
             "constraints": {
                 "maximum_connection_length": 0.0,
                 "maximum_bandwithd": 2000.0,
-                "required_power": 0.0
+                "required_power": 0.0,
             },
             "technology": "Fiber"
         },
@@ -123,6 +125,7 @@ empty_default_dict = {
             "cellular": True,
             "p2p": True,
             "satellite": True,
+            "schools_as_nodes": True,
         }
     }
 }
@@ -177,14 +180,28 @@ def get_country_defaults_old(
         defaults[country] = default
     return defaults
 
+def is_fiber(s):
+    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s or "FTT" in s:
+        return True
+    return False
+
 def check_avail_techs(country_dir,df_schools):
     fiber = True
     cell = True
     p2p = True
+    schools_as_nodes = False
 
     f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
     if len(f)==0:
-        fiber = False
+        fiber = not (df_schools["fiber_node_distance"] == math.inf).all() #df_schools["fiber_node_distance"].notnull().any()
+        if fiber:
+            with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
+                jss = json.load(f)
+            if len(jss["lookup"])==0:
+                fiber = False
+            # this takes way too long, removing it for now
+            #else:
+            #    schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
     else:
 
         with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
@@ -195,6 +212,9 @@ def check_avail_techs(country_dir,df_schools):
 
         if len(jsf["lookup"])==0 or len(jss["lookup"])==0:
             fiber = False
+        # this takes way too long, removing it for now
+        #else:
+            #schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
 
     f = data_store.read_file(os.path.join(country_dir,CELL_FILE))
     if len(f)==0:
@@ -211,7 +231,7 @@ def check_avail_techs(country_dir,df_schools):
         if len(jsp["lookup"])==0:
             p2p = False
 
-    return fiber,cell,p2p
+    return fiber,cell,p2p,schools_as_nodes
 
     
 def create_empty_tech_files(country_dir):
@@ -287,6 +307,24 @@ def fix_schools(df):
     df_new[your_column] = df_new[your_column].astype(int)
     #####################
 
+    ####fiber_node_distance####
+    your_column = 'fiber_node_distance'
+
+    # Step 1: Replace empty values with NaN
+    #df_new[your_column].replace('', pd.NA, inplace=True)
+    df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
+    df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
+
+    #fill na with inf
+    df_new[your_column].fillna(math.inf, inplace=True)
+
+    # Step 4: Convert the column to float
+    df_new[your_column] = df_new[your_column].astype(float)
+    #####################    
+
+    # Replace NaNs in 'type_connectivity' with 'Unknown'
+    #df_new['type_connectivity'].fillna('Unknown', inplace=True)
+
     return df_new
 
 def get_country_default(country,workspace, schools_dir, costs_dir):
@@ -312,6 +350,10 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
         default["model_defaults"]["available_tech"]["fiber"] = False
         default["model_defaults"]["available_tech"]["cellular"] = df_fixed["coverage_type"].notnull().any()
         default["model_defaults"]["available_tech"]["p2p"] = False
+        #let me keep this in both places for now
+        # this takes way too long, removing it for now
+        #default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
+        #default["model_defaults"]["fiber"]["capex"]["schools_as_nodes"] = False
     else:
         with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
             df2 = pd.read_csv(f, dtype={"lat": "float32", "lon": "float32"})
@@ -327,10 +369,14 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
             data_store.write_file(os.path.join(country_dir,SCHOOLS_FILE),df_fixed.to_csv(index=False))
 
         #check tech availability
-        fiber,cell,p2p = check_avail_techs(country_dir,df_fixed)
+        fiber,cell,p2p,san = check_avail_techs(country_dir,df_fixed)
         default["model_defaults"]["available_tech"]["fiber"] = fiber
         default["model_defaults"]["available_tech"]["cellular"] = cell
         default["model_defaults"]["available_tech"]["p2p"] = p2p
+        #let me keep this in both places for now
+        # this takes way too long, removing it for now
+        #default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
+        #default["model_defaults"]["fiber"]["capex"]["schools_as_nodes"] = san
 
     #get center coordinates
     df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon

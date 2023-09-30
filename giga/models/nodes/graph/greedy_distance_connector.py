@@ -103,17 +103,18 @@ class GreedyDistanceConnector:
             return self._queue_from_cache(q, set1, set2, cache)
         else:
             return self._queue_non_cached(q, set1, set2)
-
-    def run(self, data: List[UniqueCoordinate], **kwargs) -> List[PairwiseDistance]:
+        
+    def run_meta(self, data: List[UniqueCoordinate], **kwargs) -> List[PairwiseDistance]:
         """
         Connects a list of unconnected unique coordinates in the input to
         a set of connected unique coordinates until no more connections are possible
-
+        if metanode, means that no fiber coordinates exist, treat differently
         param: data, a List[UniqueCoordinate] representing a collection of
                UniqueCoordinates that contain a unique identifier and a location (usually lat/lon)
         :return list of PairwiseDistance objects which represent an ordered an connected coordinate pairs
                 added to the set of connected coordinates in this model.
         """
+
         greedy_connected = []
         queue = (
             PriorityQueue()
@@ -121,6 +122,86 @@ class GreedyDistanceConnector:
         # create two look ups for connected (self.connected)
         # and unconnected (input data) coordinate sets
         connected_coordinates = {x.coordinate_id: x for x in self.connected}
+        unconnected_coordinates = {x.coordinate_id: x for x in data}
+        # create a source tracker
+        sources = {x.coordinate_id: x.coordinate_id for x in self.connected}
+        # add pairwise distances between all coordinates and in data to priority queue
+        queue = self.queue_pairwise_distances(
+            queue, data, self.connected, cache=self._cache.connected_cache
+        )
+        if self.progress_bar:
+            pbar = managed_progress_bar(len(data), description="Distance Connect Model")
+        while not queue.empty():
+            # iterate until priority queue is empty
+            d, candidate = queue.get()  # fetch coordinate pair with closest distance
+            id1, id2 = candidate.pair_ids
+            connected1, connected2 = (
+                id1 in connected_coordinates,
+                id2 in connected_coordinates,
+            )
+            if connected1 and connected2:
+                # if both items are connected skip, used to handle identical coordinates
+                # not needed if coordinates in connected and unconnected sets are unique
+                continue
+            elif connected2:
+                # coordinate 1 is not connected
+                # make new connection move from unconnected lookup to connected lookup
+                new_connection = move_item(
+                    unconnected_coordinates, connected_coordinates, id1
+                )
+                # fetch for source use id2 if doesn't exist
+                if id2 == "metanode":
+                    candidate.coordinate1.properties["source"] = id1+"_meta"
+                    sources[id1+"_meta"] = id1+"_meta"
+                    sources[id1] = id1+"_meta"
+                    candidate.coordinate2 = UniqueCoordinate(coordinate_id=id1+"_meta",coordinate=candidate.coordinate1.coordinate)
+                    candidate.pair_ids = (id1,id1+"_meta")
+                else:
+                    candidate.coordinate1.properties["source"] = sources[id2]
+                    sources[id1] = sources[id2]
+                greedy_connected.append(candidate)
+                if self.progress_bar:
+                    pbar.update(1)
+                if self.dynamic_connect:
+                    # if other unconnected coordinates can connect to new connection
+                    queue = self.queue_pairwise_distances(
+                        queue,
+                        list(unconnected_coordinates.values()),
+                        [new_connection],
+                        cache=self._cache.unconnected_cache,
+                    )
+            else:
+                # neither items are connected, skip
+                continue
+
+        
+        if self.progress_bar:
+            pbar.update(pbar.total - pbar.n)
+            pbar.close()
+        return greedy_connected
+
+    def run(self, data: List[UniqueCoordinate], **kwargs) -> List[PairwiseDistance]:
+        """
+        Connects a list of unconnected unique coordinates in the input to
+        a set of connected unique coordinates until no more connections are possible
+        if metanode, means that no fiber coordinates exist, treat differently
+        param: data, a List[UniqueCoordinate] representing a collection of
+               UniqueCoordinates that contain a unique identifier and a location (usually lat/lon)
+        :return list of PairwiseDistance objects which represent an ordered an connected coordinate pairs
+                added to the set of connected coordinates in this model.
+        """
+
+        connected_coordinates = {x.coordinate_id: x for x in self.connected}
+        if "metanode" in connected_coordinates:
+            return self.run_meta(data)
+        
+        greedy_connected = []
+        queue = (
+            PriorityQueue()
+        )  # priority queue is used to connect closest unconnected coordinates
+        # create two look ups for connected (self.connected)
+        # and unconnected (input data) coordinate sets
+        
         unconnected_coordinates = {x.coordinate_id: x for x in data}
         # create a source tracker
         sources = {x.coordinate_id: x.coordinate_id for x in self.connected}
@@ -165,6 +246,7 @@ class GreedyDistanceConnector:
             else:
                 # neither items are connected, skip
                 continue
+
         if self.progress_bar:
             pbar.update(pbar.total - pbar.n)
             pbar.close()

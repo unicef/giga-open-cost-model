@@ -7,10 +7,11 @@ from giga.models.nodes.graph.pairwise_distance_model import PairwiseDistanceMode
 from giga.models.nodes.graph.vectorized_distance_model import VectorizedDistanceModel
 from giga.schemas.conf.models import FiberTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
-from giga.schemas.geo import PairwiseDistance
+from giga.schemas.geo import PairwiseDistance, UniqueCoordinate
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.models.components.electricity_cost_model import ElectricityCostModel
 from giga.utils.logging import LOGGER
+
 
 
 METERS_IN_KM = 1000.0
@@ -129,24 +130,30 @@ class FiberCostModel:
         :return CostResultSpace, that contains the cost of fiber connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting Fiber Cost Model")
-        if self.config.capex.schools_as_fiber_nodes:
-            connection_model = GreedyDistanceConnector(
-                data_space.fiber_coordinates + data_space._fiber_schools,
-                dynamic_connect=self.config.capex.economies_of_scale,
-                progress_bar=progress_bar,
-                maximum_connection_length_m=self.config.constraints.maximum_connection_length * METERS_IN_KM,
-                distance_model=distance_model,
-                distance_cache=data_space.fiber_cache,
-            )
+        fiber_cache = data_space.fiber_cache
+        if len(data_space.fiber_coordinates)==0:
+            #use distance to fiber in master
+            connected = [UniqueCoordinate(coordinate_id="metanode")]
+            if self.config.capex.schools_as_fiber_nodes:
+                connected += data_space._fiber_schools
+
+            fiber_cache.redo_meta(connected,data_space.school_entities)
         else:
-            connection_model = GreedyDistanceConnector(
-                data_space.fiber_coordinates,
-                dynamic_connect=self.config.capex.economies_of_scale,
-                progress_bar=progress_bar,
-                maximum_connection_length_m=self.config.constraints.maximum_connection_length,
-                distance_model=distance_model,
-                distance_cache=data_space.fiber_cache,
-            )
+            connected = data_space.fiber_coordinates
+            k = len(connected)
+            if self.config.capex.schools_as_fiber_nodes:
+                connected += data_space._fiber_schools
+                if len(connected)>k:
+                    fiber_cache.redo_schools(connected,k,data_space.school_entities)
+
+        connection_model = GreedyDistanceConnector(
+            connected,
+            dynamic_connect=self.config.capex.economies_of_scale,
+            progress_bar=progress_bar,
+            maximum_connection_length_m=self.config.constraints.maximum_connection_length * METERS_IN_KM,
+            distance_model=distance_model,
+            distance_cache=fiber_cache,
+        )
         new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         # determine which schools can be connected and their distances
         if new_electricity:

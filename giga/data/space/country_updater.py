@@ -248,6 +248,22 @@ class CountryUpdater:
             display("Complete!")
 
     @staticmethod
+    def update_schools_cache(country: str):
+        display("Updating cache -- please stay on this page until the process is complete.")
+        out = widgets.Output()
+        after = widgets.Output()
+        display(out, after)
+        update_scripts = [
+            "bin/create_schools_distance_cache"
+        ]
+        with out:
+            for script in pb(update_scripts):
+                path = os.path.join("..", "..", script)
+                with after:
+                    subprocess.run(["python", path, "-w", f"/workspace/{country}/"])
+            display("Complete!")
+
+    @staticmethod
     def update_cellular_cache(country: str):
         display("Updating cache -- please stay on this page until the process is complete.")
         out = widgets.Output()
