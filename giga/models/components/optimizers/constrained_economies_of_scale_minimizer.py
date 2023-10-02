@@ -6,7 +6,7 @@ from giga.schemas.conf.models import CostMinimizerConf
 from giga.data.space.connected_cost_graph import ConnectedCostGraph
 from giga.schemas.geo import PairwiseDistanceTable, PairwiseDistance
 from giga.schemas.output import SchoolConnectionCosts
-from giga.models.nodes.graph.cost_tree_pruner import CostTreePruner
+from giga.models.nodes.graph.cost_tree_pruner import CostTreePruner,CostTreePrunerV2
 from giga.utils.logging import LOGGER
 
 
@@ -93,6 +93,7 @@ class ConstrainedEconomiesOfScaleMinimizer:
         clusters: List[List[PairwiseDistance]],
         root_nodes: Set[str],
         baseline_cost_lookup: Dict[str, SchoolConnectionCosts],
+        scenario_id: str,
     ):
         """
         This method computes the minimum cost of a connected cost graph
@@ -108,13 +109,22 @@ class ConstrainedEconomiesOfScaleMinimizer:
                 school IDs that are optimal with economies of scale,
                 remaining budget
         """
-        pruner = CostTreePruner(
-            self.config.years_opex,
-            baseline_cost_lookup,
-            output,
-            root_nodes,
-            static_upper_bound=self.config.budget_constraint,
-        )
+        if scenario_id=="minimum_cost_actual":
+            pruner = CostTreePruner(
+                self.config.years_opex,
+                baseline_cost_lookup,
+                output,
+                root_nodes,
+                static_upper_bound=self.config.budget_constraint,
+            )
+        else:
+            pruner = CostTreePrunerV2(
+                self.config.years_opex,
+                baseline_cost_lookup,
+                output,
+                root_nodes,
+                static_upper_bound=self.config.budget_constraint,
+            )
         # find the economies of scale costs of all the clusters
         costs = self._compute_cluster_costs(clusters, pruner, root_nodes, output)
         # order the schools by cost per school
@@ -203,7 +213,7 @@ class ConstrainedEconomiesOfScaleMinimizer:
             budget_remaining,
         )
 
-    def run(self, output: OutputSpace) -> List[SchoolConnectionCosts]:
+    def run(self, output: OutputSpace, scenario_id: str) -> List[SchoolConnectionCosts]:
         """
         The constrained minimization follows the approach below:
             1. Because all economies of scale costs are optimal with respect to the baseline costs, they are considered first
@@ -230,7 +240,7 @@ class ConstrainedEconomiesOfScaleMinimizer:
             economies_of_scale_ids,
             budget_remaining,
         ) = self.minimize_economies_of_scale(
-            output, clusters, root_nodes, baseline_cost_lookup
+            output, clusters, root_nodes, baseline_cost_lookup, scenario_id
         )
         # get connections that are infeasible due constraints not related to budget
         infeasible = output.infeasible_connections()

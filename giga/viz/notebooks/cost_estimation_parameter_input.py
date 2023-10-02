@@ -657,7 +657,11 @@ class CostEstimationParameterInput:
 
     def scenario_parameters(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()
-        if p["scenario_type"] == "Lowest Cost":
+        if p["scenario_type"] == "Lowest Cost - Actual":
+            p["scenario_id"] = "minimum_cost_actual"
+            conf = MinimumCostScenarioConf(**p)
+        elif p["scenario_type"] == "Lowest Cost - Giga":
+            p["scenario_id"] = "minimum_cost_giga"
             conf = MinimumCostScenarioConf(**p)
         else: # priorities scenario
             conf = PriorityScenarioConf(**p)

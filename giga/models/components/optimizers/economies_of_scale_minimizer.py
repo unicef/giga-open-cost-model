@@ -5,6 +5,7 @@ from giga.schemas.conf.models import CostMinimizerConf
 from giga.data.space.connected_cost_graph import ConnectedCostGraph
 from giga.schemas.geo import PairwiseDistanceTable, PairwiseDistance
 from giga.models.nodes.graph.cost_tree_pruner import CostTreePruner
+from giga.models.nodes.graph.cost_tree_pruner import CostTreePrunerV2
 from giga.utils.logging import LOGGER
 
 
@@ -26,7 +27,7 @@ class EconomiesOfScaleMinimizer:
         self,
         output: OutputSpace,
         clusters: List[List[PairwiseDistance]],
-        pruner: CostTreePruner,
+        pruner: CostTreePrunerV2,
     ):
         """
         This method computes the minimum cost of a connected cost graph
@@ -59,7 +60,7 @@ class EconomiesOfScaleMinimizer:
         )
         return minimums, economies_of_scale_ids, new_connections
 
-    def run(self, output: OutputSpace):
+    def run(self, output: OutputSpace, scenario_id: str):
         """
         This method runs the economies of scale minimizer on a connected cost graph
         that represents interdependencies between schools.
@@ -89,9 +90,14 @@ class EconomiesOfScaleMinimizer:
         clusters = list(distances.group_by_source().values())
         root_nodes = set(distances.group_by_source().keys())
         # create a pruner to remove schools that exceed baseline costs or budget constraints
-        pruner = CostTreePruner(
-            self.config.years_opex, baseline_cost_lookup, output, root_nodes
-        )
+        if scenario_id=="minimum_cost_giga":
+            pruner = CostTreePrunerV2(
+                self.config.years_opex, baseline_cost_lookup, output, root_nodes
+            )
+        else:
+            pruner = CostTreePruner(
+                self.config.years_opex, baseline_cost_lookup, output, root_nodes
+            )
         # compute the minimum cost of a connected cost graph for each cluster of schools
         (
             minimums,

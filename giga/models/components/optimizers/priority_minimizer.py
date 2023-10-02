@@ -17,7 +17,7 @@ class PriorityMinimizer:
         self.config = config
 
 
-    def run(self, output: OutputSpace):
+    def run(self, output: OutputSpace, scenario_id: str):
         """
        
         """

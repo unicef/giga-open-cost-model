@@ -35,9 +35,10 @@ SCENARIO_BASE_PARAMETERS = [
         "parameter_input_name": "Cost Scenario",
         "parameter_interactive": {
             "parameter_type": "categorical_dropdown",
-            "value": "Lowest Cost",
+            "value": "Lowest Cost - Actual",
             "options": [
-                "Lowest Cost",
+                "Lowest Cost - Actual",
+                "Lowest Cost - Giga",
                 "Priorities",
             ],
             "description": "Cost Scenario:",
