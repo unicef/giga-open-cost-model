@@ -79,6 +79,17 @@ class ADLSDataStore(DataStore):
         blob_client = self.blob_service_client.get_blob_client(container=self.container, blob=blob_file_path,
                                                                snapshot=None)
         return blob_client.exists()
+    
+    def file_size(self, path: str) -> float:
+        blob_file_path = self._adls_path(path)
+        blob_client = self.blob_service_client.get_blob_client(container=self.container, blob=blob_file_path,
+                                                               snapshot=None)
+        properties = blob_client.get_blob_properties()
+
+        # The size is in bytes, convert it to kilobytes
+        size_in_bytes = properties.size
+        size_in_kb = size_in_bytes / 1024.0
+        return size_in_kb
 
     def list_files(self, path: str) -> List[str]:
         blob_items = self.container_client.list_blobs(name_starts_with=self._adls_path(path))

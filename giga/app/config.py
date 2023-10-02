@@ -195,10 +195,15 @@ def check_avail_techs(country_dir,df_schools):
     if len(f)==0:
         fiber = not (df_schools["fiber_node_distance"] == math.inf).all() #df_schools["fiber_node_distance"].notnull().any()
         if fiber:
-            with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
-                jss = json.load(f)
-            if len(jss["lookup"])==0:
+            ### too much mem 
+            #with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
+            #    jss = json.load(f)
+            #if len(jss["lookup"])==0:
+            #    fiber = False
+            if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
                 fiber = False
+
+
             # this takes way too long, removing it for now
             #else:
             #    schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
@@ -206,12 +211,12 @@ def check_avail_techs(country_dir,df_schools):
 
         with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
             jsf = json.load(f)
-
-        with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
-            jss = json.load(f)
-
-        if len(jsf["lookup"])==0 or len(jss["lookup"])==0:
+        if len(jsf["lookup"])==0:
             fiber = False
+        else:
+            if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
+                fiber = False
+
         # this takes way too long, removing it for now
         #else:
             #schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
