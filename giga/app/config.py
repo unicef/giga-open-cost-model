@@ -15,6 +15,7 @@ from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 
 import country_converter as coco
+from datetime import datetime
 
 # Get the countries to skip from an variable
 skip_in_deployment_str = os.getenv("SKIP_COUNTRIES_IN_DEPLOYMENT", "sample")
@@ -258,32 +259,33 @@ def create_empty_caches(country_dir):
 
 
 def copy_caches_to_backup(country_dir):
+    time_stamp = datetime.now().strftime("%Y_%m_%d")
     #schools cache
     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #fiber cache
     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #cell cache
     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #p2p cache
     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
 # This could be a call to GigaSchoolTable at some point...    
@@ -366,7 +368,9 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
             #if the schools are the same then the caches are ok otherwise ko
             if not df_fixed[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
                 # we save the old schools file in backup, might be useful to recalculate caches
-                data_store.write_file(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_FILE),df2.to_csv(index=False))
+                time_stamp = datetime.now().strftime("%Y_%m_%d")
+                backup_schools_file = SCHOOLS_FILE[:-3]+"_"+time_stamp+".csv"
+                data_store.write_file(os.path.join(country_dir,BACKUP_DIR,backup_schools_file),df2.to_csv(index=False))
                 copy_caches_to_backup(country_dir)
                 create_empty_caches(country_dir)
             
