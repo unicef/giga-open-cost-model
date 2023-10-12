@@ -182,7 +182,7 @@ def get_country_defaults_old(
     return defaults
 
 def is_fiber(s, fiber_keywords = ['fiber', 'fibre', 'fibra', 'ftt', 'fttx']):
-    return any(keyword == s.lower() for keyword in fiber_keywords if isinstance(s,str))
+    return any(keyword in s.lower() for keyword in fiber_keywords if isinstance(s,str))
 
 def check_avail_techs(country_dir, df_schools):
 
