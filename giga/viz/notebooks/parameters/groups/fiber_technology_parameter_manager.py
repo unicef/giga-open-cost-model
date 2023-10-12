@@ -131,10 +131,13 @@ class FiberTechnologyParameterManager:
             "schools_as_fiber_nodes", config["capex"]["schools_as_fiber_nodes"]
         )
         # this takes way too long, removing it for now
-        #if config["capex"]["schools_as_fiber_nodes"]:
-        #    self.sheet.get_interactive_parameter('schools_as_fiber_nodes').disabled = False
-        #else:
-        #    self.sheet.get_interactive_parameter('schools_as_fiber_nodes').disabled = True
+        if config["capex"]["schools_as_fiber_nodes"]:
+            self.sheet.get_interactive_parameter('schools_as_fiber_nodes').disabled = False
+            self.sheet.get_interactive_parameter('schools_as_fiber_nodes').value = True
+        else:
+            self.sheet.get_interactive_parameter('schools_as_fiber_nodes').disabled = True
+            self.sheet.get_interactive_parameter('schools_as_fiber_nodes').value = False
+            
 
         self.sheet.update_parameter("opex_cost_per_km", config["opex"]["cost_per_km"])
         self.sheet.update_parameter(

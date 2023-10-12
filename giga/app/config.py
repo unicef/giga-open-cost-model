@@ -181,12 +181,53 @@ def get_country_defaults_old(
         defaults[country] = default
     return defaults
 
-def is_fiber(s):
-    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s or "FTT" in s:
-        return True
-    return False
+def is_fiber(s, fiber_keywords = ['fiber', 'fibre', 'fibra', 'ftt', 'fttx']):
+    return any(keyword == s.lower() for keyword in fiber_keywords if isinstance(s,str))
 
-def check_avail_techs(country_dir,df_schools):
+def check_avail_techs(country_dir, df_schools):
+
+    # check fiber availability
+    fiber = False
+    if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) >= 3:
+
+        f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
+        
+        if len(f) > 0:
+            with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
+                jsf = json.load(f)
+            if len(jsf["lookup"])>0:
+                fiber = True
+        else:
+            fiber = (df_schools["fiber_node_distance"]!=math.inf).any()
+    
+    # check cell & p2p availability
+    cell = False
+    p2p = False
+
+    f_cell = data_store.read_file(os.path.join(country_dir,CELL_FILE))
+
+    if len(f_cell)>0:
+        with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
+            jsc = json.load(f)
+        if len(jsc["lookup"])>0:
+            cell = True
+        
+        with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
+            jsp = json.load(f)
+        if len(jsp["lookup"])>0:
+            p2p = True
+    else:
+        cell = df_schools["coverage_type"].notnull().any()
+
+    # check schools as nodes availability
+    if not fiber:
+        san= False
+    else:
+        san = df_schools["type_connectivity"].apply(is_fiber).any()
+
+    return fiber,cell,p2p,san
+
+def check_avail_techs_old(country_dir,df_schools):
     fiber = True
     cell = True
     p2p = True
@@ -194,7 +235,7 @@ def check_avail_techs(country_dir,df_schools):
 
     f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
     if len(f)==0:
-        fiber = not (df_schools["fiber_node_distance"] == math.inf).all() #df_schools["fiber_node_distance"].notnull().any()
+        fiber = (df_schools["fiber_node_distance"]!=math.inf).any() #df_schools["fiber_node_distance"].notnull().any()
         if fiber:
             ### too much mem 
             #with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
@@ -203,7 +244,6 @@ def check_avail_techs(country_dir,df_schools):
             #    fiber = False
             if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
                 fiber = False
-
 
             # this takes way too long, removing it for now
             #else:
@@ -217,10 +257,9 @@ def check_avail_techs(country_dir,df_schools):
         else:
             if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
                 fiber = False
-
         # this takes way too long, removing it for now
         #else:
-            #schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
+            #schools_as_nodes = df_schools["type_connectivity"].apply(is_fiber).any()
 
     f = data_store.read_file(os.path.join(country_dir,CELL_FILE))
     if len(f)==0:
@@ -334,7 +373,7 @@ def fix_schools(df):
 
     return df_new
 
-def get_country_default(country,workspace, schools_dir, costs_dir):
+def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
     default = copy.deepcopy(empty_default_dict)
     
     default['data']['country'] = country
@@ -359,8 +398,8 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
         default["model_defaults"]["available_tech"]["p2p"] = False
         #let me keep this in both places for now
         # this takes way too long, removing it for now
-        #default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
-        #default["model_defaults"]["fiber"]["capex"]["schools_as_nodes"] = False
+        default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
+        default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = False
     else:
         with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
             df2 = pd.read_csv(f, dtype={"lat": "float32", "lon": "float32"})
@@ -384,8 +423,8 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
         default["model_defaults"]["available_tech"]["p2p"] = p2p
         #let me keep this in both places for now
         # this takes way too long, removing it for now
-        #default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
-        #default["model_defaults"]["fiber"]["capex"]["schools_as_nodes"] = san
+        default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
+        default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = san
 
     #get center coordinates
     df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
