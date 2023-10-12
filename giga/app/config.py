@@ -15,6 +15,7 @@ from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 
 import country_converter as coco
+from datetime import datetime
 
 # Get the countries to skip from an variable
 skip_in_deployment_str = os.getenv("SKIP_COUNTRIES_IN_DEPLOYMENT", "sample")
@@ -180,12 +181,53 @@ def get_country_defaults_old(
         defaults[country] = default
     return defaults
 
-def is_fiber(s):
-    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s or "FTT" in s:
-        return True
-    return False
+def is_fiber(s, fiber_keywords = ['fiber', 'fibre', 'fibra', 'ftt', 'fttx']):
+    return any(keyword == s.lower() for keyword in fiber_keywords if isinstance(s,str))
 
-def check_avail_techs(country_dir,df_schools):
+def check_avail_techs(country_dir, df_schools):
+
+    # check fiber availability
+    fiber = False
+    if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) >= 3:
+
+        f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
+        
+        if len(f) > 0:
+            with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
+                jsf = json.load(f)
+            if len(jsf["lookup"])>0:
+                fiber = True
+        else:
+            fiber = (df_schools["fiber_node_distance"]!=math.inf).any()
+    
+    # check cell & p2p availability
+    cell = False
+    p2p = False
+
+    f_cell = data_store.read_file(os.path.join(country_dir,CELL_FILE))
+
+    if len(f_cell)>0:
+        with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
+            jsc = json.load(f)
+        if len(jsc["lookup"])>0:
+            cell = True
+        
+        with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
+            jsp = json.load(f)
+        if len(jsp["lookup"])>0:
+            p2p = True
+    else:
+        cell = df_schools["coverage_type"].notnull().any()
+
+    # check schools as nodes availability
+    if not fiber:
+        san= False
+    else:
+        san = df_schools["type_connectivity"].apply(is_fiber).any()
+
+    return fiber,cell,p2p,san
+
+def check_avail_techs_old(country_dir,df_schools):
     fiber = True
     cell = True
     p2p = True
@@ -193,7 +235,7 @@ def check_avail_techs(country_dir,df_schools):
 
     f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
     if len(f)==0:
-        fiber = not (df_schools["fiber_node_distance"] == math.inf).all() #df_schools["fiber_node_distance"].notnull().any()
+        fiber = (df_schools["fiber_node_distance"]!=math.inf).any() #df_schools["fiber_node_distance"].notnull().any()
         if fiber:
             ### too much mem 
             #with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
@@ -202,7 +244,6 @@ def check_avail_techs(country_dir,df_schools):
             #    fiber = False
             if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
                 fiber = False
-
 
             # this takes way too long, removing it for now
             #else:
@@ -216,10 +257,9 @@ def check_avail_techs(country_dir,df_schools):
         else:
             if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
                 fiber = False
-
         # this takes way too long, removing it for now
         #else:
-            #schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
+            #schools_as_nodes = df_schools["type_connectivity"].apply(is_fiber).any()
 
     f = data_store.read_file(os.path.join(country_dir,CELL_FILE))
     if len(f)==0:
@@ -258,32 +298,33 @@ def create_empty_caches(country_dir):
 
 
 def copy_caches_to_backup(country_dir):
+    time_stamp = datetime.now().strftime("%Y_%m_%d")
     #schools cache
     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #fiber cache
     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #cell cache
     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #p2p cache
     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
 # This could be a call to GigaSchoolTable at some point...    
@@ -332,7 +373,7 @@ def fix_schools(df):
 
     return df_new
 
-def get_country_default(country,workspace, schools_dir, costs_dir):
+def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
     default = copy.deepcopy(empty_default_dict)
     
     default['data']['country'] = country
@@ -357,8 +398,8 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
         default["model_defaults"]["available_tech"]["p2p"] = False
         #let me keep this in both places for now
         # this takes way too long, removing it for now
-        #default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
-        #default["model_defaults"]["fiber"]["capex"]["schools_as_nodes"] = False
+        default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
+        default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = False
     else:
         with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
             df2 = pd.read_csv(f, dtype={"lat": "float32", "lon": "float32"})
@@ -366,7 +407,9 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
             #if the schools are the same then the caches are ok otherwise ko
             if not df_fixed[['giga_id_school','lat','lon']].equals(df2[['giga_id_school','lat','lon']]):
                 # we save the old schools file in backup, might be useful to recalculate caches
-                data_store.write_file(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_FILE),df2.to_csv(index=False))
+                time_stamp = datetime.now().strftime("%Y_%m_%d")
+                backup_schools_file = SCHOOLS_FILE[:-3]+"_"+time_stamp+".csv"
+                data_store.write_file(os.path.join(country_dir,BACKUP_DIR,backup_schools_file),df2.to_csv(index=False))
                 copy_caches_to_backup(country_dir)
                 create_empty_caches(country_dir)
             
@@ -380,8 +423,8 @@ def get_country_default(country,workspace, schools_dir, costs_dir):
         default["model_defaults"]["available_tech"]["p2p"] = p2p
         #let me keep this in both places for now
         # this takes way too long, removing it for now
-        #default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
-        #default["model_defaults"]["fiber"]["capex"]["schools_as_nodes"] = san
+        default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
+        default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = san
 
     #get center coordinates
     df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon

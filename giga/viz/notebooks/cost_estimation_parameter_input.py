@@ -26,7 +26,7 @@ from giga.schemas.conf.models import (
 )
 from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config_client import ConfigClient
-from giga.app.config import get_country_defaults
+from giga.app.config import get_country_defaults, get_country_default
 #from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
 
 from giga.viz.notebooks.parameters.groups.data_parameter_manager import (
@@ -153,13 +153,18 @@ class CostEstimationParameterInput:
         #    k: ConfigClient.from_registered_country(k, local_data_workspace).defaults
         #    for k, v in get_country_defaults(workspace=local_data_workspace).items()
         #}
-        self.all_country_configs = {
-            k: ConfigClient.from_country_defaults(v)
-            for k, v in get_country_defaults(workspace=local_data_workspace).items()
-        }
-        self.defaults = {
-            k: v.defaults for k,v in self.all_country_configs.items()
-        }
+        
+        self.country_configs = {}
+        self.defaults = {}
+        
+
+        #self.all_country_configs = {
+        #    k: ConfigClient.from_country_defaults(v)
+        #    for k, v in get_country_defaults(workspace=local_data_workspace).items()
+        #}
+        #self.defaults = {
+        #    k: v.defaults for k,v in self.all_country_configs.items()
+        #}
 
         self.data_parameter_manager: DataParameterManager = (
             DataParameterManager(workspace=local_data_workspace)
@@ -245,6 +250,11 @@ class CostEstimationParameterInput:
         # link country selection to default parameters for that country
         def update_country_defaults(change):
             country = country_name_to_key(change["new"])
+            if country not in self.country_configs:
+                self.country_configs[country] = ConfigClient.from_country_defaults(
+                    get_country_default(country, workspace=local_data_workspace)
+                )
+                self.defaults[country] = self.country_configs[country].defaults
             self.set_defaults_for_country(self.defaults[country].model_defaults)
 
         # update defaults on load
@@ -440,7 +450,8 @@ class CostEstimationParameterInput:
         return self.data_parameter_manager.get_model_parameters()
     
     def data_parameters(self, sheet_name="data"):
-        return self.all_country_configs[self.data_parameter_manager.get_country_id()].local_workspace_data_space_config
+        #return self.all_country_configs[self.data_parameter_manager.get_country_id()].local_workspace_data_space_config
+        return self.country_configs[self.data_parameter_manager.get_country_id()].local_workspace_data_space_config
     
     def scenario_parameter_input(self, sheet_name="scenario"):
         return self.scenario_parameter_manager.input_parameters(self.show_defaults)
