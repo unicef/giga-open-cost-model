@@ -117,5 +117,5 @@ class PriorityScenario:
 
         # find the priorities cost for each school using the minimizer
         minimizer = self._create_minimizer()
-        self.output_space.minimum_cost_result = minimizer.run(self.output_space)
+        self.output_space.minimum_cost_result = minimizer.run(self.output_space, self.config.scenario_id)
         return self.output_space
