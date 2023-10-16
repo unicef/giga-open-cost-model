@@ -374,6 +374,9 @@ def fix_schools(df):
     return df_new
 
 def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
+    earth_radius = 6371
+    max_zoom_level = 11.75
+
     default = copy.deepcopy(empty_default_dict)
     
     default['data']['country'] = country
@@ -426,14 +429,21 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
         default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
         default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = san
 
-    #get center coordinates
-    df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
-    lats = list(df_filtered['lat'])
-    lons = list(df_filtered['lon'])
-    c_lat = sum(lats)/len(lats)
-    c_lon = sum(lons)/len(lons)
-    default["data"]["country_center"]["lat"] = c_lat
-    default["data"]["country_center"]["lon"] = c_lon
+    #set default country center coordinates
+    #df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
+    lats = df_fixed['lat'].to_numpy()
+    lats = lats[~np.isnan(lats)]
+    lons = df_fixed['lon'].to_numpy()
+    lons = lons[~np.isnan(lons)]
+    xcenter, ycenter = lons.mean(), lats.mean()
+    default["data"]["country_center"]["lat"] = ycenter
+    default["data"]["country_center"]["lon"] = xcenter
+    
+    #set default country zoom level
+    _xrange, _yrange = np.ptp(lons) ,np.ptp(lats)
+    max_bound = np.deg2rad(max(_xrange, _yrange)) * earth_radius
+    _zoom = max_zoom_level - np.log(max_bound)
+    default["data"]["country_zoom"] = _zoom
 
     #add costs
     ### cell

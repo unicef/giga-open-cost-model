@@ -44,6 +44,7 @@ class DataDefaults(BaseModel):
     cellular_distance_cache_file: str  # name of file for the cache, not direct path
     p2p_distance_cache_file: str
     country_center: Dict[str, float] = {"lat": 0.0, "lon": 0.0}
+    country_zoom: float = 7
 
     @property
     def country_center_tuple(self):
@@ -124,6 +125,7 @@ class CountryDefaults(BaseModel):
             cellular_distance_cache_file=data_defaults["cellular_distance_cache_file"],
             p2p_distance_cache_file=data_defaults["p2p_distance_cache_file"],
             country_center=data_defaults["country_center"],
+            country_zoom=data_defaults["country_zoom"],
         )
         return CountryDefaults(
             data=data, model_defaults=defaults["model_defaults"], **kwargs
