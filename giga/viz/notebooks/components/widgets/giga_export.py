@@ -32,7 +32,7 @@ from giga.viz.notebooks.components.charts.plotters import (
     make_tech_pie_chart,
 )
 
-from giga.utils.latex_reports import generate_infra_report
+from giga.utils.latex_reports import generate_infra_report, generate_costmodel_report
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 from giga.data.space.model_data_space import ModelDataSpace
 
@@ -120,7 +120,12 @@ def render_screenshot(tmpfile):
     try:
         browser = webdriver.Chrome()
     except:
-        return None
+        ### Do empty image
+        blank_image = Image.new('RGB', (int(PAGE_WIDTH * zoom_scale), int(PAGE_HEIGHT * zoom_scale)))
+        png_bytes = io.BytesIO()
+        blank_image.save(png_bytes, format='PNG')
+        png_bytearray = bytearray(png_bytes.getvalue())
+        return png_bytearray
         # TODO add chromium executable to environment
         # raise Exception("Error: Google Chrome must be installed in order to turn graphs into PDFs in the background.")
     browser.set_window_size(PAGE_WIDTH * zoom_scale, PAGE_HEIGHT * zoom_scale)
@@ -152,6 +157,71 @@ def generate_png_bytes(el):
         return png_bytes
     return None
 
+def generate_costmodel_zip_bytes(config,selected_schools,stats,country,data_space,all_output_maps):
+    # Create a scratch temp file
+    tmpdir = tempfile.mkdtemp()
+    tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
+    country_id = country_name_to_key(country)
+
+    #complete school data
+    schools_complete_table = data_space.schools_to_frame()
+    schools_unconnected = schools_complete_table[schools_complete_table['connected']==False]
+    schools_connected = schools_complete_table[schools_complete_table['connected']==True]
+    
+    #create all images
+    images = []
+    images.append(all_output_maps.dashboard.project_cost_barplot)
+    images.append(all_output_maps.dashboard.average_cost_barplot)
+    images.append(all_output_maps.dashboard.per_school_cost_map)
+    images.append(all_output_maps.dashboard.per_student_cost_map)
+    images.append(all_output_maps.dashboard.technology_pie)
+    images.append(all_output_maps.dashboard.technology_map)
+    images.append(all_output_maps.fiber)
+
+    #save images
+    i = 0
+    for el in pb(images):
+        image_path = os.path.join(tmpdir, f"graph_{i}.png")
+        if isinstance(el, folium.Map):
+            el.save(tmpfile)
+            png_bytes = render_screenshot(tmpfile)
+            with open(image_path, 'wb') as f:
+                f.write(png_bytes)
+        elif isinstance(el, plotly.graph_objs._figure.Figure):
+            plotly.io.write_image(el, image_path, format='png')
+        elif isinstance(el, plotly.graph_objs.FigureWidget):
+            plotly.io.write_image(el.to_dict(), image_path, format='png')
+        i+=1
+
+    #create latex file
+    doc = generate_costmodel_report(config,selected_schools,stats,country,schools_complete_table,schools_unconnected,schools_connected,data_space)
+
+    #copy giga_logo in tmpdir
+    local_logo_path = os.path.join(tmpdir,'giga_logo.png')
+
+    blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    with open(local_logo_path, "wb") as download_file:
+        download_file.write(blob_client.download_blob().readall())
+
+    #compile latex into pdf
+    doc.generate_pdf(os.path.join(tmpdir, "costmodel_report"), clean_tex=False, clean = True)
+
+    #create zip file
+    zip_buffer = io.BytesIO()
+    with ZipFile(zip_buffer, "w") as zip_file:
+        for filename in os.listdir(tmpdir):
+            file_ext = os.path.splitext(filename)[1].lower()
+            if file_ext in ['.png','.tex','.pdf','.log']:
+                file_path = os.path.join(tmpdir, filename)
+                arcname = os.path.basename(file_path)
+                zip_file.write(file_path, arcname)        
+    zip_buffer.seek(0)
+
+    #remove tmp files
+    shutil.rmtree(tmpdir)
+
+    #return zip bytes
+    return zip_buffer.read()
 
 def generate_infra_zip_bytes(country,data_space,m):
     # Create a scratch temp file
@@ -278,7 +348,21 @@ def make_export_infra_report_button(inputs, title="Generate Infrastructure Repor
             zip_bytes = generate_infra_zip_bytes(country,data_space,inputs.data_map_m)
             display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
 
-    country= inputs.data_parameter_manager.get_country_name()
+    country = inputs.data_parameter_manager.get_country_name()
+    data_space = ModelDataSpace(inputs.data_parameters())
+    button = export_btn(on_button_clicked, description=title)
+    button.on_click(on_button_clicked)
+    out = Output()
+    return VBox([button, out])
+
+def make_export_costmodel_report_button(config,selected_schools,stats,inputs,all_output_maps, title="Generate Cost Model Report", filename="cost_model_report.zip"):
+    def on_button_clicked(b):
+        out.clear_output()
+        with out:
+            zip_bytes = generate_costmodel_zip_bytes(config,selected_schools,stats,country,data_space,all_output_maps)
+            display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
+
+    country = inputs.data_parameter_manager.get_country_name()
     data_space = ModelDataSpace(inputs.data_parameters())
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
@@ -327,13 +411,13 @@ def make_export_model_package(config, selected_schools, output_space, title="Res
     out = Output()
     return VBox([button, out])
 
-def make_export_button_row(config, selected_schools, output_space, table, inputs, all_output_maps = None):
+def make_export_button_row(config, selected_schools, output_space, table, inputs, stats, all_output_maps = None):
     hr = pw.HTML('<hr/>')
     b1 = make_export_config_button(inputs)
     b2 = make_export_cost_button(table)
     b3 = make_export_model_package(config, selected_schools, output_space)
     if all_output_maps is None:
         return VBox([b1, b2, hr, b3])
-    b4 = make_export_report_button(all_output_maps)
+    b4 = make_export_costmodel_report_button(config,selected_schools,stats,inputs,all_output_maps)
     b5 = make_export_zip_button(inputs.data_map_m,all_output_maps)
     return VBox([b1, b2, hr, b3, hr, b4, hr, b5])

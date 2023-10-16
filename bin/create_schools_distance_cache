@@ -38,7 +38,7 @@ def main():
         "-ic",
         action="store_true",
         help="Specifies whether to include already connected schools in the cache",
-        default=True,
+        default=False,
     )
     optional.add_argument(
         "--n-chunks",
