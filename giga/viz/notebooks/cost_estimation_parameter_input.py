@@ -277,17 +277,17 @@ class CostEstimationParameterInput:
             map_layers, _ = self._hashed_data_layers[country]
             if country == "BRA":
                 # handle brazil as a one off for now
-                config_map = DataMapConfig(zoom=3)
+                config_map = DataMapConfig()
                 data_map = StaticDataMap(config_map)
                 data_map.add_layers(
                     map_layers.layers_no_cell
                 )  # ignore cell tower layer for now
-                m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+                m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
             else:
                 config_map = DataMapConfig()
                 data_map = StaticDataMap(config_map)
                 data_map.add_layers(map_layers.layers)
-                m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+                m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
             with self.map_output:
                 data_map.make_static_map_figure(m)
             return self.map_output
@@ -298,13 +298,13 @@ class CostEstimationParameterInput:
             if country not in self._hashed_data_layers:
                 self._hashed_data_layers[country] = self._make_map_layer(country)
             if country == "BRA":
-                config_map = DataMapConfig(zoom=3, no_cell=True)
+                config_map = DataMapConfig(no_cell=True)
             else:
                 config_map = DataMapConfig()
             _, selection_layers = self._hashed_data_layers[country]
             data_map = StaticDataMap(config_map)
             m = data_map.get_selection_map(
-                self.defaults[country].data.country_center_tuple, selection_layers
+                self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom, selection_layers
             )
             with self.selection_map_output:
                 display(
@@ -768,17 +768,17 @@ class CostEstimationParameterInput:
         map_layers, _ = self._hashed_data_layers[country]
         if country == "BRA":
             # handle brazil as a one off for now
-            config_map = DataMapConfig(zoom=3)
+            config_map = DataMapConfig()
             data_map = StaticDataMap(config_map)
             data_map.add_layers(
                 map_layers.layers_no_cell
             )  # ignore cell tower layer for now
-            m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+            m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
         else:
             config_map = DataMapConfig()
             data_map = StaticDataMap(config_map)
             data_map.add_layers(map_layers.layers)
-            m = data_map.get_map(self.defaults[country].data.country_center_tuple)
+            m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
         self.data_map_m = m
         with self.map_output:
             data_map.make_static_map_figure(m)
@@ -790,13 +790,13 @@ class CostEstimationParameterInput:
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
         if country == "BRA":
-            config_map = DataMapConfig(zoom=3, no_cell=True)
+            config_map = DataMapConfig(no_cell=True)
         else:
             config_map = DataMapConfig()
         _, selection_layers = self._hashed_data_layers[country]
         data_map = StaticDataMap(config_map)
         m = data_map.get_selection_map(
-            self.defaults[country].data.country_center_tuple, selection_layers
+            self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom, selection_layers
         )
         with self.selection_map_output:
             display(

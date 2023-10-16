@@ -26,7 +26,7 @@ class DataMapConfig(BaseModel):
 
     width: int = 850
     height: int = 600
-    zoom: int = 7
+    #zoom: int = 7
     style_default: str = "carto-darkmatter"
     style_mapbox: str = "dark"
     legend_x: float = 0.05
@@ -54,7 +54,7 @@ class StaticDataMap:
             self.add_layer(l)
 
     def get_map(
-        self, center: List[float], infra_toggle=True, selection_map=False, **kwargs
+        self, center: List[float], zoom: float, infra_toggle=True, selection_map=False, **kwargs
     ):
         style = (
             self.config.style_default
@@ -113,7 +113,7 @@ class StaticDataMap:
             updatemenus=update_menu,
             mapbox=dict(
                 center=dict(lat=center[0], lon=center[1]),
-                zoom=self.config.zoom,
+                zoom=zoom,
                 style=style,
                 accesstoken=token,
                 uirevision=False,
@@ -154,6 +154,7 @@ class StaticDataMap:
     def get_selection_map(
         self,
         center: List[float],
+        zoom: float,
         layers: SelectionMapDataLayers,
         clear_output=True,
         **kwargs
@@ -166,7 +167,7 @@ class StaticDataMap:
             else layers.layers_selection
         )
         self.add_layers(l)
-        m = self.get_map(center, infra_toggle=False, selection_map=True)
+        m = self.get_map(center, zoom, infra_toggle=False, selection_map=True)
         m._config = {**m._config, **SELECTION_MAP_MODEBAR_GLOBAL_CONFIG}
         layers.connect_school_layer_selection(m)
         upload_button = layers.make_upload_button(m)
