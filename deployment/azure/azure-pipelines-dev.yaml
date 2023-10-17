@@ -5,19 +5,15 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  containerRegistryServiceConnection: uniappsoigiga
+  containerRegistryServiceConnection: $(ACR_SERVICE_CONNECTION)
   imageRepository: cost-model-dev
   imageTag: 0.3.12
-  imageName: uniappsoigiga.azurecr.io/cost-model-dev:0.3.12
   hubImageRepository: k8s-hub-cds
   hubImageTag: 2.0.0
-  hubImageName: uniappsoigiga.azurecr.io/k8s-hub-cds:2.0.0
-  kubernetesServiceConnection: CostModel-DEV-uni-apps-aks-dev-ictd-oi-costmodel-dev-1684231758425
-  kubernetesNamespace: ictd-oi-costmodel-dev
+  kubernetesServiceConnection: $(KUBERNETES_SERVICE_CONNECTION)
+  kubernetesNamespace: $(KUBERNETES_NAMESPACE)
   dockerfilePath: $(Build.SourcesDirectory)/Dockerfile
   hubDockerfilePath: $(Build.SourcesDirectory)/Dockerfile.hub
-  containerName: giga
-  storageAccount: saunigiga
   workspaceDirectory: $(Build.SourcesDirectory)/notebooks
   helmValuesFile: $(Build.SourcesDirectory)/deployment/helm/prod.yaml
   helmReleaseName: jupyterhub

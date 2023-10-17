@@ -5,8 +5,8 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  kubernetesServiceConnection: CostModel-DEV-uni-apps-aks-dev-ictd-oi-costmodel-dev-1684231758425
-  kubernetesNamespace: ictd-oi-costmodel-dev
+  kubernetesServiceConnection: $(KUBERNETES_SERVICE_CONNECTION)
+  kubernetesNamespace: $(KUBERNETES_NAMESPACE)
 
 steps:
 - task: HelmDeploy@0
