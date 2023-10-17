@@ -100,7 +100,7 @@ hub:
   extraVolumes: []
   extraVolumeMounts: []
   image:
-    name: uniappsoigiga_new.azurecr.io/k8s-hub-cds
+    name: uniappsoigiga.azurecr.io/k8s-hub-cds
     tag: "2.0.0"
     pullPolicy:
     pullSecrets: []
@@ -426,7 +426,7 @@ singleuser:
       storageAccessModes: [ReadWriteOnce]
   image:
     # Actual config: single user image for notebook containers
-    name: uniappsoigiga_new.azurecr.io/cost-model-dev
+    name: uniappsoigiga.azurecr.io/cost-model-dev
     tag: "0.3.12"
     pullPolicy: Always
     pullSecrets: []
