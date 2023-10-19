@@ -58,7 +58,7 @@ def results_to_table(results, n_years=5, responsible_opex=None):
     return df
 
 
-def output_to_table(output_space, n_years=5, responsible_opex=None):
+def output_to_table(output_space, responsible_opex=None):
 
     if output_space.minimum_cost_result:
         results = output_space.minimum_cost_result
@@ -68,7 +68,7 @@ def output_to_table(output_space, n_years=5, responsible_opex=None):
             return pd.DataFrame()
         else:
             results = output_space.technology_outputs[0].cost_results
-    return results_to_table(results, n_years=n_years, responsible_opex=responsible_opex)
+    return results_to_table(results, n_years=output_space.years_opex, responsible_opex=responsible_opex)
 
 
 def results_to_aggregates(results, n_years=5, responsible_opex=None):
@@ -90,7 +90,7 @@ def output_summary(output_space):
         results = output_space.minimum_cost_result
     else:
         results = output_space.technology_outputs[0].cost_results
-    return results_to_aggregates(results)
+    return results_to_aggregates(results, n_years=output_space.years_opex)
 
 
 def button_cb(description, action):
