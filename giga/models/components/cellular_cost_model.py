@@ -64,7 +64,7 @@ class CellularCostModel:
                 c = SchoolConnectionCosts.infeasible_cost(
                     sid, "Cellular", "NO_ELECTRICITY"
                 )
-            elif sid in connected_set or self._existing_cell_coverage(school):
+            elif sid in connected_set or (self._existing_cell_coverage(school) and len(connected_set)==0):
                 # either school is in range of a cell tower or school has coverage information from supplemental data
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(

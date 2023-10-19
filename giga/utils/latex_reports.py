@@ -5,6 +5,7 @@ from pylatex import PageStyle, Head, Foot, MiniPage, \
     LineBreak, NewPage, Tabularx, TextColor, simple_page_number, Itemize, Enumerate, Hyperref, Package, \
     TikZ, TikZNode, TikZCoordinate, TikZOptions, NewLine, VerticalSpace
 from pylatex.utils import italic, bold, NoEscape, escape_latex
+import numpy as np
 import math
 
 def get_report_variables(schools_complete_table,schools_unconnected,schools_connected,data_space):
@@ -38,116 +39,116 @@ def get_report_variables(schools_complete_table,schools_unconnected,schools_conn
 
     return vals
 
+
 def get_cost_report_variables(config,selected_schools,stats):
     vals = {}
     output_table = stats.output_cost_table
+    output_table_full = stats.output_cost_table_full
+    tech_name_dict = {'Fiber': 'fiber', 'Cellular': 'cell', 'P2P': 'p2p', 'Satellite': 'sat'}
+    MILLION = 1000000
    
     vals['num_schools'] = len(selected_schools)
     vals['num_unconn_schools'] = len(stats.output_space.minimum_cost_result)
-    vals['budget_cstr'] = config['scenario_parameters']['budget_constraint']
+    vals['budget_cstr'] = config['scenario_parameters']['cost_minimizer_config']['budget_constraint']
     vals['max_fiber_conn'] = 0
     for tech in config['scenario_parameters']['technologies']:
         if tech['technology']=='Fiber':
-            vals['max_fiber_conn'] = tech['maximum_connection_length']
+            vals['max_fiber_conn'] = tech['constraints']['maximum_connection_length']
+            vals['schools_as_fiber_nodes'] = tech['capex']['schools_as_fiber_nodes']
 
     vals['min_bandwidth'] = config['scenario_parameters']['bandwidth_demand']
     vals['opex_years'] = config['scenario_parameters']['years_opex']
     vals['num_schools_to_connect'] = sum(output_table['feasible'])
-    vals['num_schools_over_budget'] = len(output_table[output_table["reason"] == "BUDGET_EXCEEDED"])
-    vals['total_cost'] = sum(output_table["total_cost"].dropna())/1000000
-    vals['total_capex_cost'] = stats.totals_lookup_table_mil['Technology CapEx']+stats.totals_lookup_table_mil['Electricity CapEx']
-    vals['total_opex_cost'] = stats.totals_lookup_table_mil['Annual Recurring Cost']*vals['opex_years']
-    vals['fiber_schools'] = 0
-    if 'Fiber' in stats.technology_counts:
-        vals['fiber_schools'] = stats.technology_counts['Fiber']
-    vals['cell_schools'] = 0
-    if 'Cellular' in stats.technology_counts:
-        vals['cell_schools'] = stats.technology_counts['Cellular']
-    vals['p2p_schools'] = 0
-    if 'P2P' in stats.technology_counts:
-        vals['p2p_schools'] = stats.technology_counts['P2P']
-    vals['sat_schools'] = 0
-    if 'Satellite' in stats.technology_counts:
-        vals['sat_schools'] = stats.technology_counts['Satellite']
-    vals['schools_need_electricity'] = len(output_table[output_table["capex_electricity"] > 0.0])
-    vals['fiber_capex_per_school'] = 0
-    if vals['fiber_schools']>0:
-        vals['fiber_capex_per_school'] = sum(output_table[(output_table['technology'] == 'Fiber')&(output_table['feasible'])]['capex'])/vals['fiber_schools']
-    vals['cell_capex_per_school'] = 0
-    if vals['cell_schools']>0:
-        vals['cell_capex_per_school'] = sum(output_table[(output_table['technology'] == 'Cellular')&(output_table['feasible'])]['capex'])/vals['cell_schools']
-    vals['p2p_capex_per_school'] = 0
-    if vals['p2p_schools']>0:
-        vals['p2p_capex_per_school'] = sum(output_table[(output_table['technology'] == 'P2P')&(output_table['feasible'])]['capex'])/vals['p2p_schools']
-    vals['sat_capex_per_school'] = 0
-    if vals['sat_schools']>0:
-        vals['sat_capex_per_school'] = sum(output_table[(output_table['technology'] == 'Satellite')&(output_table['feasible'])]['capex'])/vals['sat_schools']
-    vals['ele_capex_per_school'] = sum(output_table[output_table['feasible']]['electricity_capex'])/vals['schools_need_electricity']
-    vals['fiber_capex_total'] = sum(output_table[(output_table['technology'] == 'Fiber')&(output_table['feasible'])]['capex'])
-    vals['cell_capex_total'] = sum(output_table[(output_table['technology'] == 'Cellular')&(output_table['feasible'])]['capex'])
-    vals['p2p_capex_total'] = sum(output_table[(output_table['technology'] == 'P2P')&(output_table['feasible'])]['capex'])
-    vals['sat_capex_total'] = sum(output_table[(output_table['technology'] == 'Satellite')&(output_table['feasible'])]['capex'])
-    vals['ele_capex_total'] = sum(output_table[output_table['feasible']]['electricity_capex'])
-
-    vals['fiber_opex_year'] = sum(output_table[(output_table['technology'] == 'Fiber')&(output_table['feasible'])]['opex'])
-    vals['cell_opex_year'] = sum(output_table[(output_table['technology'] == 'Cellular')&(output_table['feasible'])]['opex'])
-    vals['p2p_opex_year'] = sum(output_table[(output_table['technology'] == 'P2P')&(output_table['feasible'])]['opex'])
-    vals['sat_opex_year'] = sum(output_table[(output_table['technology'] == 'Satellite')&(output_table['feasible'])]['opex'])
-    vals['ele_opex_year'] = sum(output_table[output_table['feasible']]['electricity_opex'])
-    vals['fiber_opex_per_school_year'] = 0
-    if vals['fiber_schools']>0:
-        vals['fiber_opex_per_school_year'] = vals['fiber_opex_year']/vals['fiber_schools']
-    vals['cell_opex_per_school_year'] = 0
-    if vals['cell_schools']>0:
-        vals['cell_opex_per_school_year'] = vals['cell_opex_year']/vals['cell_schools']
-    vals['p2p_opex_per_school_year'] = 0
-    if vals['p2p_schools']>0:
-        vals['p2p_opex_per_school_year'] = vals['p2p_opex_year']/vals['p2p_schools']
-    vals['sat_opex_per_school_year'] = 0
-    if vals['sat_schools']>0:
-        vals['sat_opex_per_school_year'] = vals['sat_opex_year']/vals['sat_schools']
-    vals['ele_opex_per_school_year'] = vals['ele_opex_year']/vals['num_schools_to_connect']
-    vals['fiber_opex_per_school_month'] = vals['fiber_opex_per_school_year']/12.0
-    vals['cell_opex_per_school_month'] = vals['cell_opex_per_school_year']/12.0
-    vals['p2p_opex_per_school_month'] = vals['p2p_opex_per_school_year']/12.0
-    vals['sat_opex_per_school_month'] = vals['sat_opex_per_school_year']/12.0
-    vals['ele_opex_per_school_month'] = vals['ele_opex_per_school_year']/12.0
+    vals['num_schools_over_budget'] = len(output_table_full[output_table_full["reason"] == "BUDGET_EXCEEDED"])
+    vals['total_cost'] = sum(output_table["total_cost"].dropna())/MILLION
+    vals['total_capex_cost_mil'] = stats.totals_lookup_table_mil['Technology CapEx']+stats.totals_lookup_table_mil['Electricity CapEx']
+    vals['total_capex_cost'] = vals['total_capex_cost_mil']*MILLION
+    vals['total_opex_cost_mil'] = stats.totals_lookup_table_mil['Annual Recurring Cost']*vals['opex_years']
+    vals['total_opex_cost'] = vals['total_opex_cost_mil']*MILLION
     
-    vals['fiber_opex_total'] = vals['fiber_opex_per_school_year']*vals['opex_years']
-    vals['cell_opex_total'] = vals['cell_opex_per_school_year']*vals['opex_years']
-    vals['p2p_opex_total'] = vals['p2p_opex_per_school_year']*vals['opex_years']
-    vals['sat_opex_total'] = vals['sat_opex_per_school_year']*vals['opex_years']
-    vals['ele_opex_total'] = vals['ele_opex_per_school_year']*vals['opex_years']
+    vals['num_students'] = np.round(MILLION*vals['total_cost']/stats.average_cost_per_student, 0)
+    vals['avg_school_cost'] = stats.average_cost_per_school
+    vals['avg_student_cost'] = stats.average_cost_per_student
+    
+    # electricity related matrix
+    vals['ele_capex_total_mil'] = stats.totals_lookup_table_mil['Electricity CapEx']
+    vals['ele_capex_total'] = vals['ele_capex_total_mil']*MILLION
+    vals['ele_opex_year'] = sum(output_table[output_table['feasible']]['electricity_opex'])
+    vals['ele_opex_total'] = vals['ele_opex_year']*vals['opex_years']
+    vals['ele_opex_total_mil'] = vals['ele_opex_total']/MILLION
+    vals['ele_cost_total'] = vals['ele_capex_total'] + vals['ele_opex_total']
+    vals['ele_perc_capex'] =  100*vals['ele_capex_total_mil']/vals['total_cost']
+    vals['ele_perc_opex'] = 100*vals['ele_opex_total_mil']/vals['total_cost']
+    vals['schools_need_electricity'] = len(output_table[output_table["electricity_capex"] > 0.0])
+    vals['ele_capex_per_school'] = vals['ele_capex_total']/vals['schools_need_electricity']
+    vals['ele_opex_per_school_year'] = vals['ele_opex_year']/vals['num_schools_to_connect']
+    vals['ele_opex_per_school_month'] = vals['ele_opex_per_school_year']/12
 
+    # tech related costs per tech type
+    for tech_ in ['Fiber', 'Cellular', 'P2P', 'Satellite']:
 
-    vals['tech_perc_capex'] = 0
-    vals['ele_perc_capex'] = 0
-    vals['tech_capex_total'] = 0
-    vals['ele_capex_total'] = 0
-    vals['tech_opex_total'] = 0
-    vals['tech_perc_opex'] = 0
-    vals['tech_perc_capex_year_one'] = 0
-    vals['tech_perc_opex_year_one'] = 0
-    vals['ele_perc_capex_year_one'] = 0
-    vals['ele_perc_opex_year_one'] = 0
-    vals['tech_opex_year'] = 0
-    vals['ele_opex_year'] = 0
-    vals['fiber_perc_of_tech'] = 0
-    vals['cell_perc_of_tech'] = 0
-    vals['p2p_perc_of_tech'] = 0
-    vals['sat_perc_of_tech'] = 0
-    vals['tech_cost_total'] = 0
-    vals['ele_cost_total'] = 0
-    vals['fiber_cost_total'] = 0
-    vals['avg_cost_student_year_one'] = 0
-    vals['avg_cost_school_year_one'] = 0
-    vals['avg_school_cost'] = 0
-    vals['avg_student_cost'] = 0
-    vals['fiber_perc_schools'] = 0
-    vals['cell_perc_schools'] = 0
-    vals['p2p_perc_schools'] = 0
-    vals['sat_perc_schools'] = 0
-    vals['fiber_total_kms'] = 0
+        for cost_ in ['capex', 'opex']:
+            val_name = tech_name_dict[tech_] + '_' + cost_ + ('_total' if cost_=='capex' else '_year')
+            vals[val_name] = sum(output_table[(output_table['technology'] == tech_)&(output_table['feasible'])][cost_])
+        
+        vals[tech_name_dict[tech_] +'_opex_total'] = vals[tech_name_dict[tech_]+'_opex_year'] * vals['opex_years']
+        
+        try:
+            vals[tech_name_dict[tech_]+'_schools'] = stats.technology_counts[tech_]
+            vals[tech_name_dict[tech_]+'_capex_per_school'] = vals[tech_name_dict[tech_]+'_capex_total']/stats.technology_counts[tech_]
+            vals[tech_name_dict[tech_]+'_opex_per_school_year'] = vals[tech_name_dict[tech_]+'_opex_year']/stats.technology_counts[tech_]
+        except:
+            vals[tech_name_dict[tech_]+'_schools'] = 0
+            vals[tech_name_dict[tech_]+'_capex_per_school'] = 0
+            vals[tech_name_dict[tech_]+'_opex_per_school_year'] = 0
+        
+        vals[tech_name_dict[tech_] +'_opex_per_school_month'] = vals[tech_name_dict[tech_]+'_opex_per_school_year']/12
+        vals[tech_name_dict[tech_] +'_opex_per_school_total'] = vals[tech_name_dict[tech_]+'_opex_per_school_year'] * vals['opex_years']
+        vals[tech_name_dict[tech_] +'_cost_total'] = (vals[tech_name_dict[tech_]+'_capex_total'] + vals[tech_name_dict[tech_]+'_opex_total'])
+        vals[tech_name_dict[tech_] +'_cost_total_mil'] = vals[tech_name_dict[tech_] +'_cost_total']/MILLION
+        vals[tech_name_dict[tech_]+'_perc_schools'] = 100 * vals[tech_name_dict[tech_]+'_schools']/vals['num_schools_to_connect']
+
+    # all tech costs
+    vals['tech_capex_total_mil'] = stats.totals_lookup_table_mil['Technology CapEx']
+    vals['tech_capex_total'] = vals['tech_capex_total_mil']*MILLION
+    vals['tech_opex_year'] = vals['fiber_opex_year'] + vals['cell_opex_year'] + vals['p2p_opex_year'] + vals['sat_opex_year']
+    vals['tech_opex_total'] = vals['tech_opex_year']*vals['opex_years']
+    vals['tech_opex_total_mil'] = vals['tech_opex_total']/MILLION
+    vals['tech_cost_total'] = vals['tech_capex_total'] + vals['tech_opex_total']
+    vals['tech_perc_opex'] = 100*vals['tech_opex_total_mil'] /vals['total_cost']
+    vals['tech_perc_capex'] = 100*vals['tech_capex_total_mil']/vals['total_cost']
+
+    # tech type shares of total tech cost
+    for tech_ in tech_name_dict.values():
+        vals[tech_+'_perc_of_tech'] = 100*vals[tech_+'_cost_total']/vals['tech_cost_total']
+    
+    # year one cost metrics
+    vals['total_cost_year_one'] = (vals['total_capex_cost_mil'] + stats.totals_lookup_table_mil['Annual Recurring Cost'])*MILLION
+    vals['tech_perc_capex_year_one'] = 100*vals['tech_capex_total']/vals['total_cost_year_one']
+    vals['tech_perc_opex_year_one'] = 100*vals['tech_opex_year'] /vals['total_cost_year_one']
+    vals['ele_perc_capex_year_one'] = 100*vals['ele_capex_total']/vals['total_cost_year_one']
+    vals['ele_perc_opex_year_one'] = 100*vals['ele_opex_year']/vals['total_cost_year_one']
+    vals['avg_cost_student_year_one'] = vals['total_cost_year_one']/vals['num_students']
+    vals['avg_cost_school_year_one'] = vals['total_cost_year_one']/vals['num_schools_to_connect']
+
+    # fiber length
+    vals['fiber_total_kms'] = np.round(sum([c.distance for c in stats.fiber_connections]) / 1000, 2)
+
+    # round variables
+    #var_no_round = ['num_schools', 'num_unconn_schools', 'opex_years', 'num_students', 'num_schools_to_connect', 'num_schools_over_budget', 'schools_need_electricity']
+    #var_no_round = var_no_round + [tech_+'_schools' for tech_ in tech_name_dict.values()]
+
+    # correct rounding
+    for key_, value_ in vals.items():
+
+        if value_ == 0:
+            vals[key_] = '0'
+        elif not isinstance(value_, int):
+            value_round = np.round(value_, 2)
+            if value_round.is_integer():
+                vals[key_] = int(value_round)
+            else:
+                vals[key_] = value_round
 
     return vals
 
@@ -163,20 +164,36 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     doc.preamble.append(Command(NoEscape(r'usepackage{subcaption}')))
 
     #report "variables"
-    vals = get_cost_report_variables(config,selected_schools,stats)
+    vals_num = get_cost_report_variables(config,selected_schools,stats)
+
+    def format_vals(vals):
+        vals = vals.copy()
+
+        for key_, value_ in vals.items():
+            if 'perc_' in key_ and value_ == 0:
+                vals[key_] = 'less\, than\, 0.01'
+
+            if (not isinstance(value_, str)) and value_>1000 and value_!= math.inf:
+                vals[key_] = f'{value_:,}'
+        
+        return vals
+    
+    vals = format_vals(vals_num)
+
     str1 = r"newcommand{{\country}}{{{}}}".format(country)
     doc.preamble.append(Command(NoEscape(str1)))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\totalnumschools}}{{${}$}}'.format(vals['num_schools']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\totalnumunconn}}{{${}$}}'.format(vals['num_unconn_schools']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\budgetcstr}}{{${}$}}'.format(vals['budget_cstr']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\maxfiber}}{{${}$}}'.format(vals['max_fiber_conn']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\schoolsasnodes}}{{${}$}}'.format(vals['schools_as_fiber_nodes']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\minbandwidth}}{{${}$}}'.format(vals['min_bandwidth']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\opexyears}}{{${}$}}'.format(vals['opex_years']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\numtoconn}}{{${}$}}'.format(vals['num_schools_to_connect']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\numoverbudget}}{{${}$}}'.format(vals['num_schools_over_budget']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\totalcost}}{{${}$}}'.format(vals['total_cost']))))
-    doc.preamble.append(Command(NoEscape(r'newcommand{{\totalcapexcost}}{{${}$}}'.format(vals['total_capex_cost']))))
-    doc.preamble.append(Command(NoEscape(r'newcommand{{\totalopexcost}}{{${}$}}'.format(vals['total_opex_cost']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\totalcapexcost}}{{${}$}}'.format(vals['total_capex_cost_mil']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\totalopexcost}}{{${}$}}'.format(vals['total_opex_cost_mil']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\fiberschools}}{{${}$}}'.format(vals['fiber_schools']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\cellschools}}{{${}$}}'.format(vals['cell_schools']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\ptopschools}}{{${}$}}'.format(vals['p2p_schools']))))
@@ -202,6 +219,10 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     doc.preamble.append(Command(NoEscape(r'newcommand{{\ptopopexpsy}}{{${}$}}'.format(vals['p2p_opex_per_school_year']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\satopexpsy}}{{${}$}}'.format(vals['sat_opex_per_school_year']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\eleopexpsy}}{{${}$}}'.format(vals['ele_opex_per_school_year']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\fiberopexyear}}{{${}$}}'.format(vals['fiber_opex_year']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\cellopexyear}}{{${}$}}'.format(vals['cell_opex_year']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\ptopopexyear}}{{${}$}}'.format(vals['p2p_opex_year']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\satopexyear}}{{${}$}}'.format(vals['sat_opex_year']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\fiberopextot}}{{${}$}}'.format(vals['fiber_opex_total']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\cellopextot}}{{${}$}}'.format(vals['cell_opex_total']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\ptopopextot}}{{${}$}}'.format(vals['p2p_opex_total']))))
@@ -210,7 +231,7 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     doc.preamble.append(Command(NoEscape(r'newcommand{{\techperccapex}}{{${}$}}'.format(vals['tech_perc_capex']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\eleperccapex}}{{${}$}}'.format(vals['ele_perc_capex']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\techcapextot}}{{${}$}}'.format(vals['tech_capex_total']))))
-    doc.preamble.append(Command(NoEscape(r'newcommand{{\elepercopex}}{{${}$}}'.format(vals['ele_capex_total']))))
+    doc.preamble.append(Command(NoEscape(r'newcommand{{\elepercopex}}{{${}$}}'.format(vals['ele_perc_opex']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\techopextot}}{{${}$}}'.format(vals['tech_opex_total']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\techpercopex}}{{${}$}}'.format(vals['tech_perc_opex']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\techperccapexyearone}}{{${}$}}'.format(vals['tech_perc_capex_year_one']))))
@@ -306,9 +327,11 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     \subsection{Main options}
 
     The main options selected are as follows:
-    \begin{itemize}
-        \item We allow/disallow schools connected with fiber to behave as fiber nodes.
-        \item We allow/disallow providing solar electricity to schools with no electricity.
+    \begin{itemize}""" + '\n'
+
+    latex_source+=f"    \item We {'allow' if vals_num['schools_as_fiber_nodes'] else 'disallow'} schools connected with fiber to behave as fiber nodes.\n"
+    latex_source+=f"    \item We {'allow' if vals_num['schools_as_fiber_nodes'] else 'disallow'} providing solar electricity to schools with no electricity."
+    latex_source+=r"""
         \item We allow a maximum fiber connection length of \maxfiber{} Kms.
         \item We consider a minimum bandwidth per school of \minbandwidth{} Mbps.
         \item We consider opex costs of \opexyears{} years in the total cost calculations.
@@ -322,14 +345,25 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     else:
         latex_source += r"We only consider a subset of \totalnumunconn{} unconnected schools within \country{}."+"\n"
 
+    extra_sentence = r""" (where another  \numoverbudget{} schools could have
+    been connected with additional budget). """
+
     latex_source += r"""
 
     \section{Cost estimation results overview}
 
     In this section, estimated costs of connecting schools will be shown based on the data inputs provided to the School Costing Tool. This includes an analysis of the initial CapEx investments required and an estimate of the operational costs of school connectivity.
 
-    The cost estimation tool was executed in an area with \totalnumschools{}, \totalnumunconn{} of which are currently not connected. With the given scenario and options chosen we can connect \numtoconn{} schools (where another  \numoverbudget{} schools could have
-    been connected with additional budget. The total cost of connecting these schools is \totalcost{}M USD, \totalcapexcost{}M USD consisting of CapEx cost and \totalopexcost{}M USD consisting of OpEx over a period of \opexyears{} years.
+    The cost estimation tool was executed in an area with \totalnumschools{}, \totalnumunconn{} of which are currently not connected. With the given scenario and options chosen we can connect \numtoconn{} schools""" + f"{extra_sentence if vals_num['num_schools_over_budget'] !='0' else '. '}"
+
+    latex_source += r"""The total cost of connecting these schools is \totalcost{}M USD, \totalcapexcost{}M USD consisting of CapEx cost and \totalopexcost{}M USD consisting of OpEx over a period of \opexyears{} years. See the figure below:
+
+    \begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.3]{graph_0.png} % replace with your image path
+    \caption{Project costs}
+    \label{fig:snapshot}
+    \end{figure} 
 
     \subsection{CapEx and OpEx}
 
@@ -340,7 +374,7 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     \centering
     \begin{tabular}{|c|c|c|c|}
         \hline
-        \textbf{CapEx} & \textbf{Schools} & \textbf{Cost per school} & \textbf{Total cost}  \\
+        \textbf{CapEx} & \textbf{Schools} & \textbf{Cost per school} USD & \textbf{Total cost} USD \\
         \hline
          \textbf{Fiber}  & \fiberschools{} & \fibercapexps{} & \fibercapextot{} \\
           \textbf{Cellular}  & \cellschools{} & \cellcapexps{} & \cellcapextot{} \\
@@ -359,13 +393,13 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     \centering
     \begin{tabular}{|c|c|c|c|}
         \hline
-        \textbf{OpEx} & \textbf{Cost school/Month} & \textbf{Cost school/year} & \textbf{Total cost}  \\
+        \textbf{OpEx Cost} & \textbf{School/month USD} & \textbf{School/year USD} & \textbf{Total/year USD}  \\
         \hline
-         \textbf{Fiber}  & \fiberopexpsm{} & \fiberopexpsy{} & \fiberopextot{} \\
-          \textbf{Cellular}  & \cellopexpsm{} & \cellopexpsy{} & \cellopextot{} \\
-           \textbf{Microwave}  & \ptopopexpsm{} & \ptopopexpsy{} & \ptopopextot{} \\
-            \textbf{Satellite}  & \satopexpsm{} & \satopexpsy{} & \satopextot{} \\
-             \textbf{Electricity}  & \eleopexpsm{} & \eleopexpsy{} & \eleopextot{} \\
+         \textbf{Fiber}  & \fiberopexpsm{} & \fiberopexpsy{} & \fiberopexyear{} \\
+          \textbf{Cellular}  & \cellopexpsm{} & \cellopexpsy{} & \cellopexyear{} \\
+           \textbf{Microwave}  & \ptopopexpsm{} & \ptopopexpsy{} & \ptopopexyear{} \\
+            \textbf{Satellite}  & \satopexpsm{} & \satopexpsy{} & \satopexyear{} \\
+             \textbf{Electricity}  & \eleopexpsm{} & \eleopexpsy{} & \eleopexyear{} \\
         \hline
     \end{tabular}
     \caption{OpEx Cost Model Overview}
@@ -373,22 +407,15 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     \end{table}
 
     \subsubsection{CapEx/OpEx progression}
-    Let us know delve a little dipper into the details of the costs.
+    Now, let's dive deeper into the specifics of the costs.
 
-    To connect all the unconnected \totalnumunconn{} schools in \country{} it is estimated to cost a total of \totalcost{} USD. Over a period of \opexyears{} years, 
-    electricity CapEx costs are expected to account for \eleperccapex{}$\%$ (\elecapextot{} USD) followed by capital expenditure (technology related) costs at \techcapextot{}  (\techperccapex{} \%) 
-    and operating expenditure costs for electricity at \eleopextot{} (\elepercopex{} \%) and for technology at \techopextot{}  (\techpercopex{} \%) 
+    To connect all the unconnected \totalnumunconn{} schools in \country{} it is estimated to cost a total of \totalcost{}M USD. Over a period of \opexyears{} years, 
+    electricity CapEx costs are expected to account for \eleperccapex{}$\%$ (\elecapextot{} USD) followed by capital expenditure (technology related) costs at \techcapextot{} USD (\techperccapex{}\%) 
+    and operating expenditure costs for electricity at \eleopextot{} USD (\elepercopex{}\%) and for technology at \techopextot{} USD (\techpercopex{}\%) 
 
-    \begin{figure}[h]
-    \centering
-    \includegraphics[scale=0.1]{graph_0.png} % replace with your image path
-    \caption{Project costs}
-    \label{fig:snapshot}
-    \end{figure} 
-
-    In the first year, the CapEx cost for electricity accounts for an even larger share of total costs at \eleperccapexyearone{} \% (\elecapextot{} USD) 
-    followed by technology Capex at \techperccapexyearone{} \% (\techcapextot{}), plus electricity OpEx at \elepercopexyearone{} \% (\eleopextot{} USD) 
-    and technology OpEx at \techpercopexyearone{} \% (\techopextot{}). This is because, CapEx costs constitute a one-off, initial investment and are 
+    In the first year, the CapEx cost for electricity accounts for an even larger share of total costs at \eleperccapexyearone{}\% (\elecapextot{} USD) 
+    followed by technology Capex at \techperccapexyearone{}\% (\techcapextot{} USD), plus electricity OpEx at \elepercopexyearone{}\% (\eleopexyear{} USD) 
+    and technology OpEx at \techpercopexyearone{}\% (\techopexyear{} USD). This is because, CapEx costs constitute a one-off, initial investment and are 
     expected to decrease as a percentage of total costs over time. Electricity capex costs are also assumed to be fixed and expected to decrease as a 
     percentage of total costs over time. Conversely, OpEx costs are expected to increase as a percentage of total costs over time.  
     \newline
@@ -414,15 +441,14 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     \label{tab:capex_opex_progression}
     \end{table}
 
-    \newpage
     \subsubsection{Technology cost breakdown}
-    Each technology has different associated CapEx and OpEx unit costs (see appendix). Based on the technology distribution to connect the unconnected schools, it is estimated that the total fiber cost will be of \fibercosttot{}, accounting for \fiberpercoftech{} of the total technology cost (\techcosttot{} USD). Cellular is expected to account for \cellpercoftech{}, Microwave \ptoppercoftech{} and Satellite \ptoppercoftech{}. 
-    In contrast, electricity (both CapEx and OpEx) consists of a total cost of \elecosttot{}.
+    Each technology has different associated CapEx and OpEx unit costs (see appendix). Based on the technology distribution to connect the unconnected schools, it is estimated that the total fiber cost will be of \fibercosttot{} USD, accounting for \fiberpercoftech{}\% of the total technology cost (\techcosttot{} USD). Cellular is expected to account for \cellpercoftech{}\%, Microwave \ptoppercoftech{}\% and Satellite \satpercoftech{}\%. 
+    In contrast, electricity (both CapEx and OpEx) consists of a total cost of \elecosttot{} USD.
 
     The following bar chart shows the cost break down of the different technologies (plus electricity):
     \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.1]{graph_1.png} % replace with your image path
+    \includegraphics[scale=0.3]{graph_1.png} % replace with your image path
     \caption{Technology cost breakdown}
     \label{fig:snapshot}
     \end{figure} 
@@ -430,9 +456,9 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
 
     \subsection{School/Student costs}
 
-    The average cost to connect an unconnected school in the first year is estimated to be \avgcostschoolyearone{}. Over a period of five years the cost is estimated to be \avgschoolcost{}. 
+    The average cost to connect an unconnected school in the first year is estimated to be \avgcostschoolyearone{} USD. Over a period of five years the cost is estimated to be \avgschoolcost{} USD. 
 
-    The cost per student in the first year is expected to be \avgcoststudentyearone{}. Over a period of five years the cost to connect a student is estimated to be \avgstudentcost{}.
+    The cost per student in the first year is expected to be \avgcoststudentyearone{} USD. Over a period of five years the cost to connect a student is estimated to be \avgstudentcost{} USD.
 
     The following figures show the schools colored by school cost and student cost, respectively:
 
@@ -459,11 +485,11 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
 
     \subsection{Technology breakdown}
 
-    Based on the chosen scenario and options, the algorithm of the Costing Tool, yields the following technology breakdown: \fiberpercschools{} are connected with fiber, \cellpercschools{} are connected with cellular, \ptoppercschools{} are connected with microwave and \satpercschools{} are connected with satellite. The following pie chart shows the technology breakdown both in terms of percentages and total school numbers:
+    Based on the chosen scenario and options, the algorithm of the Costing Tool, yields the following technology breakdown: \fiberpercschools{}\% are connected with fiber, \cellpercschools{}\% are connected with cellular, \ptoppercschools{}\% are connected with microwave and \satpercschools{}\% are connected with satellite. The following pie chart shows the technology breakdown both in terms of percentages and total school numbers:
 
     \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.2]{graph_4.png} % replace with your image path
+    \includegraphics[scale=0.4]{graph_4.png} % replace with your image path
     \caption{School technology breakdown}
     \label{fig:snapshot}
     \end{figure} 
@@ -472,7 +498,7 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
 
     \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.2]{graph_5.png} % replace with your image path
+    \includegraphics[scale=0.4]{graph_5.png} % replace with your image path
     \caption{School technology breakdown map}
     \label{fig:snapshot}
     \end{figure} 
@@ -480,15 +506,14 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
     \subsubsection{Fiber "economies of scale"}
 
     Finally, it is important to show the predicted fiber connections between schools or between a school and a fiber node as it the core of the capex cost of fiber connectivity. These fiber connections should constitute the lowest number 
-    of Kilometres possible so that the fiber CapEx cost remains as low as possible. In the following map we show all \fiberkms{} Kilometres of fiber runs for the chosen scenario:
+    of kilometres possible so that the fiber CapEx cost remains as low as possible. In the following map we show all \fiberkms{} kilometer(s) of fiber runs for the chosen scenario:
 
     \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.4]{graph_6.png} % replace with your image path
+    \includegraphics[scale=0.3]{graph_6.png} % replace with your image path
     \caption{Fiber routes}
     \label{fig:snapshot}
     \end{figure} 
-
 
     \end{document}
 

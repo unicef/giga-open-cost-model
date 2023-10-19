@@ -211,6 +211,7 @@ class OutputSpace(BaseModel):
     p2p_costs: CostResultSpace = None
     aggregated_costs: Dict[str, Dict[str, SchoolConnectionCosts]] = {}
     minimum_cost_result: List[SchoolConnectionCosts] = []
+    years_opex: int = 5
 
     @property
     def technology_outputs(self):

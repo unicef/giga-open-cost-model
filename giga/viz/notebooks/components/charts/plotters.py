@@ -20,6 +20,26 @@ DEFAULT_FIBER_NAMES = ["5km", "10km", "15km", "20km", "20km+"]
 DEFAULT_CELL_BINS = [0, 1_000, 3_000, 5_000, 10_000, np.inf]
 DEFAULT_CELL_NAMES = ["1km", "3km", "5km", "10km", "10km+"]
 
+CUSTOM_TEMPLATE = custom_template = {
+    "layout": go.Layout(
+        font={
+            "family": "Nunito",
+            "size": 12,
+            "color": "#707070",
+        },
+        title={
+            "font": {
+                "family": "Arial",
+                "size": 18,
+                "color": "#1f1f1f",
+            },
+        },
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        colorway=px.colors.qualitative.G10,
+    )
+}
+
 
 def technology_distribution_bar_plot(data):
     # data is a dictionary of technology counts
@@ -256,98 +276,34 @@ def cumulative_visible_cell_tower_distance_barplot(
         y_label="Distance to visible tower"
     )
 
-
-def make_project_cost_bar_plots(stats, bar_width=0.3):
+def make_project_cost_bar_plots(stats):
     totals_mil = stats.totals_lookup_table_mil
-    averages_usd = stats.averages_lookup_table_usd
-    # Create subplot figure
-    fig = make_subplots(rows=1, cols=2)
-    # Add first bar plot
-    for i, (key, value) in enumerate(totals_mil.items()):
-        fig.add_trace(
-            go.Bar(
-                name=key,
-                x=[key],
-                y=[round(value, 2)],
-                marker_color=COST_COLORS_TRIPLET[i],
-                text=[round(value, 2)],
-                textposition="auto",
-                width=[bar_width]
-            ),
-            row=1,
-            col=1,
-        )
-    # Add second bar plot
-    for i, (key, value) in enumerate(averages_usd.items()):
-        fig.add_trace(
-            go.Bar(
-                name=key,
-                x=[key],
-                y=[round(value, 2)],
-                marker_color=COST_COLORS_PAIR[i],
-                text=[round(value)],
-                textposition="auto",
-                width=[bar_width],
-            ),
-            row=1,
-            col=2,
-        )
-    # Update layout
-    fig.update_layout(
-        title=dict(
-            text="Total Project Costs (USD Millions) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Average Total Costs (USD)",
-            x=0.5, 
-            font=dict(size=18, family="Arial")
-        ),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        showlegend=False,
-        autosize=False,
-        width=1000,  # increase the figure width to provide more space between subplots
-        height=500,
-        margin=dict(
-            l=50,
-            r=50,
-            b=100,
-            t=100,
-            pad=20,  # increase the padding to provide more space between subplots
-        ),
+    df_totals = pd.DataFrame(zip(totals_mil.keys(), totals_mil.values()), columns= ['cost_type', 'cost'])
+
+    fig = px.bar(
+        df_totals,
+        x='cost_type',
+        y ='cost',
+        color = 'cost_type',
+        labels={
+            "cost": "Cost (M USD)",
+            "cost_type": "Cost Type",
+        },
+        #barmode="group",
+        title='Total Project Costs (USD Millions)',
+        color_discrete_sequence=COST_COLORS_TRIPLET,
+        facet_row_spacing=0.2,
+        template=CUSTOM_TEMPLATE,
     )
 
-    # Remove y-axis tick labels from first subplot
-    fig.update_yaxes(showticklabels=False, row=1, col=1)
-    # Remove y-axis tick labels from second subplot
-    fig.update_yaxes(showticklabels=False, row=1, col=2)
-    fig.add_shape(
-        dict(
-            type="line",
-            xref="paper",
-            yref="y2",
-            x0=0.55,
-            y0=0,  # change here
-            x1=1.0,
-            y1=0,  # and here
-            line=dict(
-                color="Black",
-                width=2,
-            ),
-        )
-    )
-    # Add horizontal line at y=0 for the second plot, slightly above y=0
-    fig.add_shape(
-        dict(
-            type="line",
-            xref="paper",
-            yref="y2",
-            x0=0,
-            y0=0,  # change here
-            x1=0.45,
-            y1=0,  # and here
-            line=dict(
-                color="Black",
-                width=2,
-            ),
-        )
+    # Clean up the background and change the font
+    fig.update_layout(
+        plot_bgcolor="white",
+        paper_bgcolor="#f5f5f5",
+        title=dict(x=0.5, font=dict(size=18, family="Arial")),
+        font=dict(size=14, family="Arial"),
+        bargap=0.6,
+        width=1200,
     )
     return fig
 

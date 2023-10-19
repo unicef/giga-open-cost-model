@@ -139,8 +139,11 @@ def create_summary_table(output_space, data_space):
     cap_total = format_currency(
         sum(dfcap["Total Costs"]), currency="USD", locale="en_US"
     )
-    op_total = format_currency(
+    op_total_year = format_currency(
         sum(dfop["Total Annual Cost"]), currency="USD", locale="en_US"
+    )
+    op_total = format_currency(
+        sum(dfop["Total Annual Cost"])*output_space.years_opex, currency="USD", locale="en_US"
     )
 
     dfcap = format_dollars(dfcap, ["Per School", "Total Costs"])
@@ -180,7 +183,7 @@ def create_summary_table(output_space, data_space):
                             [
                                 _pdHTML(dfcap),
                                 HTML(
-                                    f"<b><font color='#07706d'>Total Technology CapEx Costs {get_space('&emsp;', 2)} {cap_total}</b>"
+                                    f"<b><font color='#07706d'>Total Technology CapEx Costs: {get_space('&emsp;', 2)} {cap_total}</b>"
                                 ),
                             ]
                         ),
@@ -197,7 +200,9 @@ def create_summary_table(output_space, data_space):
                             [
                                 _pdHTML(dfop),
                                 HTML(
-                                    f"<b><font color='#07706d'>Total OpEx Costs {get_space('&emsp;', 12)} {op_total}</b>"
+                                    f"<b><font color='#07706d'>Total Annual OpEx Costs: {get_space('&emsp;', 7)} {op_total_year}</b>"
+                                    f"<br style='line-height: 4px' />"
+                                    f"<b><font color='#07706d'>Total OpEx Costs: {get_space('&emsp;', 10)} {op_total}</b>"
                                 ),
                             ]
                         ),

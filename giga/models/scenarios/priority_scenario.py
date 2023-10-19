@@ -105,6 +105,9 @@ class PriorityScenario:
         """
         LOGGER.info(f"Starting Minimum Cost Scenario")
         self._prep()
+
+        self.output_space.years_opex = self.config.years_opex
+        
         # compute baseline costs for all the technologies
         for c in self.config.technologies:
             cost_model = self._make_model(c)
