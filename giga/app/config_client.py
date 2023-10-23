@@ -82,6 +82,7 @@ class ConfigClient:
             p2p_distance_cache_conf={
                 "cache_type": "p2p-distance",
                 "p2p_cache_file": self.defaults.data.p2p_distance_cache_file,
+                "school_visibility_cache_file": self.defaults.data.school_visibility_cache_file,
                 "data": {"workspace": self.distance_cache_workspace},
             },
         )

@@ -6,7 +6,7 @@ from giga.schemas.conf.models import CostMinimizerConf
 from giga.data.space.connected_cost_graph import ConnectedCostGraph
 from giga.schemas.geo import PairwiseDistanceTable, PairwiseDistance
 from giga.schemas.output import SchoolConnectionCosts
-from giga.models.nodes.graph.cost_tree_pruner import CostTreePruner
+from giga.models.nodes.graph.cost_tree_pruner import CostTreePrunerV3
 from giga.utils.logging import LOGGER
 
 
@@ -19,10 +19,13 @@ class ConstrainedPriorityMinimizer:
     by connecting the schools with lowest cost per school first under economies of scale.
     """
 
-    def __init__(self, config: CostMinimizerConf):
+    def __init__(self, config: CostMinimizerConf, tech_name: str, current_cost):
         self.config = config
+        self.tech_name = tech_name
+        self.current_cost = current_cost
+        self.budget_constraint = self.config.budget_constraint - current_cost
 
-    def _compute_cluster_costs(self, clusters, pruner, root_nodes, output):
+    def _compute_cluster_costs(self, clusters, root_nodes, output):
         """
         This method computes the minimum cost baseline of a connected cost graph
         for each cluster of schools.
@@ -37,7 +40,7 @@ class ConstrainedPriorityMinimizer:
                 if n not in root_nodes
             ]
             cluster_costs = output.project_lifetime_cost(
-                cluster_schools, "fiber", self.config.years_opex
+                cluster_schools, self.tech_name, self.config.years_opex
             )
             costs.append((cluster_costs, cluster_schools, initial_cost_graph))
         return costs
@@ -63,7 +66,7 @@ class ConstrainedPriorityMinimizer:
         schools = [n for n in list(cost_graph.graph.nodes()) if n not in root_nodes]
         # update budget
         connectivity_cost = output.project_lifetime_cost(
-            schools, "fiber", self.config.years_opex
+            schools, self.tech_name, self.config.years_opex
         )
         budget_remaining -= connectivity_cost
         # get the connections between the schools
@@ -81,10 +84,10 @@ class ConstrainedPriorityMinimizer:
             n for n in list(constrained_graph.graph.nodes()) if n not in root_nodes
         ]
         constrained_costs = output.project_lifetime_cost(
-            constrained_schools, "fiber", self.config.years_opex
+            constrained_schools, self.tech_name, self.config.years_opex
         )
         budget_remaining -= constrained_costs
-        connections = cost_graph.to_pairwise_distances()
+        connections = constrained_graph.to_pairwise_distances()
         return budget_remaining, constrained_schools, connections
 
     def minimize_economies_of_scale(
@@ -92,7 +95,6 @@ class ConstrainedPriorityMinimizer:
         output: OutputSpace,
         clusters: List[List[PairwiseDistance]],
         root_nodes: Set[str],
-        baseline_cost_lookup: Dict[str, SchoolConnectionCosts],
     ):
         """
         This method computes the minimum cost of a connected cost graph
@@ -108,19 +110,20 @@ class ConstrainedPriorityMinimizer:
                 school IDs that are optimal with economies of scale,
                 remaining budget
         """
-        pruner = CostTreePruner(
+        """pruner = CostTreePruner(
             self.config.years_opex,
             baseline_cost_lookup,
             output,
             root_nodes,
-            static_upper_bound=self.config.budget_constraint,
-        )
+            self.tech_name,
+            static_upper_bound=self.budget_constraint,
+        )"""
         # find the economies of scale costs of all the clusters
-        costs = self._compute_cluster_costs(clusters, pruner, root_nodes, output)
+        costs = self._compute_cluster_costs(clusters, root_nodes, output)
         # order the schools by cost per school
         ordered_costs = self._order_schools_by_cost_per_school(costs)
         # while there is budget add cluster and reduce budget
-        budget_remaining = self.config.budget_constraint
+        budget_remaining = self.budget_constraint
         connections = []
         school_ids = []
         for c in ordered_costs:
@@ -138,11 +141,12 @@ class ConstrainedPriorityMinimizer:
                 connections += cluster_connections
             else:
                 # if the cluster cost is above budget, drop leaf nodes until the budget constraint is satisfied
-                pruner = CostTreePruner(
+                pruner = CostTreePrunerV3(
                     self.config.years_opex,
-                    baseline_cost_lookup,
+                    {},
                     output,
                     root_nodes,
+                    self.tech_name,
                     static_upper_bound=budget_remaining,
                 )
                 (
@@ -153,10 +157,10 @@ class ConstrainedPriorityMinimizer:
                     budget_remaining, cost_graph, root_nodes, output, pruner
                 )
                 school_ids += cluster_schools
-                connections += cost_graph.to_pairwise_distances()
+                connections += cluster_connections
                 break
         # generate a cost collection for the schools that are cost optimal with economies of scale
-        minimums = output.get_technology_cost_collection(school_ids, "fiber")
+        minimums = output.get_technology_cost_collection(school_ids, self.tech_name)
         return minimums, connections, school_ids, budget_remaining
 
     def minimize_baseline_costs(
@@ -189,7 +193,7 @@ class ConstrainedPriorityMinimizer:
         budget_constrained_baseline_costs = []
         budget_constrained_baseline_ids = []
         finished = False
-        for t in ['cellular','p2p','satellite']:
+        for t in ['cellular','satellite']:
             for c in sorted_baseline_costs:
                 # add schools unitl budget exceeded
                 if c.technology.lower()==t and c.school_id not in economies_of_scale_ids:
@@ -211,7 +215,69 @@ class ConstrainedPriorityMinimizer:
             budget_remaining,
         )
 
-    def run(self, output: OutputSpace) -> List[SchoolConnectionCosts]:
+    def run(self, output: OutputSpace, new_schools: List[str]):
+        if self.tech_name == "fiber":
+            distances = PairwiseDistanceTable(distances=output.fiber_distances)
+            # group schools into clusters based on their root node (e.g. fiber nodes)
+            clusters = list(distances.group_by_source().values())
+            root_nodes = set(distances.group_by_source().keys())
+            # minimize the economies of scale costs under the budget constraint
+            (
+                economies_of_scale_costs,
+                connections,
+                economies_of_scale_ids,
+                budget_remaining,
+            ) = self.minimize_economies_of_scale(
+                output, clusters, root_nodes
+            )
+            removed_ids = [x for x in new_schools if x not in economies_of_scale_ids]
+            
+            costs = output.project_lifetime_cost(
+                economies_of_scale_ids, self.tech_name, self.config.years_opex
+            )
+            output.fiber_costs.technology_results.distances = connections
+            return self.current_cost+costs,removed_ids
+            
+        if self.tech_name == "p2p":
+            distances = PairwiseDistanceTable(distances=output.p2p_distances)
+            # group schools into clusters based on their root node (e.g. fiber nodes)
+            clusters = list(distances.group_by_source().values())
+            root_nodes = set(distances.group_by_source().keys())
+            # minimize the economies of scale costs under the budget constraint
+            (
+                economies_of_scale_costs,
+                connections,
+                economies_of_scale_ids,
+                budget_remaining,
+            ) = self.minimize_economies_of_scale(
+                output, clusters, root_nodes
+            )
+            removed_ids = [x for x in new_schools if x not in economies_of_scale_ids]
+            
+            costs = output.project_lifetime_cost(
+                economies_of_scale_ids, self.tech_name, self.config.years_opex
+            )
+            output.p2p_costs.technology_results.distances = connections
+            return self.current_cost+costs,removed_ids
+
+        baseline_cost_lookup = output.priority_cost_lookup()
+        (
+            budget_constrained_baseline_costs,
+            budget_constrained_baseline_ids,
+            budget_remaining,
+        ) = self.minimize_baseline_costs(
+            self.budget_constraint, output, baseline_cost_lookup, new_schools, []
+        )
+
+        removed_ids = [x for x in new_schools if x not in budget_constrained_baseline_ids]
+            
+        costs = output.project_lifetime_cost(
+            budget_constrained_baseline_ids, self.tech_name, self.config.years_opex
+        )
+        return self.current_cost+costs,removed_ids
+
+        
+    def run_old(self, output: OutputSpace, scenario_id: str) -> List[SchoolConnectionCosts]:
         """
         The constrained minimization follows the approach below:
             1. Because all economies of scale costs are optimal with respect to the baseline costs, they are considered first
@@ -225,19 +291,39 @@ class ConstrainedPriorityMinimizer:
         LOGGER.info("Starting budget constrained priorities")
         # generate lookups and graph object needed for minimization
         baseline_cost_lookup = output.priority_cost_lookup()
-        distances = PairwiseDistanceTable(distances=output.fiber_distances)
-        # group schools into clusters based on their root node (e.g. fiber nodes)
-        clusters = list(distances.group_by_source().values())
-        root_nodes = set(distances.group_by_source().keys())
-        # minimize the economies of scale costs under the budget constraint
-        (
-            economies_of_scale_costs,
-            connections,
-            economies_of_scale_ids,
-            budget_remaining,
-        ) = self.minimize_economies_of_scale(
-            output, clusters, root_nodes, baseline_cost_lookup
-        )
+
+        if self.tech_name == "fiber":
+            distances = PairwiseDistanceTable(distances=output.fiber_distances)
+            # group schools into clusters based on their root node (e.g. fiber nodes)
+            clusters = list(distances.group_by_source().values())
+            root_nodes = set(distances.group_by_source().keys())
+            # minimize the economies of scale costs under the budget constraint
+            (
+                economies_of_scale_costs,
+                connections,
+                economies_of_scale_ids,
+                budget_remaining,
+            ) = self.minimize_economies_of_scale(
+                output, clusters, root_nodes, baseline_cost_lookup
+            )
+        elif self.tech_name == "p2p":
+            distances = PairwiseDistanceTable(distances=output.p2p_distances)
+            # group schools into clusters based on their root node (e.g. fiber nodes)
+            clusters = list(distances.group_by_source().values())
+            root_nodes = set(distances.group_by_source().keys())
+            # minimize the economies of scale costs under the budget constraint
+            (
+                economies_of_scale_costs,
+                connections,
+                economies_of_scale_ids,
+                budget_remaining,
+            ) = self.minimize_economies_of_scale(
+                output, clusters, root_nodes, baseline_cost_lookup
+            )
+        else:
+            economies_of_scale_costs = []
+            economies_of_scale_ids = []
+            budget_remaining = self.budget_constraint
         # get connections that are infeasible due constraints not related to budget
         infeasible = output.infeasible_connections()
         infeasible_ids = [c.school_id for c in infeasible]
@@ -277,12 +363,18 @@ class ConstrainedPriorityMinimizer:
         LOGGER.info(
             f"Budget minimization: schools exceeding budget: {len(unable_to_connect_baseline_ids)}, connection not feasible: {len(infeasible_ids)}"
         )
-        if len(output.fiber_distances) > 0:
+        if self.tech_name== "fiber" and len(output.fiber_distances) > 0:
             # update the output space with the new set of economies of scale connections for fiber (if exist) and track the old fiber network
             output.fiber_costs.technology_results.complete_network_distances = (
                 output.fiber_costs.technology_results.distances
             )
             output.fiber_costs.technology_results.distances = connections
+        if self.tech_name== "p2p" and len(output.p2p_distances) > 0:
+            # update the output space with the new set of economies of scale connections for fiber (if exist) and track the old fiber network
+            output.p2p_costs.technology_results.complete_network_distances = (
+                output.p2p_costs.technology_results.distances
+            )
+            output.p2p_costs.technology_results.distances = connections
         return (
             economies_of_scale_costs
             + budget_constrained_baseline_costs

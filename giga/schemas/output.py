@@ -188,7 +188,7 @@ class CellularModelResults(BaseModel):
 class P2PModelResults(BaseModel):
 
     distances: List[PairwiseDistance]
-
+    complete_network_distances: List[PairwiseDistance] = []
 
 class GenericModelResults(BaseModel):
 
@@ -201,6 +201,7 @@ class CostResultSpace(BaseModel):
         FiberModelResults, CellularModelResults, P2PModelResults, GenericModelResults
     ]
     cost_results: List[SchoolConnectionCosts]
+    tech_name: str
 
 
 class OutputSpace(BaseModel):
@@ -231,6 +232,13 @@ class OutputSpace(BaseModel):
     def fiber_distances(self):
         if self.fiber_costs is not None:
             return self.fiber_costs.technology_results.distances
+        else:
+            return []
+        
+    @property
+    def p2p_distances(self):
+        if self.p2p_costs is not None:
+            return self.p2p_costs.technology_results.distances
         else:
             return []
 
@@ -350,10 +358,10 @@ class OutputSpace(BaseModel):
                 if costs['cellular'].feasible:
                     min_costs[school_id] = costs['cellular']
                     continue
-            if 'p2p' in costs:
-                if costs['p2p'].feasible:
-                    min_costs[school_id] = costs['p2p']
-                    continue
+            #if 'p2p' in costs:
+            #    if costs['p2p'].feasible:
+            #        min_costs[school_id] = costs['p2p']
+            #        continue
             if 'satellite' in costs:
                 if costs['satellite'].feasible:
                     min_costs[school_id] = costs['satellite']

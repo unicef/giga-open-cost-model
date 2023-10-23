@@ -119,6 +119,7 @@ class FiberCostModel:
     def run(
         self,
         data_space: ModelDataSpace,
+        used_ids: List = [],
         progress_bar: bool = False,
         distance_model=VectorizedDistanceModel(),
     ) -> CostResultSpace:
@@ -157,10 +158,12 @@ class FiberCostModel:
         new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         # determine which schools can be connected and their distances
         if new_electricity:
-            distances = connection_model.run(data_space.school_coordinates)
+            school_coords = [coord for coord in data_space.school_coordinates if coord.coordinate_id not in used_ids]
+            distances = connection_model.run(school_coords)
         else:
-            distances = connection_model.run(data_space.school_with_electricity_coordinates)
+            school_coords = [coord for coord in data_space.school_with_electricity_coordinates if coord.coordinate_id not in used_ids]
+            distances = connection_model.run(school_coords)
         costs = self.compute_costs(distances, data_space)
         return CostResultSpace(
-            technology_results={"distances": distances}, cost_results=costs
+            technology_results={"distances": distances}, cost_results=costs, tech_name="fiber"
         )

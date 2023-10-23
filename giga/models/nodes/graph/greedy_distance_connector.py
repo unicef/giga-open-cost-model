@@ -76,7 +76,8 @@ class GreedyDistanceConnector:
             # single cache in set 2
             distances = []
             for cid in coord_ids2:
-                distances += cache.lookup[cid]
+                if cid in cache.lookup:
+                    distances += cache.lookup[cid]
         else:
             raise Exception("Trying to use a cache of unsupported type")
         distances = list(
@@ -242,6 +243,273 @@ class GreedyDistanceConnector:
                         list(unconnected_coordinates.values()),
                         [new_connection],
                         cache=self._cache.unconnected_cache,
+                    )
+            else:
+                # neither items are connected, skip
+                continue
+
+        if self.progress_bar:
+            pbar.update(pbar.total - pbar.n)
+            pbar.close()
+        return greedy_connected
+    
+class DoubleGreedyDistanceConnector:
+
+    """
+    Uses a greedy approach to iteratively connect the closest unconnected nodes to
+    a subset of connected nodes.
+    When configured with the dynamic_connect parameter to True
+    this runs Prim's algorithm: https://en.wikipedia.org/wiki/Prim%27s_algorithm
+    """
+
+    def __init__(
+        self,
+        connected: List[List[UniqueCoordinate]],
+        distance_cache: List[GreedyConnectCache],
+        maximum_connection_length_m: List[float],
+        distance_threshold: float,
+        **kwargs
+    ):
+        self.tech1_connected = connected[0]
+        self.tech2_connected = connected[1]
+        # used to compute distances between coordinate pairs
+        self.distance_model = kwargs.get("distance_model", PairwiseDistanceModel())
+        # if configured, allows connections that are less than the configured length
+        self.maximum_connection_length_m =  maximum_connection_length_m
+        # if set to False only allows connections between the existing connected set
+        # when set True, new dynamic connected coordinates can be used as connections
+        self.dynamic_connect = kwargs.get("dynamic_connect", True)
+        self.progress_bar = kwargs.get("progress_bar", False)
+        self._tech1_cache = (
+            distance_cache[0] if distance_cache[0] is not None else GreedyConnectCache()
+        )
+        self._tech2_cache = (
+            distance_cache[1] if distance_cache[1] is not None else GreedyConnectCache()
+        )
+        self.distance_threshold = distance_threshold
+
+    def _queue_non_cached(self, q, index, set1, set2):
+        distances = self.distance_model.run((set1, set2))
+        distances = list(
+            filter(
+                lambda x: x is not None
+                and x.distance < self.maximum_connection_length_m[index],
+                distances,
+            )
+        )
+        return add_distances(q, distances)
+
+    def _queue_from_cache(self, q, index, set1, set2, cache):
+        coord_ids1 = set([c.coordinate_id for c in set1])
+        coord_ids2 = set([c.coordinate_id for c in set2])
+        if cache.cache_type == "one-to-one":
+            distances = [cache.lookup.get(cid, None) for cid in coord_ids1]
+        elif cache.cache_type == "one-to-many":
+            # single cache in set 2
+            distances = []
+            for cid in coord_ids2:
+                if cid in cache.lookup:
+                    distances += cache.lookup[cid]
+        else:
+            raise Exception("Trying to use a cache of unsupported type")
+        distances = list(
+            filter(
+                lambda x: x is not None
+                and x.distance < self.maximum_connection_length_m[index]
+                and (
+                    x.coordinate1.coordinate_id in coord_ids1
+                    or x.coordinate1.coordinate_id in coord_ids2
+                )
+                and (
+                    (
+                        x.coordinate2.coordinate_id in coord_ids1
+                        or x.coordinate2.coordinate_id in coord_ids2
+                    )
+                ),  # add check here to make sure coordinates in distance are in both sets
+                distances,
+            )
+        )
+        return add_distances(q, distances)
+
+    def queue_pairwise_distances(self, q, index, set1, set2, cache=None):
+        if cache:
+            return self._queue_from_cache(q, index, set1, set2, cache)
+        else:
+            return self._queue_non_cached(q, index, set1, set2)
+        
+    def run_meta(self, data: List[UniqueCoordinate], **kwargs) -> List[PairwiseDistance]:
+        """
+        Connects a list of unconnected unique coordinates in the input to
+        a set of connected unique coordinates until no more connections are possible
+        if metanode, means that no fiber coordinates exist, treat differently
+        param: data, a List[UniqueCoordinate] representing a collection of
+               UniqueCoordinates that contain a unique identifier and a location (usually lat/lon)
+        :return list of PairwiseDistance objects which represent an ordered an connected coordinate pairs
+                added to the set of connected coordinates in this model.
+        """
+
+        greedy_connected = [[],[]]
+        queues = [(PriorityQueue()),(PriorityQueue())]
+        # priority queue is used to connect closest unconnected coordinates
+        # create two look ups for connected (self.connected)
+        # and unconnected (input data) coordinate sets
+        connected_coordinates = [{x.coordinate_id: x for x in self.tech1_connected},{x.coordinate_id: x for x in self.tech2_connected}]
+        unconnected_coordinates = {x.coordinate_id: x for x in data}
+        # create a source tracker
+        sources = [{x.coordinate_id: x.coordinate_id for x in self.tech1_connected},{x.coordinate_id: x.coordinate_id for x in self.tech2_connected}]
+        # add pairwise distances between all coordinates and in data to priority queue
+        queues[0] = self.queue_pairwise_distances(
+            queues[0], 0,data, self.tech1_connected, cache=self._tech1_cache.connected_cache
+        )
+        queues[1] = self.queue_pairwise_distances(
+            queues[1], 1,data, self.tech2_connected, cache=self._tech2_cache.connected_cache
+        )
+        if self.progress_bar:
+            pbar = managed_progress_bar(len(data), description="Distance Connect Model")
+        while not queues[0].empty() and not queues[1].empty():
+            # iterate until priority queue is empty
+            if not queues[0].empty():
+                d1, candidate1 = queues[0].get()
+                if d1>self.distance_threshold:
+                    if not queues[1].empty():
+                        d,candidate = queues[1].get()
+                        queues[0].put((d1,candidate1))
+                        queue_index = 1
+                    else:
+                        candidate = candidate1
+                        queue_index = 0
+                else:
+                    candidate = candidate1
+                    queue_index = 0 
+            else:
+                d,candidate = queues[1].get()
+            id1, id2 = candidate.pair_ids
+            connected1, connected2 = (
+                id1 in connected_coordinates[0] or id1 in connected_coordinates[1],
+                id2 in connected_coordinates[0] or id2 in connected_coordinates[1],
+            )
+            if connected1 and connected2:
+                # if both items are connected skip, used to handle identical coordinates
+                # not needed if coordinates in connected and unconnected sets are unique
+                continue
+            elif connected2:
+                # coordinate 1 is not connected
+                # make new connection move from unconnected lookup to connected lookup
+                new_connection = move_item(
+                    unconnected_coordinates, connected_coordinates[queue_index], id1
+                )
+                # fetch for source use id2 if doesn't exist
+                if id2 == "metanode":
+                    candidate.coordinate1.properties["source"] = id1+"_meta"
+                    sources[queue_index][id1+"_meta"] = id1+"_meta"
+                    sources[queue_index][id1] = id1+"_meta"
+                    candidate.coordinate2 = UniqueCoordinate(coordinate_id=id1+"_meta",coordinate=candidate.coordinate1.coordinate)
+                    candidate.pair_ids = (id1,id1+"_meta")
+                else:
+                    candidate.coordinate1.properties["source"] = sources[queue_index][id2]
+                    sources[queue_index][id1] = sources[queue_index][id2]
+                greedy_connected[queue_index].append(candidate)
+                if self.progress_bar:
+                    pbar.update(1)
+                if self.dynamic_connect:
+                    # if other unconnected coordinates can connect to new connection
+                    queues[queue_index] = self.queue_pairwise_distances(
+                        queues[queue_index],
+                        queue_index,
+                        list(unconnected_coordinates.values()),
+                        [new_connection],
+                        cache=self._tech1_cache.unconnected_cache if queue_index==0 else self._tech2_cache.unconnected_cache,
+                    )
+            else:
+                # neither items are connected, skip
+                continue
+
+        
+        if self.progress_bar:
+            pbar.update(pbar.total - pbar.n)
+            pbar.close()
+        return greedy_connected
+
+    def run(self, data: List[UniqueCoordinate], **kwargs) -> List[PairwiseDistance]:
+        """
+        Connects a list of unconnected unique coordinates in the input to
+        a set of connected unique coordinates until no more connections are possible
+        if metanode, means that no fiber coordinates exist, treat differently
+        param: data, a List[UniqueCoordinate] representing a collection of
+               UniqueCoordinates that contain a unique identifier and a location (usually lat/lon)
+        :return list of PairwiseDistance objects which represent an ordered an connected coordinate pairs
+                added to the set of connected coordinates in this model.
+        """
+
+        connected_coordinates = [{x.coordinate_id: x for x in self.tech1_connected},{x.coordinate_id: x for x in self.tech2_connected}]
+        if "metanode" in connected_coordinates[0]: #For now meta only in fiber...
+            return self.run_meta(data)
+        
+        greedy_connected = [[],[]]
+        queues = [(PriorityQueue()),(PriorityQueue())]
+          # priority queue is used to connect closest unconnected coordinates
+        # create two look ups for connected (self.connected)
+        # and unconnected (input data) coordinate sets
+        
+        unconnected_coordinates = {x.coordinate_id: x for x in data}
+        # create a source tracker
+        sources = [{x.coordinate_id: x.coordinate_id for x in self.tech1_connected},{x.coordinate_id: x.coordinate_id for x in self.tech2_connected}]
+        # add pairwise distances between all coordinates and in data to priority queue
+        queues[0] = self.queue_pairwise_distances(
+            queues[0], 0,data, self.tech1_connected, cache=self._tech1_cache.connected_cache
+        )
+        queues[1] = self.queue_pairwise_distances(
+            queues[1], 1,data, self.tech2_connected, cache=self._tech2_cache.connected_cache
+        )
+        if self.progress_bar:
+            pbar = managed_progress_bar(len(data), description="Distance Connect Model")
+        while not queues[0].empty() or not queues[1].empty():
+            # iterate until priority queue is empty
+            if not queues[0].empty():
+                d1, candidate1 = queues[0].get()
+                if d1>self.distance_threshold:
+                    if not queues[1].empty():
+                        d,candidate = queues[1].get()
+                        queues[0].put((d1,candidate1))
+                        queue_index = 1
+                    else:
+                        candidate = candidate1
+                        queue_index = 0
+                else:
+                    candidate = candidate1
+                    queue_index = 0 
+            else:
+                d,candidate = queues[1].get()
+            
+            id1, id2 = candidate.pair_ids
+            connected1, connected2 = (
+                id1 in connected_coordinates[0] or id1 in connected_coordinates[1],
+                id2 in connected_coordinates[0] or id2 in connected_coordinates[1],
+            )
+            if connected1 and connected2:
+                # if both items are connected skip, used to handle identical coordinates
+                # not needed if coordinates in connected and unconnected sets are unique
+                continue
+            elif connected2:
+                # coordinate 1 is not connected
+                # make new connection move from unconnected lookup to connected lookup
+                new_connection = move_item(
+                    unconnected_coordinates, connected_coordinates[queue_index], id1
+                )
+                # fetch for source use id2 if doesn't exist
+                candidate.coordinate1.properties["source"] = sources[queue_index][id2]
+                sources[queue_index][id1] = sources[queue_index][id2]
+                greedy_connected[queue_index].append(candidate)
+                if self.progress_bar:
+                    pbar.update(1)
+                if self.dynamic_connect:
+                    # if other unconnected coordinates can connect to new connection
+                    queues[queue_index] = self.queue_pairwise_distances(
+                        queues[queue_index],
+                        queue_index,
+                        list(unconnected_coordinates.values()),
+                        [new_connection],
+                        cache=self._tech1_cache.unconnected_cache if queue_index==0 else self._tech2_cache.unconnected_cache,
                     )
             else:
                 # neither items are connected, skip

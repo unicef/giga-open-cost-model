@@ -41,7 +41,7 @@ class CellularCostModel:
         )
 
     def compute_costs(
-        self, distances: List[PairwiseDistance], data_space: ModelDataSpace
+        self, distances: List[PairwiseDistance], data_space: ModelDataSpace, tower_coordinates: List
     ) -> List[SchoolConnectionCosts]:
         """
         Compute the cost of cellular connectivity for each school in the data space.
@@ -64,7 +64,7 @@ class CellularCostModel:
                 c = SchoolConnectionCosts.infeasible_cost(
                     sid, "Cellular", "NO_ELECTRICITY"
                 )
-            elif sid in connected_set or (self._existing_cell_coverage(school) and len(connected_set)==0):
+            elif sid in connected_set or (self._existing_cell_coverage(school) and len(tower_coordinates)==0):
                 # either school is in range of a cell tower or school has coverage information from supplemental data
                 opex_consumer = self._cost_of_operation(school)
                 c = SchoolConnectionCosts(
@@ -87,7 +87,7 @@ class CellularCostModel:
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def run(
-        self, data_space: ModelDataSpace, progress_bar: bool = False
+        self, data_space: ModelDataSpace, used_ids: List = [], progress_bar: bool = False
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
@@ -109,10 +109,12 @@ class CellularCostModel:
         new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         # determine which schools can be connected and their distances
         if new_electricity:
-            distances = connection_model.run(data_space.school_coordinates)
+            school_coords = [coord for coord in data_space.school_coordinates if coord.coordinate_id not in used_ids]
+            distances = connection_model.run(school_coords)
         else:
-            distances = connection_model.run(data_space.school_with_electricity_coordinates)
-        costs = self.compute_costs(distances, data_space)
+            school_coords = [coord for coord in data_space.school_with_electricity_coordinates if coord.coordinate_id not in used_ids]
+            distances = connection_model.run(school_coords)
+        costs = self.compute_costs(distances, data_space, tower_coordinates)
         return CostResultSpace(
-            technology_results={"distances": distances}, cost_results=costs
+            technology_results={"distances": distances}, cost_results=costs, tech_name="cellular"
         )

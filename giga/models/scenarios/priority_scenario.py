@@ -42,13 +42,13 @@ class PriorityScenario:
         self.data_space.schools.update_bw_demand_all(self.config.bandwidth_demand)
         self.data_space.schools.update_required_power_all(self.config.required_power_per_school)
 
-    def _create_minimizer(self):
+    def _create_minimizer(self, tech_name, current_cost):
         if self.config.cost_minimizer_config.economies_of_scale:
             if self.config.cost_minimizer_config.budget_constraint == math.inf:
                 return PriorityMinimizer(self.config.cost_minimizer_config)
             else:
                 return ConstrainedPriorityMinimizer(
-                    self.config.cost_minimizer_config
+                    self.config.cost_minimizer_config,tech_name,current_cost
                 )
         else:
             return BaselineMinimizer(self.config.cost_minimizer_config)
@@ -94,6 +94,20 @@ class PriorityScenario:
         for sid, costs in by_school.items():
             by_tech[sid] = {c.technology.lower(): c for c in costs}
         return by_tech
+    
+    def trim_results(self,tech_name,current_cost,new_schools):
+        minimizer = ConstrainedPriorityMinimizer(
+                    self.config.cost_minimizer_config,tech_name,current_cost
+                )
+        current_cost,removed_ids = minimizer.run(self.output_space, new_schools)
+        for sid in removed_ids:
+            self.output_space.aggregated_costs[sid] = {}
+
+        for outputs in self.output_space.technology_outputs:
+            if outputs.tech_name==tech_name:
+                outputs.cost_results = [x for x in outputs.cost_results if x.school_id not in removed_ids]
+
+        return current_cost,removed_ids
 
     def run(self, progress_bar: bool = False):
         """
@@ -108,17 +122,35 @@ class PriorityScenario:
 
         self.output_space.years_opex = self.config.years_opex
         
+        used_ids = []
+        removed_ids = []
+        current_cost = 0.0
+        tech_name = "fiber"
         # compute baseline costs for all the technologies
         for c in self.config.technologies:
+            tech_name = c.technology.lower()
             cost_model = self._make_model(c)
-            output = cost_model.run(self.data_space, progress_bar=progress_bar)
+            output = cost_model.run(self.data_space, used_ids, progress_bar=progress_bar)
             self._to_output_space(output, c)
-        aggregated = self._aggregate_outputs_by_school()
-        self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
-            aggregated
-        )
+            aggregated = self._aggregate_outputs_by_school()
+            self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
+                aggregated
+            )
+            new_schools = []
+            for cost_result in output.cost_results:
+                if cost_result.feasible:
+                    used_ids.append(cost_result.school_id)
+                    new_schools.append(cost_result.school_id)
+            new_cost = self.output_space.project_lifetime_cost(
+                new_schools, tech_name, self.config.years_opex
+            )
+            if (current_cost+new_cost>=self.config.cost_minimizer_config.budget_constraint):
+                current_cost,removed_ids = self.trim_results(tech_name,current_cost,new_schools)
+                used_ids = [x for x in used_ids if x not in removed_ids]
+            else:
+                current_cost += new_cost
 
         # find the priorities cost for each school using the minimizer
-        minimizer = self._create_minimizer()
-        self.output_space.minimum_cost_result = minimizer.run(self.output_space, self.config.scenario_id)
+        minimizer = PriorityMinimizer(self.config.cost_minimizer_config)
+        self.output_space.minimum_cost_result = minimizer.run(self.output_space, removed_ids)
         return self.output_space

@@ -8,6 +8,7 @@ from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.models.components.satellite_cost_model import SatelliteCostModel
 from giga.models.components.cellular_cost_model import CellularCostModel
 from giga.models.components.p2p_cost_model import P2PCostModel
+from giga.models.components.fiber_and_p2p_cost_model import FiberP2PCostModel
 from giga.models.components.optimizers.economies_of_scale_minimizer import (
     EconomiesOfScaleMinimizer,
 )
@@ -41,13 +42,13 @@ class MinimumCostScenario:
         self.data_space.schools.update_bw_demand_all(self.config.bandwidth_demand)
         self.data_space.schools.update_required_power_all(self.config.required_power_per_school)
 
-    def _create_minimizer(self):
+    def _create_minimizer(self,economies_of_scale):
         if self.config.cost_minimizer_config.economies_of_scale:
             if self.config.cost_minimizer_config.budget_constraint == math.inf:
-                return EconomiesOfScaleMinimizer(self.config.cost_minimizer_config)
+                return EconomiesOfScaleMinimizer(self.config.cost_minimizer_config,economies_of_scale)
             else:
                 return ConstrainedEconomiesOfScaleMinimizer(
-                    self.config.cost_minimizer_config
+                    self.config.cost_minimizer_config,economies_of_scale
                 )
         else:
             return BaselineMinimizer(self.config.cost_minimizer_config)
@@ -94,6 +95,57 @@ class MinimumCostScenario:
             by_tech[sid] = {c.technology.lower(): c for c in costs}
         return by_tech
 
+    def run_stable(self, progress_bar: bool = False):
+        """
+        Runs the minimum cost scenario by computing the cost of each technology
+        and then applying a minimizer to find the minimum cost solution.
+
+        :param progress_bar, wether or not to show the progress bar when running the scenario
+        :return output space that contains costs of each technology considered as well as the minimum costs for each school
+        """
+        LOGGER.info(f"Starting Minimum Cost Scenario")
+        self._prep()
+
+        self.output_space.years_opex = self.config.years_opex
+
+        techs = [c.technology for c in self.config.technologies]
+        
+        #We deal with this now, optimize in the future
+        if "Fiber" in techs and "P2P" in techs:
+            economies_of_scale = ["fiber","p2p"]
+            # compute baseline costs for all the technologies
+            for c in self.config.technologies:
+                if c.technology!="P2P":
+                    cost_model = self._make_model(c)
+                    output = cost_model.run(self.data_space, progress_bar=progress_bar)
+                    self._to_output_space(output, c)
+            #here we should do P2P for everything not feasible before
+
+            #aggregate
+            aggregated = self._aggregate_outputs_by_school()
+            self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
+                aggregated
+            )
+        else:
+            if "P2P" in techs:
+                economies_of_scale = ["p2p"] 
+            elif "Fiber" in techs:
+                economies_of_scale = ["fiber"]
+            # compute baseline costs for all the technologies
+            for c in self.config.technologies:
+                cost_model = self._make_model(c)
+                output = cost_model.run(self.data_space, progress_bar=progress_bar)
+                self._to_output_space(output, c)
+            aggregated = self._aggregate_outputs_by_school()
+            self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
+                aggregated
+            )
+
+        # find the minimum cost for each school using the minimizer
+        minimizer = self._create_minimizer(economies_of_scale)
+        self.output_space.minimum_cost_result = minimizer.run(self.output_space,self.config.scenario_id)
+        return self.output_space
+    
     def run(self, progress_bar: bool = False):
         """
         Runs the minimum cost scenario by computing the cost of each technology
@@ -106,17 +158,48 @@ class MinimumCostScenario:
         self._prep()
 
         self.output_space.years_opex = self.config.years_opex
+
+        techs = [c.technology for c in self.config.technologies]
         
-        # compute baseline costs for all the technologies
-        for c in self.config.technologies:
-            cost_model = self._make_model(c)
-            output = cost_model.run(self.data_space, progress_bar=progress_bar)
-            self._to_output_space(output, c)
-        aggregated = self._aggregate_outputs_by_school()
-        self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
-            aggregated
-        )
+        #We deal with this now, optimize in the future
+        if "Fiber" in techs and "P2P" in techs:
+            economies_of_scale = ["fiber","p2p"]
+            fiber_conf = self.config.technologies[techs.index("Fiber")]
+            p2p_conf = self.config.technologies[techs.index("P2P")]
+            #Compute EoS of both fiber and p2p together
+            cost_model = FiberP2PCostModel(fiber_conf,p2p_conf)
+            outputs = cost_model.run(self.data_space, progress_bar=progress_bar)
+            self._to_output_space(outputs[0], fiber_conf)
+            self._to_output_space(outputs[1], p2p_conf)
+            # compute baseline costs for all the technologies
+            for c in self.config.technologies:
+                if c.technology!="P2P" and c.technology!="Fiber":
+                    cost_model = self._make_model(c)
+                    output = cost_model.run(self.data_space, progress_bar=progress_bar)
+                    self._to_output_space(output, c)
+            #here we should do P2P for everything not feasible before
+
+            #aggregate
+            aggregated = self._aggregate_outputs_by_school()
+            self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
+                aggregated
+            )
+        else:
+            if "P2P" in techs:
+                economies_of_scale = ["p2p"] 
+            elif "Fiber" in techs:
+                economies_of_scale = ["fiber"]
+            # compute baseline costs for all the technologies
+            for c in self.config.technologies:
+                cost_model = self._make_model(c)
+                output = cost_model.run(self.data_space, progress_bar=progress_bar)
+                self._to_output_space(output, c)
+            aggregated = self._aggregate_outputs_by_school()
+            self.output_space.aggregated_costs = self._aggregate_outputs_by_technology(
+                aggregated
+            )
+
         # find the minimum cost for each school using the minimizer
-        minimizer = self._create_minimizer()
+        minimizer = self._create_minimizer(economies_of_scale)
         self.output_space.minimum_cost_result = minimizer.run(self.output_space,self.config.scenario_id)
         return self.output_space

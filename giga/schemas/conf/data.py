@@ -96,11 +96,12 @@ class P2PDistanceCacheConf(BaseModel):
 
     cache_type: Literal["p2p-distance"]
     p2p_cache_file: str
+    school_visibility_cache_file: str
     data: LocalConnectCachePipeline
 
     def load(self, hot_load: bool = False):
         cache: GreedyConnectCache = self.data.load(
-            connected_file=self.p2p_cache_file, unconnected_file=None
+            connected_file=self.p2p_cache_file, unconnected_file=self.school_visibility_cache_file
         )  # loads data from the configured pipeline
         if len(cache) != 0 or not hot_load:
             return cache
