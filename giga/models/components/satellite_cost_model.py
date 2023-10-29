@@ -28,7 +28,7 @@ class SatelliteCostModel:
             + self.config.opex.fixed_costs
         )
 
-    def compute_costs(self, data_space: ModelDataSpace) -> List[SchoolConnectionCosts]:
+    def compute_costs(self, data_space: ModelDataSpace,used_ids) -> List[SchoolConnectionCosts]:
         """
         Computes the cost of connecting a school to the internet using satellite technology.
         :param data_space: a data space containing school entities
@@ -40,7 +40,11 @@ class SatelliteCostModel:
         costs = []
         for school in data_space.school_entities:
             sid = school.giga_id
-            if school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
+            if sid in used_ids:#change reason
+                c = SchoolConnectionCosts.infeasible_cost(
+                    sid, "Satellite", "SATELLITE_BW_THRESHOLD"
+                )
+            elif school.bandwidth_demand > self.config.constraints.maximum_bandwithd:
                 c = SchoolConnectionCosts.infeasible_cost(
                     sid, "Satellite", "SATELLITE_BW_THRESHOLD"
                 )
@@ -79,14 +83,14 @@ class SatelliteCostModel:
         return costs
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def run(self, data_space: ModelDataSpace, **kwargs) -> CostResultSpace:
+    def run(self, data_space: ModelDataSpace, used_ids: List = [], **kwargs) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
         :param data_space: a data space containing school entities
         :return CostResultSpace, that contains the cost of satellite connectivity for all schools in the data space
         """
         LOGGER.info(f"Starting Satellite Cost Model")
-        costs = self.compute_costs(data_space)
+        costs = self.compute_costs(data_space,used_ids)
         return CostResultSpace(
-            technology_results={"model_type": "Satellite"}, cost_results=costs
+            technology_results={"model_type": "Satellite"}, cost_results=costs, tech_name="satellite"
         )

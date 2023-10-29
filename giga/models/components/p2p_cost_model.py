@@ -5,7 +5,7 @@ from pydantic import validate_arguments
 from giga.models.nodes.graph.greedy_distance_connector import GreedyDistanceConnector
 from giga.schemas.conf.models import P2PTechnologyCostConf
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
-from giga.schemas.geo import PairwiseDistance
+from giga.schemas.geo import PairwiseDistance, PairwiseDistanceTable
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.models.components.electricity_cost_model import ElectricityCostModel
 from giga.utils.logging import LOGGER
@@ -84,7 +84,7 @@ class P2PCostModel:
 
     @validate_arguments(config=dict(arbitrary_types_allowed=True))
     def run(
-        self, data_space: ModelDataSpace, progress_bar: bool = False
+        self, data_space: ModelDataSpace,  used_ids: List = [], progress_bar: bool = False
     ) -> CostResultSpace:
         """
         Computes a cost table for schools present in the data_space input
@@ -95,7 +95,7 @@ class P2PCostModel:
         LOGGER.info(f"Starting P2P Cost Model")
         connection_model = GreedyDistanceConnector(
             data_space.cell_tower_coordinates,
-            dynamic_connect=False,  # this will create closest distance pairs
+            dynamic_connect=True,  # this will create closest distance pairs
             progress_bar=progress_bar,
             maximum_connection_length_m=self.config.constraints.maximum_range * METERS_IN_KM,
             distance_cache=data_space.p2p_cache,
@@ -103,11 +103,13 @@ class P2PCostModel:
         new_electricity = self.config.electricity_config.constraints.allow_new_electricity
         # determine which schools can be connected and their distances
         if new_electricity:
-            distances = connection_model.run(data_space.school_coordinates)
+            school_coords = [coord for coord in data_space.school_coordinates if coord.coordinate_id not in used_ids]
+            distances = connection_model.run(school_coords)
         else:
-            distances = connection_model.run(data_space.school_with_electricity_coordinates)
+            school_coords = [coord for coord in data_space.school_with_electricity_coordinates if coord.coordinate_id not in used_ids]
+            distances = connection_model.run(school_coords)
        
         costs = self.compute_costs(distances, data_space)
         return CostResultSpace(
-            technology_results={"distances": distances}, cost_results=costs
+            technology_results={"distances": distances}, cost_results=costs, tech_name="p2p"
         )

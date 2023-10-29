@@ -15,15 +15,19 @@ class PriorityMinimizer:
 
     def __init__(self, config: CostMinimizerConf):
         self.config = config
+        
 
 
-    def run(self, output: OutputSpace, scenario_id: str):
+    def run(self, output: OutputSpace, removed_ids: List[str]):
         """
        
         """
         LOGGER.info("Starting priorities scenario")
         connections = []
         for sid in output.aggregated_costs:
+            if sid in removed_ids:
+                connections.append(SchoolConnectionCosts.budget_exceeded_cost(sid, "None"))
+                continue
             if 'fiber' in output.aggregated_costs[sid]:
                 if output.aggregated_costs[sid]['fiber'].feasible:
                     connections.append(output.aggregated_costs[sid]['fiber'])

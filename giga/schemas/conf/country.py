@@ -38,6 +38,8 @@ class DataDefaults(BaseModel):
     country: str
     country_code: int = None
     workspace: str
+    school_cache_file: str
+    school_visibility_cache_file: str
     school_file: str
     fiber_file: str
     cellular_file: str
@@ -119,6 +121,8 @@ class CountryDefaults(BaseModel):
             country=data_defaults["country"],
             country_code=data_defaults["country_code"],
             workspace=data_defaults["workspace"],
+            school_cache_file=data_defaults["school_cache_file"],
+            school_visibility_cache_file=data_defaults["school_visibility_cache_file"],
             school_file=get_path("school_file"),
             fiber_file=get_path("fiber_file"),
             cellular_file=get_path("cellular_file"),

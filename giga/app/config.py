@@ -32,6 +32,8 @@ empty_default_dict = {
         "country_code": 0,
         "workspace": "workspace",
         "school_file": SCHOOLS_FILE,
+        "school_cache_file": SCHOOLS_CACHE_FILE,
+        "school_visibility_cache_file": SCHOOLS_VISIBILITY_CACHE_FILE,
         "fiber_file":FIBER_FILE,
         "cellular_file": CELL_FILE,
         "fiber_distance_cache_file":FIBER_CACHE_FILE,
@@ -215,7 +217,8 @@ def check_avail_techs(country_dir, df_schools):
         with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
             jsp = json.load(f)
         if len(jsp["lookup"])>0:
-            p2p = True
+            if data_store.file_size(os.path.join(country_dir,SCHOOLS_VISIBILITY_CACHE_FILE)) >= 3:
+                p2p = True
     else:
         cell = df_schools["coverage_type"].notnull().any()
 
