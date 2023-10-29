@@ -373,6 +373,23 @@ def fix_schools(df):
 
     return df_new
 
+def get_country_center_zoom(df, max_zoom_level = 11.75):
+    earth_radius = 6371.0
+
+    # get country center
+    lats = df['lat'].to_numpy()
+    lats = lats[~np.isnan(lats)]
+    lons = df['lon'].to_numpy()
+    lons = lons[~np.isnan(lons)]
+    _center = {'lon': lons.mean(), 'lat': lats.mean()}
+    
+    #getcountry zoom level
+    _xrange, _yrange = np.ptp(lons) ,np.ptp(lats)
+    max_bound = np.deg2rad(max(_xrange, _yrange)) * earth_radius
+    _zoom = max_zoom_level - np.log(max_bound)
+    
+    return _center, _zoom
+
 def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
     earth_radius = 6371
     max_zoom_level = 11.75
@@ -431,19 +448,10 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
 
     #set default country center coordinates
     #df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
-    lats = df_fixed['lat'].to_numpy()
-    lats = lats[~np.isnan(lats)]
-    lons = df_fixed['lon'].to_numpy()
-    lons = lons[~np.isnan(lons)]
-    xcenter, ycenter = lons.mean(), lats.mean()
-    default["data"]["country_center"]["lat"] = ycenter
-    default["data"]["country_center"]["lon"] = xcenter
-    
-    #set default country zoom level
-    _xrange, _yrange = np.ptp(lons) ,np.ptp(lats)
-    max_bound = np.deg2rad(max(_xrange, _yrange)) * earth_radius
-    _zoom = max_zoom_level - np.log(max_bound)
-    default["data"]["country_zoom"] = _zoom
+    country_center, country_zoom = get_country_center_zoom(df_fixed, max_zoom_level=11.75)
+    default["data"]["country_center"]["lat"] = country_center['lat']
+    default["data"]["country_center"]["lon"] = country_center['lon']
+    default["data"]["country_zoom"] = country_zoom
 
     #add costs
     ### cell

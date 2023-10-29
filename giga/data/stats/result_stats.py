@@ -222,9 +222,11 @@ class ResultStats:
 
     @property
     def fiber_connections(self):
-        if self.output_space.fiber_costs is not None:
-            return self.output_space.fiber_costs.technology_results.distances
-        return []
+        return self.output_space.fiber_distances
+    
+    @property
+    def p2p_connections(self):
+        return self.output_space.p2p_distances
 
     def get_cumulative_distance_fraction(self, distance, distance_key):
         if len(self.output_cost_table) == 0:

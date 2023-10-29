@@ -8,6 +8,8 @@ from pylatex.utils import italic, bold, NoEscape, escape_latex
 import numpy as np
 import math
 
+from giga.viz.notebooks.parameters.groups.data_parameter_manager import country_key_to_name
+
 def get_report_variables(schools_complete_table,schools_unconnected,schools_connected,data_space):
     vals = {}
     num_u = len(schools_unconnected)
@@ -152,7 +154,7 @@ def get_cost_report_variables(config,selected_schools,stats):
 
     return vals
 
-def generate_costmodel_report(config,selected_schools,stats,country,schools_complete_table,schools_unconnected,schools_connected,data_space):
+def generate_costmodel_report(config,selected_schools,stats,country_id,schools_complete_table,schools_unconnected,schools_connected,data_space):
     # Create a LaTeX document object
     geometry_options = {"tmargin":"3cm","lmargin":"3cm","margin":"3cm"}
     doc = Document(geometry_options= geometry_options,documentclass='report',document_options=['12pt', 'a4paper'])
@@ -179,6 +181,7 @@ def generate_costmodel_report(config,selected_schools,stats,country,schools_comp
         return vals
     
     vals = format_vals(vals_num)
+    country = country_key_to_name(country_id)
 
     str1 = r"newcommand{{\country}}{{{}}}".format(country)
     doc.preamble.append(Command(NoEscape(str1)))

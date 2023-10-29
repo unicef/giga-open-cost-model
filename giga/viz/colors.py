@@ -49,6 +49,9 @@ CELL_COVERAGE_COLOR_MAP = OrderedDict({
         "LTE": "#009dff", # same as 4G
     })
 
+# for electricity maps
+ELECTRICITY_AVAILABILITY_COLORS = ['black', '#ffd74d']
+
 # for satellite breakdown pie chart
 SATELLITE_BREAKDOWN_COLORS = {"Satellite": "#f94b4b", "Other": "#277aff"}
 

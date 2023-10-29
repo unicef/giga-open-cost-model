@@ -29,6 +29,7 @@ from giga.viz.notebooks.components.charts.plotters import (
     make_unit_cost_bar_plot,
     make_satellite_pie_breakdown,
 )
+from giga.viz.notebooks.maps import ResultMapConfig, ResultMapLayersConfig, ResultMap
 from giga.viz.colors import GIGA_TECHNOLOGY_COLORS
 from giga.viz.plot_configs import STATIC_MAP_MODEBAR_CONFIG
 
@@ -43,9 +44,16 @@ class ResultDashboard:
     - Technology
     """
 
-    def __init__(self, results, height=650):
+    def __init__(self, results, inputs, height=650):
         self.results = results
+        self.inputs = inputs
         self.height = height
+
+        result_map_config = ResultMapConfig()
+        result_map_layers_config = ResultMapLayersConfig()
+        self.result_map = ResultMap(results, inputs, result_map_config, result_map_layers_config)
+
+        self.country_id = self.result_map.country
 
     def display(self):
         tabs = widgets.Tab(
@@ -80,14 +88,13 @@ class ResultDashboard:
         display(tabs)
 
     def populate_outputs(self):
-        country_id = self.results.data_space.config.school_data_conf.country_id
         self.overview_grid = project_overview_grid(self.results.output_project_overview)
-        self.fiber_infra_map = make_fiber_distance_map_plot(self.results.new_connected_schools,country_id)
+        self.fiber_infra_map = make_fiber_distance_map_plot(self.results.new_connected_schools,self.country_id)
         self.fiber_distance_bar = cumulative_fiber_distance_barplot(self.results.output_cost_table)
-        self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools,country_id)
+        self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools,self.country_id)
         self.cell_distance_bar = cumulative_cell_tower_distance_barplot(self.results.output_cost_table)
-        self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools,country_id)
-        self.p2p_infra_map = make_p2p_distance_map_plot(self.results.new_connected_schools,country_id)
+        self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools,self.country_id)
+        self.p2p_infra_map = make_p2p_distance_map_plot(self.results.new_connected_schools,self.country_id)
         self.p2p_distance_bar = cumulative_visible_cell_tower_distance_barplot(self.results.output_cost_table)
         self.technology_map = make_technology_map(self.results.new_connected_schools)
         self.satellite_pie_breakdown = make_satellite_pie_breakdown(self.results.new_connected_schools)
@@ -237,6 +244,11 @@ class ResultDashboard:
             }
         )
 
+        self.result_map.populate_result_maps()
+        self.electricity_map = self.result_map.electricity_map
+        self.cost_map = self.result_map.cost_map
+        self.infra_lines_map = self.result_map.infra_lines_map
+
     def get_visual_plots(self):
         # These plots will be included in downloaded reports.
         return [
@@ -268,6 +280,9 @@ class ResultDashboard:
             self.feasibility_pie,
             self.tech_distrib_plot
         ]
+    
+    def get_all_plots(self):
+        return self.get_visual_plots() + self.result_map.get_result_maps()
 
     def _update_title_font(self, fig):
         fig.update_layout(
@@ -334,9 +349,7 @@ class ResultDashboard:
                         section("Technology Modalities", self._map_to_output(self.technology_map), "dark"),
                         section("Satellite Only Modality", self._figure_to_output(self.satellite_pie_breakdown), "dark"),
                         section("Average Cost Per School", self._map_to_output(self.per_school_cost_map), "dark"),
-                        section(
-                            "Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"
-                        ),
+                        section("Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"),
                     ]
                 )
             )
@@ -472,3 +485,20 @@ class ResultDashboard:
                 )
             )
         return tab
+    
+    def display_result_maps_output(self, map_output):
+
+        #output = widgets.Output(widgets.Layout(width = '100%'))
+
+        map_list = [section('Electricity Map', self._map_to_output(self.electricity_map)), section('Cost Map', self._map_to_output(self.cost_map)),]
+
+        if not self.infra_lines_map is None:
+            map_list += [section('Infrastructure Lines Map', self._map_to_output(self.infra_lines_map))]
+
+        with map_output:
+            display(
+                widgets.VBox(map_list)
+            )
+
+        #return map_output
+
