@@ -287,17 +287,20 @@ def create_empty_tech_files(country_dir):
     data_store.write_file(os.path.join(country_dir,FIBER_FILE),"")
 
 def create_empty_caches(country_dir):
-     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE), "w") as f:
         json.dump(empty_multiple_cache, f)
 
-     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE), "w") as f:
         json.dump(empty_single_cache, f)
 
-     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE), "w") as f:
         json.dump(empty_single_cache, f)
 
-     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE), "w") as f:
         json.dump(empty_single_cache, f)
+
+    with data_store.open(os.path.join(country_dir,SCHOOLS_VISIBILITY_CACHE_FILE), 'w') as f:
+        json.dump(empty_multiple_cache, f)
 
 
 def copy_caches_to_backup(country_dir):
@@ -306,28 +309,34 @@ def copy_caches_to_backup(country_dir):
     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #fiber cache
     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #cell cache
     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #p2p cache
     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
+        json.dump(js, f)
+    
+    with data_store.open(os.path.join(country_dir,SCHOOLS_VISIBILITY_CACHE_FILE)) as f:
+        json.load(f)
+    
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_VISIBILITY_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
 # This could be a call to GigaSchoolTable at some point...    
