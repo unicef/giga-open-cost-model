@@ -287,17 +287,20 @@ def create_empty_tech_files(country_dir):
     data_store.write_file(os.path.join(country_dir,FIBER_FILE),"")
 
 def create_empty_caches(country_dir):
-     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE), "w") as f:
         json.dump(empty_multiple_cache, f)
 
-     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE), "w") as f:
         json.dump(empty_single_cache, f)
 
-     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE), "w") as f:
         json.dump(empty_single_cache, f)
 
-     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE), "w") as f:
+    with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE), "w") as f:
         json.dump(empty_single_cache, f)
+
+    with data_store.open(os.path.join(country_dir,SCHOOLS_VISIBILITY_CACHE_FILE), 'w') as f:
+        json.dump(empty_multiple_cache, f)
 
 
 def copy_caches_to_backup(country_dir):
@@ -306,28 +309,34 @@ def copy_caches_to_backup(country_dir):
     with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #fiber cache
     with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,FIBER_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #cell cache
     with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,CELL_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
     #p2p cache
     with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
         js = json.load(f)
 
-    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE[:-4]+"_"+time_stamp+".json"), "w") as f:
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,P2P_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
+        json.dump(js, f)
+    
+    with data_store.open(os.path.join(country_dir,SCHOOLS_VISIBILITY_CACHE_FILE)) as f:
+        json.load(f)
+    
+    with data_store.open(os.path.join(country_dir,BACKUP_DIR,SCHOOLS_VISIBILITY_CACHE_FILE[:-5]+"_"+time_stamp+".json"), "w") as f:
         json.dump(js, f)
 
 # This could be a call to GigaSchoolTable at some point...    
@@ -375,6 +384,23 @@ def fix_schools(df):
     #df_new['type_connectivity'].fillna('Unknown', inplace=True)
 
     return df_new
+
+def get_country_center_zoom(df, max_zoom_level = 11.75):
+    earth_radius = 6371.0
+
+    # get country center
+    lats = df['lat'].to_numpy()
+    lats = lats[~np.isnan(lats)]
+    lons = df['lon'].to_numpy()
+    lons = lons[~np.isnan(lons)]
+    _center = {'lon': lons.mean(), 'lat': lats.mean()}
+    
+    #getcountry zoom level
+    _xrange, _yrange = np.ptp(lons) ,np.ptp(lats)
+    max_bound = np.deg2rad(max(_xrange, _yrange)) * earth_radius
+    _zoom = max_zoom_level - np.log(max_bound)
+    
+    return _center, _zoom
 
 def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
     earth_radius = 6371
@@ -434,19 +460,10 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
 
     #set default country center coordinates
     #df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
-    lats = df_fixed['lat'].to_numpy()
-    lats = lats[~np.isnan(lats)]
-    lons = df_fixed['lon'].to_numpy()
-    lons = lons[~np.isnan(lons)]
-    xcenter, ycenter = lons.mean(), lats.mean()
-    default["data"]["country_center"]["lat"] = ycenter
-    default["data"]["country_center"]["lon"] = xcenter
-    
-    #set default country zoom level
-    _xrange, _yrange = np.ptp(lons) ,np.ptp(lats)
-    max_bound = np.deg2rad(max(_xrange, _yrange)) * earth_radius
-    _zoom = max_zoom_level - np.log(max_bound)
-    default["data"]["country_zoom"] = _zoom
+    country_center, country_zoom = get_country_center_zoom(df_fixed, max_zoom_level=11.75)
+    default["data"]["country_center"]["lat"] = country_center['lat']
+    default["data"]["country_center"]["lon"] = country_center['lon']
+    default["data"]["country_zoom"] = country_zoom
 
     #add costs
     ### cell
