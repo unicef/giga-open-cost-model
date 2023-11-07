@@ -12,9 +12,9 @@ variables:
   hubImageTag: 2.0.0
   kubernetesServiceConnection: $(KUBERNETES_SERVICE_CONNECTION)
   kubernetesNamespace: $(KUBERNETES_NAMESPACE)
+  kubernetesEnvironment: $(KUBERNETES_ENVIRONMENT)
   dockerfilePath: $(Build.SourcesDirectory)/Dockerfile
   hubDockerfilePath: $(Build.SourcesDirectory)/Dockerfile.hub
-  workspaceDirectory: $(Build.SourcesDirectory)/notebooks
   helmValuesFile: $(Build.SourcesDirectory)/deployment/helm/prod.yaml
   helmReleaseName: jupyterhub
   jupyterhubHelmVersion: 2.0.0
@@ -22,92 +22,113 @@ variables:
   adlsConnectionString: $(ADLS_CONNECTION_STRING)
   system.debug: true
 
+stages:
+- stage: Build
+  displayName: Costmodel Build Stage
+  jobs:
+  - job: Build
+    displayName: Costmodel Build Job
 
-steps:
-- task: Docker@2
-  displayName: Login to container Registry
-  inputs:
-    command: login
-    containerRegistry: $(containerRegistryServiceConnection)
+    steps:
+    - task: Docker@2
+      displayName: Login to container Registry
+      inputs:
+        command: login
+        containerRegistry: $(containerRegistryServiceConnection)
 
-- task: Docker@2
-  displayName: Build and push image to container registry
-  inputs:
-    command: buildAndPush
-    repository: $(imageRepository)
-    dockerfile: $(dockerfilePath)
-    containerRegistry: $(containerRegistryServiceConnection)
-    tags: |
-      $(imageTag)
+    - task: Docker@2
+      displayName: Build and push image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(containerRegistryServiceConnection)
+        tags: |
+          $(imageTag)
 
-- task: Docker@2
-  displayName: Build and push hub image with extra dependencies to container registry
-  inputs:
-    command: buildAndPush
-    repository: $(hubImageRepository)
-    dockerfile: $(hubDockerfilePath)
-    containerRegistry: $(containerRegistryServiceConnection)
-    tags: |
-      $(hubImageTag)
+    - task: Docker@2
+      displayName: Build and push hub image with extra dependencies to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(hubImageRepository)
+        dockerfile: $(hubDockerfilePath)
+        containerRegistry: $(containerRegistryServiceConnection)
+        tags: |
+          $(hubImageTag)
 
-- task: Kubernetes@1
-  displayName: Create secret for Mapbox token
-  continueOnError: true
-  inputs:
-    connectionType: 'Kubernetes Service Connection'
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: create
-    arguments: "secret generic mapbox-secrets --from-literal=mapbox-token=$(mapBoxToken)"
-    namespace: $(kubernetesNamespace)
+- stage: Deploy
+  displayName: Costmodel Deploy Stage
+  jobs:
+  - deployment: Deploy
+    displayName: Costmodel Deployment
+    environment: $(kubernetesEnvironment)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: Kubernetes@1
+            displayName: Delete secret for Mapbox token
+            continueOnError: true
+            inputs:
+              command: delete
+              arguments: "secret mapbox-secrets"
+              namespace: $(kubernetesNamespace)
 
-- task: Kubernetes@1
-  displayName: Create secret for ADLS connection string
-  continueOnError: true
-  inputs:
-    connectionType: 'Kubernetes Service Connection'
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: create
-    arguments: "secret generic azure-secrets --from-literal=adls-connection-string=$(adlsConnectionString)"
-    namespace: $(kubernetesNamespace)
+          - task: Kubernetes@1
+            displayName: Create secret for Mapbox token
+            continueOnError: true
+            inputs:
+              command: create
+              arguments: "secret generic mapbox-secrets --from-literal=mapbox-token=$(mapBoxToken)"
+              namespace: $(kubernetesNamespace)
 
-- task: HelmDeploy@0
-  displayName: 'Add JupyterHub Helm Repo'
-  enabled: true
-  inputs:
-    connectionType: Kubernetes Service Connection
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: 'repo'
-    arguments: 'add jupyterhub https://jupyterhub.github.io/helm-chart/'
-    namespace: $(kubernetesNamespace)
+          - task: Kubernetes@1
+            displayName: Delete secret for ADLS connection string
+            continueOnError: true
+            inputs:
+              command: delete
+              arguments: "secret azure-secrets"
+              namespace: $(kubernetesNamespace)
 
-- task: HelmDeploy@0
-  displayName: 'Update Helm Repo'
-  enabled: true
-  inputs:
-    connectionType: Kubernetes Service Connection
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: 'repo'
-    arguments: 'update'
-    namespace: $(kubernetesNamespace)
+          - task: Kubernetes@1
+            displayName: Create secret for ADLS connection string
+            continueOnError: true
+            inputs:
+              command: create
+              arguments: "secret generic azure-secrets --from-literal=adls-connection-string=$(adlsConnectionString)"
+              namespace: $(kubernetesNamespace)
 
-- task: HelmDeploy@0
-  displayName: Helm deploy Jupyterhub
-  inputs:
-    connectionType: Kubernetes Service Connection
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: upgrade
-    chartType: Name
-    chartName: jupyterhub/jupyterhub
-    releaseName: $(helmReleaseName)
-    valueFile: $(helmValuesFile)
-    namespace: $(kubernetesNamespace)
-    arguments: '--version $(jupyterhubHelmVersion) --timeout 20m'
+          - task: HelmDeploy@0
+            displayName: 'Add JupyterHub Helm Repo'
+            enabled: true
+            inputs:
+              command: 'repo'
+              arguments: 'add jupyterhub https://jupyterhub.github.io/helm-chart/'
+              namespace: $(kubernetesNamespace)
 
-- task: Kubernetes@1
-  displayName: Set up Ingress
-  inputs:
-    connectionType: Kubernetes Service Connection
-    kubernetesServiceEndpoint: $(kubernetesServiceConnection)
-    command: apply
-    arguments: '-f deployment/azure/ingress.yaml'
-    namespace: $(kubernetesNamespace)
+          - task: HelmDeploy@0
+            displayName: 'Update Helm Repo'
+            enabled: true
+            inputs:
+              command: 'repo'
+              arguments: 'update'
+              namespace: $(kubernetesNamespace)
+
+          - task: HelmDeploy@0
+            displayName: Helm deploy Jupyterhub
+            inputs:
+              command: upgrade
+              chartType: Name
+              chartName: jupyterhub/jupyterhub
+              releaseName: $(helmReleaseName)
+              valueFile: $(helmValuesFile)
+              namespace: $(kubernetesNamespace)
+              arguments: '--version $(jupyterhubHelmVersion) --timeout 20m'
+
+          - task: Kubernetes@1
+            displayName: Set up Ingress
+            inputs:
+              command: apply
+              arguments: '-f deployment/azure/ingress.yaml'
+              namespace: $(kubernetesNamespace)
