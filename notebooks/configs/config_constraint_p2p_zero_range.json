@@ -1,1 +1,87 @@
-{"data_parameters": {"school_data_conf": {"country_id": "sample", "data": {"file_path": "/Users/maxnova/Desktop/projects/actual/giga/giga/giga-copy/notebooks/workspace/sample/schools.csv", "table_type": "school"}, "manual_entries": []}, "fiber_map_conf": {"map_type": "fiber-nodes", "data": {"file_path": "/Users/maxnova/Desktop/projects/actual/giga/giga/giga-copy/notebooks/workspace/sample/fiber.csv", "table_type": "coordinate-map"}}, "cell_tower_map_conf": {"map_type": "cell-towers", "data": {"file_path": "/Users/maxnova/Desktop/projects/actual/giga/giga/giga-copy/notebooks/workspace/sample/cellular.csv", "table_type": "cell-towers"}}, "fiber_distance_cache_conf": {"cache_type": "fiber-distance", "data": {"workspace": "workspace/sample"}}, "cellular_distance_cache_conf": {"cache_type": "cellular-distance", "cell_cache_file": "cellular_cache.json", "data": {"workspace": "workspace/sample"}}, "p2p_distance_cache_conf": {"cache_type": "p2p-distance", "p2p_cache_file": "p2p_cache.json", "data": {"workspace": "workspace/sample"}}}, "scenario_parameters": {"scenario_id": "single_tech_cost", "technology": "P2P", "years_opex": 5, "opex_responsible": "Consumer", "bandwidth_demand": 20.0, "tech_config": {"capex": {"fixed_costs": 500.0, "tower_fixed_costs": 500.0}, "opex": {"fixed_costs": 0.0, "annual_bandwidth_cost_per_mbps": 10.0}, "constraints": {"maximum_range": 0.0, "maximum_bandwithd": 100.0, "required_power": 10.0}, "technology": "P2P", "electricity_config": {"capex": {"solar_panel_costs": 10000.0, "battery_costs": 0.0}, "opex": {"cost_per_kwh": 0.1}}}}}
+{"data_parameters": 
+    {"school_data_conf": 
+        {"country_id": "RWA", 
+        "data": 
+            {"file_path": "workspace/RWA/schools.csv", 
+            "table_type": "school"
+            }, 
+        "manual_entries": []
+        }, 
+    "fiber_map_conf": 
+        {"map_type": "fiber-nodes", 
+        "data": 
+            {"file_path": "workspace/RWA/fiber.csv", 
+            "table_type": "coordinate-map"
+            }
+        }, 
+    "cell_tower_map_conf": 
+        {"map_type": "cell-towers", 
+        "data": 
+            {"file_path": "workspace/RWA/cellular.csv", 
+            "table_type": "cell-towers"
+            }
+        }, 
+    "fiber_distance_cache_conf": 
+        {"cache_type": "fiber-distance", 
+        "data": 
+            {"workspace": "workspace/RWA"
+            }
+        }, 
+    "cellular_distance_cache_conf": 
+        {"cache_type": "cellular-distance", 
+        "cell_cache_file": "cellular_cache.json", 
+        "data": 
+            {"workspace": "workspace/RWA"
+            }
+        }, 
+    "p2p_distance_cache_conf": 
+        {"cache_type": "p2p-distance", 
+        "cell_cache_file": "p2p_cache.json", 
+        "school_visibility_cache_file":"school_visibility_cache.json", 
+        "data": 
+            {"workspace": "workspace/RWA"
+            }
+        }
+    }, 
+    "scenario_parameters": 
+        {"scenario_id": "minimum_cost_giga",   
+        "technologies": [
+            {"capex": 
+                {"fixed_costs": 1000.0, "tower_fixed_costs": 500.0}, 
+            "opex": 
+                {"fixed_costs": 0.0, "annual_bandwidth_cost_per_mbps": 11.3}, 
+            "constraints": 
+                {"maximum_range": 0.0,"maximum_bandwithd": 150.0, "required_power": 10.0}, 
+            "technology": "P2P", 
+            "electricity_config": 
+                {"capex": {"solar_cost_per_watt": 2.7}, 
+                "opex": {"cost_per_kwh": 0.14400000000000002}, 
+                "constraints": 
+                    {"required_power_per_school": 11000.0, 
+                    "allow_new_electricity": false
+                    }
+                }
+            }
+        ],      
+        "years_opex": 5, 
+        "opex_responsible": "Consumer", 
+        "bandwidth_demand": 20.0, 
+        "required_power_per_school": 11000.0,
+        "single_tech": null, 
+        "cost_minimizer_config": 
+            {"years_opex": 5, 
+            "budget_constraint": Infinity, 
+            "economies_of_scale": true
+            }, 
+        "sat_solver_config": 
+            {"sat_engine": false, 
+            "road_data": false, 
+            "time_limit": 600, 
+            "do_hints": false, 
+            "num_workers": 16, 
+            "search_log": false, 
+            "load_relational_graph_path": null, 
+            "write_relational_graph_path": null
+            }
+        }
+    }

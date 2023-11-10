@@ -5,9 +5,37 @@ import pandas as pd
 import numpy as np
 import math
 from IPython.display import display, clear_output
-from ipywidgets import Button, Output
+from ipywidgets import Button, Output, HTML
 from giga.utils.logging import LOGGER
 
+def download_link_frame(df, title="Download Results", filename="results.csv"):
+    csv = df.to_csv()
+    b64 = base64.b64encode(csv.encode())
+    payload = b64.decode()
+    html = '<a download="{filename}" href="data:text/csv;base64,{payload}" target="_blank">{title}</a>'
+    html = html.format(payload=payload, title=title, filename=filename)
+    return HTML(html)
+
+
+def download_link_scenario_config(
+    scenario, title="Export Configuration", filename="config.json"
+):
+    payload = scenario.config_json
+    b64 = base64.b64encode(payload.encode())
+    payload = b64.decode()
+    html = """<html>
+              <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              </head>
+              <body>
+              <a download="{filename}" href="data:text/csv;base64,{payload}" download>
+              <button class="p-Widget jupyter-widgets jupyter-button widget-button mod-warning">{title}</button>
+              </a>
+              </body>
+              </html>
+          """
+    html = html.format(payload=payload, title=title, filename=filename)
+    return HTML(html)
 
 def run_message(wait_time=0.1):
     LOGGER.info("Run complete")

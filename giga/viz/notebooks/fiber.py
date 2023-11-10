@@ -174,7 +174,7 @@ def plot_static_connections(border, fiber, schools, connections):
         plt.plot(lng, lat, color="#dbcb3b")
 
     # add grid
-    ax.grid(b=True, alpha=0.5)
+    ax.grid(visible=True, alpha=0.5)
     plt.show()
 
 

@@ -3,6 +3,7 @@ from pydantic import BaseModel, validate_arguments
 from giga.utils.progress_bar import progress_bar as pb
 from giga.schemas.output import CostResultSpace, SchoolConnectionCosts
 from giga.utils.logging import LOGGER
+from giga.data.space.model_data_space import ModelDataSpace
 
 
 class SampleTechnologyCostConf(BaseModel):
@@ -33,6 +34,8 @@ class SampleCostModel:
         return SchoolConnectionCosts(
             school_id=school.giga_id,
             capex=self.config.cost_parameter_a,
+            capex_provider=self.config.cost_parameter_a,
+            capex_consumer=0.0,
             opex=opex,
             opex_provider=0.0,  # assume no cost attribution to provider
             opex_consumer=opex,
@@ -52,5 +55,5 @@ class SampleCostModel:
         iterable = pb(schools) if progress_bar else schools  # creates a progress bar
         costs = [self.compute_cost(s) for s in iterable]
         return CostResultSpace(
-            technology_results={"model_type": "Sample"}, cost_results=costs
+            technology_results={"model_type": "Sample"}, cost_results=costs,tech_name="sample"
         )
