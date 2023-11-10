@@ -403,8 +403,6 @@ def get_country_center_zoom(df, max_zoom_level = 11.75):
     return _center, _zoom
 
 def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
-    earth_radius = 6371
-    max_zoom_level = 11.75
 
     default = copy.deepcopy(empty_default_dict)
     

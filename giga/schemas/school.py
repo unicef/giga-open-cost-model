@@ -9,22 +9,40 @@ from giga.schemas.geo import UniqueCoordinate
 from giga.data.store.stores import COUNTRY_DATA_STORE
 
 DEFAULT_POWER_REQUIRED_PER_SCHOOL = 11_000  # Watts
+KM_TO_METERS = 1000
 
-def parse_connectivity(s):
-    if pd.isnull(s) or s=='':
-        return "Unknown"
-    if "fiber" in s or "Fiber" in s or "FIBER" in s or "Fibre" in s or "fibre" in s or "FIBRE" in s or "Fibra" in s or "FTT" in s:
-        return "Fiber"
-    if "cell" in s or "Cell" in s or "Cellular" in s or "cellular" in s or "Celular" in s or "G" in s or "Mobile" in s:
-        return "Cellular"
-    if "Satellite" in s or "satellite" in s or "SATELLITE" in s or "SATELITE" in s:
-        return "Satellite"
-    if "unknow" in s or "Unknown" in s:
-        return "Unknown"
-    if "P2P" in s or "radio" in s or "Radio" in s or "Microwave" in s or "microwave" in s:
-        return "Microwave"
-    
-    return "Other"
+class ConnectivityType(Enum):
+    Unknown = "Unknown"
+    Fiber = "Fiber"
+    Cellular = "Cellular"
+    Satellite = "Satellite"
+    P2P = "P2P"
+    Other = "Other"
+
+CONNECTIVITY_KEYWORDS = {
+    ConnectivityType.Unknown: ['unknown'],
+    ConnectivityType.Fiber: ['fiber', 'fibre', 'fibra', 'ftt', 'fttx'],
+    ConnectivityType.Cellular: ['cell', 'cellular', 'celular', '2g', '3g', '4g', '5g', 'lte', 'gsm', 'umts', 'cdma', 'mobile', 'nr'],
+    ConnectivityType.Satellite: ['satellite', 'satelite'],
+    ConnectivityType.P2P: ['p2p', 'radio', 'microwave'],
+}
+
+class CoverageType(Enum):
+    Unknown = "Unknown"
+    _None = "None"
+    _2G = "2G"
+    _3G = "3G"
+    _4G = "4G"
+    _5G = "5G"
+
+COVERAGE_KEYWORDS = {
+    CoverageType.Unknown: ['unknown'],
+    CoverageType._None: ['no coverage', 'none'],
+    CoverageType._2G: ['2g', 'gsm'],
+    CoverageType._3G: ['3g', 'cdma', 'umts'],
+    CoverageType._4G: ['4g', 'lte'],
+    CoverageType._5G: ['5g', 'nr']
+}
 
 class SchoolZone(str, Enum):
     """Valid school zone environment"""
@@ -54,9 +72,7 @@ class GigaSchool(BaseModel):
     connectivity: str
     type_connectivity: str
     electricity: str
-    connectivity_status: str = Field(
-        "Unknown"
-    )  # 'Good', 'Moderate', 'No connection', 'Unknown'
+    connectivity_status: str = Field( "Unknown")  # 'Good', 'Moderate', 'No connection', 'Unknown'
     has_electricity: bool = False
     bandwidth_demand: float = 20.0  # Mbps
     has_fiber: bool = False  # True if the school is connected to a fiber network
@@ -64,6 +80,7 @@ class GigaSchool(BaseModel):
     cell_coverage_type: str = Field(..., alias="coverage_type")
     fiber_node_distance: float = math.inf
     power_required_watts: float = DEFAULT_POWER_REQUIRED_PER_SCHOOL
+    nearest_LTE_distance: float = math.inf
 
     class Config:
         use_enum_values = True
@@ -75,52 +92,99 @@ class GigaSchool(BaseModel):
             coordinate=[self.lat, self.lon],
             properties={"has_electricity": self.has_electricity},
         )
-    
-    def process_fields(self):
-        # connected and connectivity_status
-        if self.connectivity=="Yes" or self.connectivity=="yes" or self.connectivity=="YES":
-            self.connected = True
-            self.connectivity_status = "Good" #we do not care about good or moderate for now - would need sql query for that
-        else:
-            self.connected = False
-            if self.connectivity=="No" or self.connectivity=="no" or self.connectivity=="NO":
-                self.connectivity_status = "No connection"
-            else:
-                self.connectivity_status = "Unknown"
 
-        #electricity
-        if self.electricity=="Yes" or self.electricity=="yes" or self.electricity=="YES":
-            self.has_electricity = True
-        else:
-            self.has_electricity = False
-            if self.electricity!="No" and self.electricity!="no" and self.electricity!="NO":
-                self.electricity = "Unknown"
+# New Class for School Connectivity
+class SchoolConnectivity:
+    @staticmethod
+    def parse(s: str) -> str:
+        if pd.isnull(s) or s=='':
+            return ConnectivityType.Unknown.value
 
-        #fiber
-        self.type_connectivity = parse_connectivity(self.type_connectivity)
-        if self.type_connectivity=="Fiber":
-            self.has_fiber = True
-        else:
-            self.has_fiber = False
+        s_lower = s.lower()
 
-        #distance to fiber node
-        if pd.isnull(self.fiber_node_distance) or self.fiber_node_distance=='':
-            self.fiber_node_distance = math.inf
-        else:
-            self.fiber_node_distance = self.fiber_node_distance * 1000 #kms to meters
+        for conn_type, keywords in CONNECTIVITY_KEYWORDS.items():
+            for keyword in keywords:
+                if keyword in s_lower:
+                    return conn_type.value
 
-        #admins
-        if pd.isnull(self.admin1):
-            self.admin1 = ''
-        if pd.isnull(self.admin2):
-            self.admin2 = ''
-        if pd.isnull(self.admin3):
-            self.admin3 = ''
-        if pd.isnull(self.admin4):
-            self.admin4 = ''
+        return ConnectivityType.Other.value
+
+class SchoolCoverage:
+    @staticmethod
+    def parse(s: str) -> str:
+        if pd.isnull(s) or s=='':
+            return CoverageType.Unknown.value
         
+        s_lower = s.lower()
+
+        for cov_type, keywords in COVERAGE_KEYWORDS.items():
+            for keyword in keywords:
+                if keyword in s_lower:
+                    return cov_type.value
+        
+        return CoverageType.Unknown.value
 
 
+# New Class for Data Processing
+class SchoolDataProcessor:
+    @staticmethod
+    def process_fields(school_info: GigaSchool):
+        # Process 'connected' and 'connectivity_status'
+        if school_info.connectivity.lower() == 'yes':
+            school_info.connected = True
+            school_info.connectivity_status = "Good"
+        else:
+            school_info.connected = False
+            if school_info.connectivity.lower() == "no":
+                school_info.connectivity_status = "No connection"
+            else:
+                school_info.connectivity_status = "Unknown"
+
+        # Process 'electricity'
+        if school_info.electricity.lower() == "yes":
+            school_info.has_electricity = True
+        else:
+            school_info.has_electricity = False
+            if school_info.electricity.lower() != "no":
+                school_info.electricity = "Unknown"
+
+        # Process 'type_connectivity' for 'has_fiber'
+        school_info.type_connectivity = SchoolConnectivity.parse(school_info.type_connectivity)
+        if school_info.type_connectivity == ConnectivityType.Fiber.value:
+            school_info.has_fiber = True
+        else:
+            school_info.has_fiber = False
+        
+        # Process distance fields
+        for dist_field in ['fiber_node_distance', 'nearest_LTE_distance']:
+            school_info = SchoolDataProcessor.process_distance_field(school_info, dist_field)
+        
+        # Process coverage type field
+        school_info = SchoolDataProcessor.process_coverage_type(school_info)
+        
+        # Process 'admins'
+        for admin in ['admin1', 'admin2', 'admin3', 'admin4']:
+            if pd.isnull(getattr(school_info, admin)):
+                setattr(school_info, admin, '') 
+
+        # Return the updated GigaSchool
+        return school_info
+
+    @staticmethod
+    def process_distance_field(school_info, field_name):
+        dist_value = getattr(school_info, field_name)
+        if pd.isnull(dist_value) or dist_value == '':
+            setattr(school_info, field_name, math.inf)
+        else:
+            setattr(school_info, field_name, float(dist_value) * KM_TO_METERS)
+        return school_info
+    
+    @staticmethod
+    def process_coverage_type(school_info: GigaSchool):
+        # Process 'cell_coverage_type'
+        school_info.cell_coverage_type = SchoolCoverage.parse(school_info.cell_coverage_type)
+        return school_info
+        
 class GigaSchoolTable(BaseModel):
     """A table or collection of schools"""
 
@@ -174,8 +238,8 @@ class GigaSchoolTable(BaseModel):
             s.power_required_watts = power
 
     def process_fields_all(self):
-        for s in self.schools:
-            s.process_fields()
+        for school in self.schools:
+            SchoolDataProcessor.process_fields(school)
 
     def to_coordinate_vector(self):
         """Transforms the school table into a numpy vector of coordinates"""

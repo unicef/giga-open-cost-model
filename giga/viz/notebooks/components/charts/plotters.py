@@ -11,6 +11,8 @@ from giga.viz.colors import (
     COST_COLORS_TRIPLET,
     ORDERED_CUMULATIVE_DISTANCE_COLORS,
     SATELLITE_BREAKDOWN_COLORS,
+    CELL_COVERAGE_COLOR_MAP,
+    GIGA_TECHNOLOGY_COLORS
 )
 
 
@@ -381,16 +383,24 @@ def make_satellite_pie_breakdown(to_show):
     grouped.columns = ["tech_class", "total"]
     # Calculate the percentage for each class
     grouped["percentage"] = (grouped["total"] / grouped["total"].sum()) * 100
+
     # Create a pie chart
-    fig = px.pie(
-        grouped,
-        values="total",
-        names="tech_class",
-        color="tech_class",
-        color_discrete_map=SATELLITE_BREAKDOWN_COLORS,
-    )
+    # Create a Pie chart using plotly.graph_objects.Pie  
+    fig = go.Figure(  
+        go.Pie(  
+            labels=grouped["tech_class"],  
+            values=grouped["total"],  
+            text=grouped["tech_class"],  
+            insidetextorientation='radial',  # Adjust text orientation  
+            textposition='inside',  # Position text inside the pie slices  
+            marker=dict(colors=list(SATELLITE_BREAKDOWN_COLORS.values())),
+            #color_discrete_map=SATELLITE_BREAKDOWN_COLORS,
+            textinfo="value+percent",  # Display labels, values, and percentages  
+            hoverinfo="value+percent",  # Display hover information  
+        )  
+    ) 
     # Show the total counts and percentages on the plot
-    fig.update_traces(textinfo="label+value+percent", hoverinfo="label+value+percent")
+    #fig.update_traces(textinfo="label+value+percent", hoverinfo="label+value+percent")
     # Add title to the plot
     fig.update_layout(
         title={
@@ -426,12 +436,16 @@ def make_tech_pie_chart(df):
     else:
         percentages['Other'] = sum_others
 
-        # Create a Pie chart using plotly.graph_objects.Pie
+    # Create a Pie chart using plotly.graph_objects.Pie
     fig = go.Figure(
         go.Pie(
             labels=percentages.index,
             values=percentages.values,
-            text=percentages.index,
+            textinfo="percent",  
+            hoverinfo="percent", 
+            marker = dict(colors=percentages.index.map(GIGA_TECHNOLOGY_COLORS).fillna("#000000")),
+            insidetextorientation='radial',  # Adjust text orientation  
+            textposition='inside',  # Position text inside the pie slices 
         )
     )
     # Add title to the plot
@@ -444,7 +458,107 @@ def make_tech_pie_chart(df):
             "yanchor": "top",
             "font": dict(size=24, color="black", family="Arial"),
         },
-        showlegend=False,
+        showlegend=True,
         margin=dict(t=100),
     )  # Adjust top margin to fit title)
+    return fig
+
+def make_coverage_bar_plot(arr: np.array):
+
+    unique_elements, counts = np.unique(arr, return_counts=True)
+
+    # Calculate cumulative distribution
+    counts_percentage = counts / np.sum(counts) * 100 
+
+    sorted_indices = np.argsort(counts)[::-1]  
+    sorted_elements = unique_elements[sorted_indices]  
+    sorted_counts = counts[sorted_indices]
+    sorted_counts_percentage = counts_percentage[sorted_indices]  
+
+    colors = [CELL_COVERAGE_COLOR_MAP.get(element, "#000000") for element in sorted_elements]
+
+    fig = go.FigureWidget()
+
+    fig.add_trace(
+        go.Bar(  
+            x=sorted_counts,
+            y=sorted_elements,
+            orientation="h",  
+            marker=dict(color=colors),  
+            text=np.round(sorted_counts_percentage, 2),
+            texttemplate="%{text:.2f}%",  
+            textposition="outside",  
+            name="",
+            opacity=0.6,
+            width=[0.4] * len(sorted_elements),
+        )
+    )
+
+    fig.update_layout(
+        title={
+            'text': f'<b>Distribution of Coverage Type</b>',
+            "y": 0.9,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(
+                family="Arial",
+                size=18,
+                color="#000000",
+            ),
+        },
+        xaxis={
+            "title_font": dict(size=15, color="black", family="Arial"),
+            "showticklabels": True,
+            "range": [0, max(sorted_counts) * 1.1],
+            'title': "Count",
+        },
+        yaxis={
+            'title': "Coverage type",
+            "title_font": dict(size=15, color="black", family="Arial"),
+            "categoryorder": "array",
+            "tickfont": dict(size=13, color="black", family="Arial"),
+            "range": [-0.5, len(sorted_counts)],
+        },
+        bargap=0.3,
+        plot_bgcolor="#faf8f2",
+        paper_bgcolor="#faf8f2",
+    )
+
+    return fig
+
+
+def make_results_tech_pie(new_connected_schools):
+
+    technology_counts = new_connected_schools["technology"].value_counts().reset_index()  
+    technology_counts.columns = ["technology", "count"]
+    
+    fig = go.FigureWidget()
+
+    fig.add_trace(
+        go.Pie(
+            labels=new_connected_schools['technology'],
+            values=technology_counts["count"],
+            marker=dict(colors=technology_counts["technology"].map(GIGA_TECHNOLOGY_COLORS)),  
+            textinfo="value+percent",  
+            hoverinfo="value+percent", 
+            insidetextorientation='radial',  # Adjust text orientation  
+            textposition='inside',  # Position text inside the pie slices 
+        )
+    )
+
+    # Add title to the plot
+    fig.update_layout(
+        title={
+            "text": "<b>Number of Newly Schools Connected by Technology Type</b>",
+            "y": 0.95,
+            "x": 0.5,
+            "xanchor": "center",
+            "yanchor": "top",
+            "font": dict(size=24, color="black", family="Arial"),
+        },
+        showlegend=True,
+        margin=dict(t=100),
+    )  # Adjust top margin to fit title)
+
     return fig

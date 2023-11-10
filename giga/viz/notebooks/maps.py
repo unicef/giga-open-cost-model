@@ -296,7 +296,7 @@ class ResultMap:
 
         self.electricity_map = self.get_electricity_map()
         self.cost_map = self.get_cost_map()
-        self.infra_lines_map = self.get_infra_lines_map(data_map = self.inputs.data_map_m)
+        self.infra_lines_map = self.get_infra_lines_map(data_map = self.inputs.selected_data_map())
     
     def get_result_maps(self):
         try:

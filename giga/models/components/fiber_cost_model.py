@@ -136,14 +136,14 @@ class FiberCostModel:
             #use distance to fiber in master
             connected = [UniqueCoordinate(coordinate_id="metanode")]
             if self.config.capex.schools_as_fiber_nodes:
-                connected += data_space._fiber_schools
+                connected += data_space.fiber_schools
 
             data_space.fiber_cache.redo_meta(connected,data_space.school_entities)
         else:
             connected = data_space.fiber_coordinates
             k = len(connected)
             if self.config.capex.schools_as_fiber_nodes:
-                connected += data_space._fiber_schools
+                connected += data_space.fiber_schools
                 if len(connected)>k:
                     data_space.fiber_cache.redo_schools(connected,k,data_space.school_entities)
 
