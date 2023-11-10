@@ -404,7 +404,8 @@ class CostEstimationParameterInput:
             return
         sp = config["scenario_parameters"]
         if ("scenario_id" in sp and 
-            sp["scenario_id"] != "minimum_cost"
+            sp["scenario_id"] != "minimum_cost_actual"
+            and sp["scenario_id"] != "minimum_cost_giga"
             and sp["scenario_id"] != "priority_cost"
         ):
             raise ValueError(

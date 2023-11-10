@@ -201,8 +201,10 @@ def get_scenario_type_old(config):
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
 
 def get_scenario_type(config):
-    if config["scenario_id"] == "minimum_cost":
-        return "Lowest Cost"
+    if config["scenario_id"] == "minimum_cost_actual":
+        return "Lowest Cost - Actual"
+    elif config["scenario_id"] == "minimum_cost_giga":
+        return "Lowest Cost - Giga"
     elif config["scenario_id"] == "priority_cost":
         return "Priorities"
     else:

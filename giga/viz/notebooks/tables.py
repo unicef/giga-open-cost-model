@@ -230,13 +230,13 @@ def plot_cost_breakdown(output_space, data_space, border):
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(14, 5))
 
-    border.to_crs(epsg=4326).plot(ax=ax1, color="lightgrey")
+    border.to_crs(epsg=4326).plot(ax=ax1, color="lightgrey",aspect=1)
     schools.plot(
         column="total_cost",
         ax=ax1,
         cmap="rainbow",
         legend=True,
-        legend_kwds={"shrink": 0.3},
+        #legend_kwds={"shrink": 0.3},
         markersize=12,
     )
     ax1.set_title("Connectivity Cost Map")

@@ -36,7 +36,7 @@ class ModelDataSpace:
     @property
     def schools(self):
         """
-        Accessor for school entities - includes coordinates, school ids, and other metadata such as
+        Accessor for unconnected school entities - includes coordinates, school ids, and other metadata such as
         electricity availability, connectivity quality, etc.
         """
         if self._schools is None:
@@ -52,7 +52,7 @@ class ModelDataSpace:
     @property
     def all_schools(self):
         """
-        Accessor for unconnected schools - a subset of the schools that are not connected to
+        Accessor for schools - a subset of the schools that are not connected to
         any internet infrastructure
         """
         if self._all_schools is None:
@@ -71,7 +71,6 @@ class ModelDataSpace:
                 self._fiber_schools = GigaSchoolTable(schools=fiber_schools).to_coordinates()
             else:
                 self._fiber_schools = []
-        
         return self._fiber_schools
 
     @property
