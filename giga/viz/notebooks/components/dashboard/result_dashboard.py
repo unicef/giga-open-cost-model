@@ -28,6 +28,7 @@ from giga.viz.notebooks.components.charts.plotters import (
     make_project_cost_bar_plots,
     make_unit_cost_bar_plot,
     make_satellite_pie_breakdown,
+    make_results_tech_pie
 )
 from giga.viz.notebooks.maps import ResultMapConfig, ResultMapLayersConfig, ResultMap
 from giga.viz.colors import GIGA_TECHNOLOGY_COLORS
@@ -54,6 +55,7 @@ class ResultDashboard:
         self.result_map = ResultMap(results, inputs, result_map_config, result_map_layers_config)
 
         self.country_id = self.result_map.country
+        self.selected_schools = inputs.get_selected_schools()
 
     def display(self):
         tabs = widgets.Tab(
@@ -98,6 +100,7 @@ class ResultDashboard:
         self.p2p_distance_bar = cumulative_visible_cell_tower_distance_barplot(self.results.output_cost_table)
         self.technology_map = make_technology_map(self.results.new_connected_schools)
         self.satellite_pie_breakdown = make_satellite_pie_breakdown(self.results.new_connected_schools)
+        self.technology_pie = make_results_tech_pie(self.results.new_connected_schools)
         self.per_school_cost_map = make_cost_map(
             self.results.new_connected_schools,
             cost_key="total_cost",
@@ -140,27 +143,27 @@ class ResultDashboard:
             self.results.new_connected_schools
         )
         to_show = self.results.new_connected_schools
-        self.technology_pie = px.pie(
-            to_show,
-            names="technology",
-            color="technology",
-            color_discrete_map=GIGA_TECHNOLOGY_COLORS,
-        ).update_traces(
-            textinfo="label+value+percent", hoverinfo="label+value+percent"
-        ).update_layout(
-            title={
-                'text': "Number of Schools Connected by Tech Type",
-                'y': 0.95,
-                'x': 0.5,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                'font': dict(
-                    family="Arial",
-                    size=18,
-                    color="black"
-                )
-            }
-        )
+        # self.technology_pie = px.pie(
+        #     to_show,
+        #     names="technology",
+        #     color="technology",
+        #     color_discrete_map=GIGA_TECHNOLOGY_COLORS,
+        # ).update_traces(
+        #     textinfo="value+percent", hoverinfo="value+percent"
+        # ).update_layout(
+        #     title={
+        #         'text': "Number of Schools Connected by Tech Type",
+        #         'y': 0.95,
+        #         'x': 0.5,
+        #         'xanchor': 'center',
+        #         'yanchor': 'top',
+        #         'font': dict(
+        #             family="Arial",
+        #             size=18,
+        #             color="black"
+        #         )
+        #     }
+        # )
         self.cost_pie = px.pie(
             to_show,
             values="total_cost",
@@ -375,6 +378,18 @@ class ResultDashboard:
             self._map_to_output(self.p2p_infra_map),
             self._figure_to_output(self.p2p_distance_bar)
         ])
+        # Electricity Plot
+        electricity_plots = widgets.VBox([
+            self._map_to_output(self.electricity_map),
+        ])
+        # Cost Map
+        cost_plots = widgets.VBox([
+            self._map_to_output(self.cost_map),
+        ])
+        # Infrastructure Lines Map
+        infra_lines_map = widgets.VBox([
+            self._map_to_output(self.infra_lines_map),
+        ])
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         # Technology Map
         # cost maps
@@ -386,6 +401,9 @@ class ResultDashboard:
                         section("Cellular Infrastructure", cell_plots, "dark"),
                         section("Cellular Coverage", coverage_plots, "dark"),
                         section("Visibility P2P Infrastructure", p2p_plots, "dark"),
+                        section('Electricity Availability', electricity_plots, "dark"),
+                        section('Total Costs', cost_plots, "dark"),
+                        section('Infrastructure Lines', infra_lines_map, 'dark'),
                     ]
                 )
             )

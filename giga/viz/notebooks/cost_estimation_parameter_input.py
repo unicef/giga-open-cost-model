@@ -26,7 +26,7 @@ from giga.schemas.conf.models import (
 )
 from giga.schemas.conf.data import DataSpaceConf
 from giga.app.config_client import ConfigClient
-from giga.app.config import get_country_defaults, get_country_default
+from giga.app.config import get_country_default, get_country_center_zoom
 #from giga.app.config import CODE_COUNTRY_DICT, COUNTRY_CODE_DICT
 
 from giga.viz.notebooks.parameters.groups.data_parameter_manager import (
@@ -104,6 +104,7 @@ UPLOADED_DATA_SPACE_PARAMETERS = [
 UPLOAD_SUFFIX = "_upload"
 SHOW_MAP = False  # temporary flag to show/hide map
 SCHOOL_SELECTION = False
+LARGE_COUNTRIES = ['BRA'] # List of countries with large data that needs removal of cell tower layer to improve map loading speed
 
 def constraint_freeze_transform(value):
     if value:
@@ -270,24 +271,15 @@ class CostEstimationParameterInput:
             self.map_output.clear_output()
             self.selection_map_output.clear_output()
             country = country_name_to_key(change["new"])
-            config_map = DataMapConfig()
-            data_map = StaticDataMap(config_map)
+
             if country not in self._hashed_data_layers:
                 self._hashed_data_layers[country] = self._make_map_layer(country)
             map_layers, _ = self._hashed_data_layers[country]
-            if country == "BRA":
-                # handle brazil as a one off for now
-                config_map = DataMapConfig()
-                data_map = StaticDataMap(config_map)
-                data_map.add_layers(
-                    map_layers.layers_no_cell
-                )  # ignore cell tower layer for now
-                m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
-            else:
-                config_map = DataMapConfig()
-                data_map = StaticDataMap(config_map)
-                data_map.add_layers(map_layers.layers)
-                m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
+            
+            config_map = DataMapConfig()
+            data_map = StaticDataMap(config_map)
+            data_map.add_layers((map_layers.layers_no_cell if country in LARGE_COUNTRIES else map_layers.layers))
+            m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
             self.data_map_m = m
             with self.map_output:
                 data_map.make_static_map_figure(m)
@@ -296,13 +288,12 @@ class CostEstimationParameterInput:
         def update_selection_map(change):
             self.selection_map_output.clear_output()
             country = country_name_to_key(change["new"])
+            
             if country not in self._hashed_data_layers:
                 self._hashed_data_layers[country] = self._make_map_layer(country)
-            if country == "BRA":
-                config_map = DataMapConfig(no_cell=True)
-            else:
-                config_map = DataMapConfig()
             _, selection_layers = self._hashed_data_layers[country]
+            
+            config_map = DataMapConfig(no_cell=(True if country in LARGE_COUNTRIES else False))
             data_map = StaticDataMap(config_map)
             m = data_map.get_selection_map(
                 self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom, selection_layers
@@ -759,6 +750,16 @@ class CostEstimationParameterInput:
             SelectionMapLayersConfig(), layer
         )
         return layer, selection_layer
+    
+    def _make_selected_map_layer(self, country):
+        country_key = country
+        config_client = ConfigClient(self.defaults[country_key])
+        data_space = ModelDataSpace(config_client.local_workspace_data_space_config)
+        data_space_selected = data_space.filter_schools(self.get_selected_schools())
+        config_layers = MapLayersConfig()
+        layer = MapDataLayers(data_space_selected, config_layers)
+        center_selected, zoom_selected = get_country_center_zoom(data_space_selected.schools_to_frame(), max_zoom_level=12)
+        return layer, center_selected, zoom_selected
 
     def data_map(self):
         # TODO (max): this is a placeholder for a static map in the notebook that will be refactored out once the UI implementation is complete
@@ -767,34 +768,32 @@ class CostEstimationParameterInput:
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
         map_layers, _ = self._hashed_data_layers[country]
-        if country == "BRA":
-            # handle brazil as a one off for now
-            config_map = DataMapConfig()
-            data_map = StaticDataMap(config_map)
-            data_map.add_layers(
-                map_layers.layers_no_cell
-            )  # ignore cell tower layer for now
-            m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
-        else:
-            config_map = DataMapConfig()
-            data_map = StaticDataMap(config_map)
-            data_map.add_layers(map_layers.layers)
-            m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
+        config_map = DataMapConfig()
+        data_map = StaticDataMap(config_map)
+        data_map.add_layers((map_layers.layers_no_cell if country in LARGE_COUNTRIES else map_layers.layers))
+        m = data_map.get_map(self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom)
         self.data_map_m = m
         with self.map_output:
             data_map.make_static_map_figure(m)
         return self.map_output
+    
+    def selected_data_map(self):
+        country = self.data_parameters().school_data_conf.country_id
+        map_layers, center_selected, zoom_selected = self._make_selected_map_layer(country)
+        config_map = DataMapConfig()
+        data_map = StaticDataMap(config_map)
+        data_map.add_layers((map_layers.layers_no_cell if country in LARGE_COUNTRIES else map_layers.layers))
+        m = data_map.get_map([center_selected['lat'], center_selected['lon']], zoom_selected)
+        self.data_map_m_selected = m
+        return m
 
     def selection_map(self):
         self.selection_map_output.clear_output()
         country = self.data_parameters().school_data_conf.country_id
         if country not in self._hashed_data_layers:
             self._hashed_data_layers[country] = self._make_map_layer(country)
-        if country == "BRA":
-            config_map = DataMapConfig(no_cell=True)
-        else:
-            config_map = DataMapConfig()
         _, selection_layers = self._hashed_data_layers[country]
+        config_map = DataMapConfig(no_cell=(True if country in LARGE_COUNTRIES else False))
         data_map = StaticDataMap(config_map)
         m = data_map.get_selection_map(
             self.defaults[country].data.country_center_tuple, self.defaults[country].data.country_zoom, selection_layers
@@ -894,5 +893,10 @@ class CostEstimationParameterInput:
                     contents=self.model_parameter_input(),
                     extra_class="center",
                 ),
+                giga_sections.section(
+                    title = 'Verbose',
+                    contents = self.dashboard_parameters_input(),
+                    extra_class = 'center'
+                )
             ]
         )

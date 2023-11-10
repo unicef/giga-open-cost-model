@@ -4,11 +4,10 @@ from selenium import webdriver
 from IPython.display import HTML, display
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from ipywidgets import Output, VBox, Button, Widget
+from ipywidgets import Output, VBox
 import ipywidgets as pw
-from ipywidgets.embed import embed_minimal_html
+import numpy as np
 import io
-import base64
 import folium
 import os
 import shutil
@@ -30,9 +29,10 @@ from giga.viz.notebooks.components.charts.plotters import (
     cumulative_cell_tower_distance_barplot,
     cumulative_visible_cell_tower_distance_barplot,
     make_tech_pie_chart,
+    make_coverage_bar_plot
 )
 
-from giga.utils.latex_reports import generate_infra_report, generate_costmodel_report
+from giga.utils.latex_reports import generate_infra_report, generate_cost_report, generate_merged_report
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 from giga.data.space.model_data_space import ModelDataSpace
 
@@ -107,8 +107,8 @@ def make_export_cost_button(df, title="Export Costs", filename="costs.csv"):
     return make_payload_export(title, filename, df.to_csv().encode(), "text/csv;base64")
 
 
-def make_export_config_button(scenario, title="Export Configuration", filename="config.json"):
-    return make_payload_export(title, filename, scenario.config_json.encode(), "text/plain;base64")
+def make_export_config_button(inputs, title="Export Configuration", filename="config.json"):
+    return make_payload_export(title, filename, inputs.config_json.encode(), "text/plain;base64")
 
 PAGE_WIDTH = 8 * inch
 PAGE_HEIGHT = 6 * inch
@@ -156,44 +156,56 @@ def generate_png_bytes(el):
         return png_bytes
     return None
 
-def generate_costmodel_zip_bytes(config,selected_schools,data_space,dashboard):
+def get_cost_report_image_dict(dashboard):
+
+    figs = {}
+    figs['project_cost_barplot'] = dashboard.project_cost_barplot # graph 0
+    figs['average_cost_barplot'] = dashboard.average_cost_barplot # graph 1
+    figs['per_school_cost_map'] = dashboard.per_school_cost_map # graph 2
+    figs['per_student_cost_map'] = dashboard.per_student_cost_map # graph 3
+    figs['technology_pie'] = dashboard.technology_pie # graph 4
+    figs['technology_map'] = dashboard.technology_map # graph 5
+    figs['infra_lines_map'] = dashboard.infra_lines_map # graph 6
+
+    return figs
+
+def generate_cost_report_zip_bytes(dashboard):
+
+    figs = get_cost_report_image_dict(dashboard)
+
     # Create a scratch temp file
     tmpdir = tempfile.mkdtemp()
-    tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
-    country_id = dashboard.country_id
-
-    #complete school data
-    schools_complete_table = data_space.schools_to_frame()
-    schools_unconnected = schools_complete_table[schools_complete_table['connected']==False]
-    schools_connected = schools_complete_table[schools_complete_table['connected']==True]
+    
+    write_images_from_dict(tmpdir=tmpdir, figs=figs)
+    #tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
     
     #create all images
-    images = []
-    images.append(dashboard.project_cost_barplot)
-    images.append(dashboard.average_cost_barplot)
-    images.append(dashboard.per_school_cost_map)
-    images.append(dashboard.per_student_cost_map)
-    images.append(dashboard.technology_pie)
-    images.append(dashboard.technology_map)
-    #images.append(dashboard.infra_lines_map_fiber)
+    #images = []
+    #images.append(dashboard.project_cost_barplot)
+    #images.append(dashboard.average_cost_barplot)
+    #images.append(dashboard.per_school_cost_map)
+    #images.append(dashboard.per_student_cost_map)
+    #images.append(dashboard.technology_pie)
+    #images.append(dashboard.technology_map)
+    #images.append(dashboard.infra_lines_map)
 
     #save images
-    i = 0
-    for el in pb(images):
-        image_path = os.path.join(tmpdir, f"graph_{i}.png")
-        if isinstance(el, folium.Map):
-            el.save(tmpfile)
-            png_bytes = render_screenshot(tmpfile)
-            with open(image_path, 'wb') as f:
-                f.write(png_bytes)
-        elif isinstance(el, plotly.graph_objs._figure.Figure):
-            plotly.io.write_image(el, image_path, format='png')
-        elif isinstance(el, plotly.graph_objs.FigureWidget):
-            plotly.io.write_image(el.to_dict(), image_path, format='png')
-        i+=1
+    #i = 0
+    #for el in pb(images):
+    #    image_path = os.path.join(tmpdir, f"graph_{i}.png")
+    #    if isinstance(el, folium.Map):
+    #        el.save(tmpfile)
+    #        png_bytes = render_screenshot(tmpfile)
+    #        with open(image_path, 'wb') as f:
+    #            f.write(png_bytes)
+    #    elif isinstance(el, plotly.graph_objs._figure.Figure):
+    #        plotly.io.write_image(el, image_path, format='png')
+    #    elif isinstance(el, plotly.graph_objs.FigureWidget):
+    #        plotly.io.write_image(el.to_dict(), image_path, format='png')
+    #    i+=1
 
     #create latex file
-    doc = generate_costmodel_report(config,selected_schools,dashboard.results,country_id,schools_complete_table,schools_unconnected,schools_connected,data_space)
+    doc = generate_cost_report(dashboard = dashboard)
 
     #copy giga_logo in tmpdir
     local_logo_path = os.path.join(tmpdir,'giga_logo.png')
@@ -222,32 +234,35 @@ def generate_costmodel_zip_bytes(config,selected_schools,data_space,dashboard):
     #return zip bytes
     return zip_buffer.read()
 
-def generate_infra_zip_bytes(country,data_space,m):
-    # Create a scratch temp file
-    tmpdir = tempfile.mkdtemp()
-    tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
-    country_id = country_name_to_key(country)
+def get_infra_report_image_dict(data_space, country_id, static_data_map):
 
     #complete school data
     schools_complete_table = data_space.schools_to_frame()
+    schools_connected = schools_complete_table[schools_complete_table['connected']]
     schools_unconnected = schools_complete_table[schools_complete_table['connected']==False]
-    schools_connected = schools_complete_table[schools_complete_table['connected']==True]
-    
-    #create all images
-    images = [m]
-    images.append(make_tech_pie_chart(schools_connected))
-    images.append(make_fiber_distance_map_plot(schools_unconnected,country_id))
-    images.append(cumulative_fiber_distance_barplot(schools_unconnected))
-    images.append(make_cellular_distance_map_plot(schools_unconnected,country_id))
-    images.append(cumulative_cell_tower_distance_barplot(schools_unconnected))
-    images.append(make_cellular_coverage_map(schools_unconnected,country_id))
-    images.append(make_p2p_distance_map_plot(schools_unconnected,country_id))
-    images.append(cumulative_visible_cell_tower_distance_barplot(schools_unconnected))
 
-    #save images
-    i = 0
-    for el in pb(images):
-        image_path = os.path.join(tmpdir, f"graph_{i}.png")
+    suffix = ('_selected' if data_space.selected_space else '')
+
+    figs = {}
+    figs['static_data_map' + suffix] = static_data_map
+    figs['schools_conn_pie' + suffix] = make_tech_pie_chart(schools_connected) # graph 1
+    figs['fiber_dist_map' + suffix] = make_fiber_distance_map_plot(schools_unconnected,country_id) # graph 2
+    figs['cum_fiber_dist' + suffix] = cumulative_fiber_distance_barplot(schools_unconnected) # graph 3
+    figs['cell_dist_map' + suffix] = make_cellular_distance_map_plot(schools_unconnected,country_id) # graph 4
+    figs['cum_cell_dist' + suffix] = cumulative_cell_tower_distance_barplot(schools_unconnected) # graph 5
+    figs['cell_coverage_map' + suffix] = make_cellular_coverage_map(schools_unconnected,country_id) # graph 6
+    figs['p2p_dist_map' + suffix] = make_p2p_distance_map_plot(schools_unconnected,country_id) # graph 7
+    figs['cum_visible_cell_dist' + suffix] = cumulative_visible_cell_tower_distance_barplot(schools_unconnected) # graph 8
+    figs['cum_distribution_coverage' + suffix] = make_coverage_bar_plot(schools_unconnected['cell_coverage_type'].to_numpy()) # graph 9
+
+    return figs
+
+def write_images_from_dict(tmpdir, figs: dict):
+    
+    tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
+        
+    for image_name, el in figs.items():
+        image_path = os.path.join(tmpdir, f"{image_name}.png")
         if isinstance(el, folium.Map):
             el.save(tmpfile)
             png_bytes = render_screenshot(tmpfile)
@@ -257,10 +272,48 @@ def generate_infra_zip_bytes(country,data_space,m):
             plotly.io.write_image(el, image_path, format='png')
         elif isinstance(el, plotly.graph_objs.FigureWidget):
             plotly.io.write_image(el.to_dict(), image_path, format='png')
-        i+=1
+
+
+
+def generate_infra_report_zip_bytes(inputs):
+
+    data_space = ModelDataSpace(inputs.data_parameters())
+    country_id = data_space.config.school_data_conf.country_id
+
+    figs = get_infra_report_image_dict(data_space, country_id, inputs.data_map_m)
+
+    # Create a scratch temp file
+    tmpdir = tempfile.mkdtemp()
+
+    write_images_from_dict(tmpdir, figs)
+    #tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
+    
+    #create all images
+    #images = [static_data_map]
+    #images.append(make_tech_pie_chart(schools_connected))
+    #images.append(make_fiber_distance_map_plot(schools_unconnected,country_id))
+    #images.append(cumulative_fiber_distance_barplot(schools_unconnected))
+    #images.append(make_cellular_distance_map_plot(schools_unconnected,country_id))
+    #images.append(cumulative_cell_tower_distance_barplot(schools_unconnected))
+    #images.append(make_cellular_coverage_map(schools_unconnected,country_id))
+    #images.append(make_p2p_distance_map_plot(schools_unconnected,country_id))
+    #images.append(cumulative_visible_cell_tower_distance_barplot(schools_unconnected))
+
+    # save images
+    #for image_name, el in figs.items():
+    #    image_path = os.path.join(tmpdir, f"{image_name}.png")
+    #    if isinstance(el, folium.Map):
+    #        el.save(tmpfile)
+    #        png_bytes = render_screenshot(tmpfile)
+    #        with open(image_path, 'wb') as f:
+    #            f.write(png_bytes)
+    #    elif isinstance(el, plotly.graph_objs._figure.Figure):
+    #        plotly.io.write_image(el, image_path, format='png')
+    #    elif isinstance(el, plotly.graph_objs.FigureWidget):
+    #        plotly.io.write_image(el.to_dict(), image_path, format='png')
 
     #create latex file
-    doc = generate_infra_report(country,schools_complete_table,schools_unconnected,schools_connected,data_space)
+    doc = generate_infra_report(data_space)
 
     #copy giga_logo in tmpdir
     local_logo_path = os.path.join(tmpdir,'giga_logo.png')
@@ -288,6 +341,60 @@ def generate_infra_zip_bytes(country,data_space,m):
 
     #return zip bytes
     return zip_buffer.read()
+
+def generate_merged_report_zip_bytes(dashboard):
+
+    inputs = dashboard.inputs
+    data_space = ModelDataSpace(inputs.data_parameters())
+
+    selected_schools = dashboard.selected_schools
+    
+    
+    figs = get_infra_report_image_dict(data_space, dashboard.country_id, inputs.data_map_m)
+    figs.update(
+        get_cost_report_image_dict(dashboard=dashboard)
+    )
+
+    if len(dashboard.results.complete_school_table) != len(selected_schools):
+        data_space_selected = data_space.filter_schools(selected_schools)
+        selected_figs = get_infra_report_image_dict(data_space_selected, dashboard.country_id, inputs.selected_data_map()) # static data map to be updated
+        figs.update(selected_figs)
+
+    # Create a temp dir
+    tmpdir = tempfile.mkdtemp()
+
+    write_images_from_dict(tmpdir=tmpdir, figs=figs)
+
+    doc = generate_merged_report(dashboard=dashboard)
+
+    #copy giga_logo in tmpdir
+    local_logo_path = os.path.join(tmpdir,'giga_logo.png')
+
+    blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    with open(local_logo_path, "wb") as download_file:
+        download_file.write(blob_client.download_blob().readall())
+
+    #compile latex into pdf
+    doc.generate_pdf(os.path.join(tmpdir, "merged_report"), clean_tex=False, clean = True)
+
+    #create zip file
+    zip_buffer = io.BytesIO()
+    with ZipFile(zip_buffer, "w") as zip_file:
+        for filename in os.listdir(tmpdir):
+            file_ext = os.path.splitext(filename)[1].lower()
+            if file_ext in ['.png','.tex','.pdf','.log']:
+                file_path = os.path.join(tmpdir, filename)
+                arcname = os.path.basename(file_path)
+                zip_file.write(file_path, arcname)        
+    zip_buffer.seek(0)
+
+    #remove tmp files
+    shutil.rmtree(tmpdir)
+
+    #return zip bytes
+    return zip_buffer.read()
+
+
 
 def generate_pdf_bytes(el_list):
     # Create a scratch temp file
@@ -344,24 +451,34 @@ def make_export_infra_report_button(inputs, title="Generate Infrastructure Repor
     def on_button_clicked(b):
         out.clear_output()
         with out:
-            zip_bytes = generate_infra_zip_bytes(country,data_space,inputs.data_map_m)
+            zip_bytes = generate_infra_report_zip_bytes(inputs)
             display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
 
-    country = inputs.data_parameter_manager.get_country_name()
-    data_space = ModelDataSpace(inputs.data_parameters())
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
     out = Output()
     return VBox([button, out])
 
-def make_export_costmodel_report_button(config,selected_schools,dashboard, title="Generate Cost Model Report", filename="cost_model_report.zip"):
+def make_export_cost_report_button(dashboard, title="Generate Cost Model Report", filename="cost_model_report.zip"):
     def on_button_clicked(b):
         out.clear_output()
         with out:
-            zip_bytes = generate_costmodel_zip_bytes(config,selected_schools,data_space,dashboard)
+            zip_bytes = generate_cost_report_zip_bytes(dashboard)
             display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
 
-    data_space = ModelDataSpace(dashboard.inputs.data_parameters())
+    button = export_btn(on_button_clicked, description=title)
+    button.on_click(on_button_clicked)
+    out = Output()
+    return VBox([button, out])
+
+def make_export_merged_report_button(dashboard, title="Generate Merged Report", filename="merged_report.zip"):
+
+    def on_button_clicked(b):
+        out.clear_output()
+        with out:
+            zip_bytes = generate_merged_report_zip_bytes(dashboard)
+            display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
+
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
     out = Output()
@@ -395,11 +512,15 @@ class ModelPackage():
         self.selected_schools = selected_schools
         self.output_space = output_space
 
-def make_export_model_package(config, selected_schools, output_space, title="Results Package", filename="results_package.pkl"):
+def make_export_model_package(dashboard, title="Results Package", filename="results_package.pkl"):
+    input_config = dashboard.inputs.config
+    output_space = dashboard.results.output_space
+    selected_schools = dashboard.selected_schools
+
     def on_button_clicked(b):
         out.clear_output()
         with out:
-            pkg = ModelPackage(config, selected_schools, output_space)
+            pkg = ModelPackage(input_config, selected_schools, output_space)
             output_space_bytes = pickle.dumps(pkg)
             display(make_payload_export("Download package", filename, output_space_bytes.hex(),
                                         "text/plain;charset=utf-8"))
@@ -409,11 +530,12 @@ def make_export_model_package(config, selected_schools, output_space, title="Res
     out = Output()
     return VBox([button, out])
 
-def make_export_button_row(config, selected_schools, output_space, table, dashboard):
+def make_export_button_row(dashboard, table):
     hr = pw.HTML('<hr/>')
     b1 = make_export_config_button(dashboard.inputs)
     b2 = make_export_cost_button(table)
-    b3 = make_export_model_package(config, selected_schools, output_space)
-    b4 = make_export_costmodel_report_button(config,selected_schools,dashboard)
-    b5 = make_export_zip_button(dashboard)
-    return VBox([b1, b2, hr, b3, hr, b4, hr, b5])
+    b3 = make_export_model_package(dashboard)
+    b4 = make_export_cost_report_button(dashboard)
+    b5 = make_export_merged_report_button(dashboard)
+    b6 = make_export_zip_button(dashboard)
+    return VBox([b1, b2, hr, b3, hr, b4, b5, hr, b6])

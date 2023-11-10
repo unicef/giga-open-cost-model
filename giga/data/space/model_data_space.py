@@ -21,6 +21,7 @@ class ModelDataSpace:
         self.config = config
         self._schools = None
         self._all_schools = None
+        self._fiber_schools = None
         self._fiber_map = None
         self._cell_tower_map = None
         self._cell_tower_coordinates = None
@@ -30,6 +31,7 @@ class ModelDataSpace:
         self._for_infra_fiber_cache = None
         self._for_infra_unconnected_schools = None
         self._for_infra_connected_schools = None
+        self.selected_space = False
 
     @property
     def schools(self):
@@ -58,15 +60,19 @@ class ModelDataSpace:
         return self._all_schools
 
     @property
-    def schools_with_fiber_coordinates(self):
+    def fiber_schools(self):
         """
         Accessor to fiber school coordinates - a subset of the schools that are connected to fiber infrastrucutre
         """
-        fiber_schools = [s for s in self.all_schools.schools if s.has_fiber]
-        if len(fiber_schools) > 0:
-            return GigaSchoolTable(schools=fiber_schools).to_coordinates()
-        else:
-            return []
+
+        if self._fiber_schools is None:
+            fiber_schools = [s for s in self.all_schools.schools if s.has_fiber]
+            if len(fiber_schools) > 0:
+                self._fiber_schools = GigaSchoolTable(schools=fiber_schools).to_coordinates()
+            else:
+                self._fiber_schools = []
+        
+        return self._fiber_schools
 
     @property
     def school_coordinates(self):
@@ -201,24 +207,24 @@ class ModelDataSpace:
         ####
         if len(school_ids)==len(self._all_schools.school_ids):
             new_space._schools = self._schools
-            filtered_schools = self.all_schools
+            new_space._all_schools = self.all_schools
         else:
             new_space._schools = self._schools.filter_schools_by_id(school_ids)
-            filtered_schools = self._all_schools.filter_schools_by_id(school_ids)
+            new_space._all_schools = self._all_schools.filter_schools_by_id(school_ids)
             
-        fiber_schools = [s for s in filtered_schools.schools if s.has_fiber]
+        fiber_schools = [s for s in new_space._all_schools.schools if s.has_fiber]
         if len(fiber_schools) > 0:
             new_space._fiber_schools = GigaSchoolTable(schools=fiber_schools).to_coordinates()
         else:
              new_space._fiber_schools = []
         ####
-        new_space._all_schools = self._schools
         new_space._fiber_map = self._fiber_map
         new_space._cell_tower_map = self._cell_tower_map
         new_space._cell_tower_coordinates = self._cell_tower_coordinates
         new_space._fiber_cache = self._fiber_cache
         new_space._cellular_cache = self._cellular_cache
         new_space._p2p_cache = self._p2p_cache
+        new_space.selected_space = True
         return new_space
 
     def get_cell_tower_coordinates_with_technologies(self, technologies: List[str]):
@@ -251,12 +257,12 @@ class ModelDataSpace:
                     c.giga_id
                 )
                 if self.fiber_cache.connected_cache is not None
-                else math.inf,
+                else c.fiber_node_distance,
                 "nearest_cell_tower": self.cellular_cache.connected_cache.get_distance(
                     c.giga_id
                 )
                 if self.cellular_cache.connected_cache is not None
-                else math.inf,
+                else c.nearest_LTE_distance,
                 "nearest_visible_cell_tower": self.p2p_cache.connected_cache.get_distance(
                     c.giga_id
                 )
@@ -302,12 +308,12 @@ class ModelDataSpace:
                     c.giga_id
                 )
                 if self.fiber_cache.connected_cache is not None
-                else math.inf,
+                else c.fiber_node_distance,
                 "nearest_cell_tower": self.cellular_cache.connected_cache.get_distance(
                     c.giga_id
                 )
                 if self.cellular_cache.connected_cache is not None
-                else math.inf,
+                else c.nearest_LTE_distance,
                 "nearest_visible_cell_tower": self.p2p_cache.connected_cache.get_distance(
                     c.giga_id
                 )

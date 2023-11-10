@@ -243,6 +243,16 @@ class MapDataLayers:
                 self.fiber_layer_mb,
                 self.fiber_layer_mb_legend,
             ] + self.school_layers_mb
+    
+    @property
+    def layers_selected(self):
+        """
+        Returns a school data layer for selected data map
+        """
+        if MAP_BOX_ACCESS_TOKEN == "":
+            return [self._layers[0]]
+        else:
+            return self.school_layers_mb
 
     @property
     def _layers(self):
@@ -261,3 +271,5 @@ class MapDataLayers:
             + [self.fiber_layer_mb, self.fiber_layer_mb_legend]
             + self.school_layers_mb
         )
+
+
