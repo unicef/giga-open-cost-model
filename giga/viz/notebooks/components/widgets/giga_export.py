@@ -6,7 +6,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from ipywidgets import Output, VBox
 import ipywidgets as pw
-import numpy as np
 import io
 import folium
 import os
@@ -35,6 +34,7 @@ from giga.viz.notebooks.components.charts.plotters import (
 from giga.utils.latex_reports import generate_infra_report, generate_cost_report, generate_merged_report
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 from giga.data.space.model_data_space import ModelDataSpace
+from giga.utils.logging import LOGGER
 
 from giga.utils.progress_bar import progress_bar as pb
 from giga.viz.notebooks.components.widgets.giga_buttons import make_button
@@ -177,32 +177,6 @@ def generate_cost_report_zip_bytes(dashboard):
     tmpdir = tempfile.mkdtemp()
     
     write_images_from_dict(tmpdir=tmpdir, figs=figs)
-    #tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
-    
-    #create all images
-    #images = []
-    #images.append(dashboard.project_cost_barplot)
-    #images.append(dashboard.average_cost_barplot)
-    #images.append(dashboard.per_school_cost_map)
-    #images.append(dashboard.per_student_cost_map)
-    #images.append(dashboard.technology_pie)
-    #images.append(dashboard.technology_map)
-    #images.append(dashboard.infra_lines_map)
-
-    #save images
-    #i = 0
-    #for el in pb(images):
-    #    image_path = os.path.join(tmpdir, f"graph_{i}.png")
-    #    if isinstance(el, folium.Map):
-    #        el.save(tmpfile)
-    #        png_bytes = render_screenshot(tmpfile)
-    #        with open(image_path, 'wb') as f:
-    #            f.write(png_bytes)
-    #    elif isinstance(el, plotly.graph_objs._figure.Figure):
-    #        plotly.io.write_image(el, image_path, format='png')
-    #    elif isinstance(el, plotly.graph_objs.FigureWidget):
-    #        plotly.io.write_image(el.to_dict(), image_path, format='png')
-    #    i+=1
 
     #create latex file
     doc = generate_cost_report(dashboard = dashboard)
@@ -286,31 +260,6 @@ def generate_infra_report_zip_bytes(inputs):
     tmpdir = tempfile.mkdtemp()
 
     write_images_from_dict(tmpdir, figs)
-    #tmpfile = os.path.join(tmpdir, "tmp.html") #for snapshot
-    
-    #create all images
-    #images = [static_data_map]
-    #images.append(make_tech_pie_chart(schools_connected))
-    #images.append(make_fiber_distance_map_plot(schools_unconnected,country_id))
-    #images.append(cumulative_fiber_distance_barplot(schools_unconnected))
-    #images.append(make_cellular_distance_map_plot(schools_unconnected,country_id))
-    #images.append(cumulative_cell_tower_distance_barplot(schools_unconnected))
-    #images.append(make_cellular_coverage_map(schools_unconnected,country_id))
-    #images.append(make_p2p_distance_map_plot(schools_unconnected,country_id))
-    #images.append(cumulative_visible_cell_tower_distance_barplot(schools_unconnected))
-
-    # save images
-    #for image_name, el in figs.items():
-    #    image_path = os.path.join(tmpdir, f"{image_name}.png")
-    #    if isinstance(el, folium.Map):
-    #        el.save(tmpfile)
-    #        png_bytes = render_screenshot(tmpfile)
-    #        with open(image_path, 'wb') as f:
-    #            f.write(png_bytes)
-    #    elif isinstance(el, plotly.graph_objs._figure.Figure):
-    #        plotly.io.write_image(el, image_path, format='png')
-    #    elif isinstance(el, plotly.graph_objs.FigureWidget):
-    #        plotly.io.write_image(el.to_dict(), image_path, format='png')
 
     #create latex file
     doc = generate_infra_report(data_space)
@@ -380,12 +329,9 @@ def generate_merged_report_zip_bytes(dashboard):
     #create zip file
     zip_buffer = io.BytesIO()
     with ZipFile(zip_buffer, "w") as zip_file:
-        for filename in os.listdir(tmpdir):
-            file_ext = os.path.splitext(filename)[1].lower()
-            if file_ext in ['.png','.tex','.pdf','.log']:
-                file_path = os.path.join(tmpdir, filename)
-                arcname = os.path.basename(file_path)
-                zip_file.write(file_path, arcname)        
+        file_path = os.path.join(tmpdir, 'merged_report.pdf')
+        arcname = os.path.basename(file_path)
+        zip_file.write(file_path, arcname)           
     zip_buffer.seek(0)
 
     #remove tmp files
@@ -393,7 +339,6 @@ def generate_merged_report_zip_bytes(dashboard):
 
     #return zip bytes
     return zip_buffer.read()
-
 
 
 def generate_pdf_bytes(el_list):
@@ -449,10 +394,14 @@ def make_export_report_button(dashboard, title="Generate Report", filename="repo
 
 def make_export_infra_report_button(inputs, title="Generate Infrastructure Report", filename="infra_report.zip"):
     def on_button_clicked(b):
+        b.disabled = True
         out.clear_output()
         with out:
+            LOGGER.info('Generating infrastructure report...')
             zip_bytes = generate_infra_report_zip_bytes(inputs)
+            LOGGER.info('Infrastructure report is ready to be downloaded!')
             display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
+        b.disabled = False
 
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
@@ -461,10 +410,14 @@ def make_export_infra_report_button(inputs, title="Generate Infrastructure Repor
 
 def make_export_cost_report_button(dashboard, title="Generate Cost Model Report", filename="cost_model_report.zip"):
     def on_button_clicked(b):
+        b.disabled = True
         out.clear_output()
         with out:
+            LOGGER.info('Generating cost model report...')
             zip_bytes = generate_cost_report_zip_bytes(dashboard)
+            LOGGER.info('Cost model report is ready to be downloaded!')
             display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
+        b.disabled = False
 
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
@@ -474,10 +427,14 @@ def make_export_cost_report_button(dashboard, title="Generate Cost Model Report"
 def make_export_merged_report_button(dashboard, title="Generate Merged Report", filename="merged_report.zip"):
 
     def on_button_clicked(b):
+        b.disabled = True
         out.clear_output()
         with out:
+            LOGGER.info('Generating infrastructure & cost model report...')
             zip_bytes = generate_merged_report_zip_bytes(dashboard)
+            LOGGER.info('Merged report is ready to be downloaded!')
             display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
+        b.disabled = False
 
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
@@ -486,6 +443,7 @@ def make_export_merged_report_button(dashboard, title="Generate Merged Report", 
 
 def make_export_zip_button(dashboard, title="Download Graph .zip", filename="graphs.zip"):
     def on_button_clicked(b):
+        b.disabled = True
         out.clear_output()
         with out:
             el_list = [dashboard.inputs.data_map_m] + dashboard.get_all_plots()
@@ -500,6 +458,7 @@ def make_export_zip_button(dashboard, title="Download Graph .zip", filename="gra
                     i += 1
             zip_buffer.seek(0)
             display(make_payload_export("Download .zip", filename, zip_buffer.read(), "text/pdf;base64"))
+        b.disabled = False
 
     button = export_btn(on_button_clicked, description=title)
     button.on_click(on_button_clicked)
@@ -535,7 +494,11 @@ def make_export_button_row(dashboard, table):
     b1 = make_export_config_button(dashboard.inputs)
     b2 = make_export_cost_button(table)
     b3 = make_export_model_package(dashboard)
-    b4 = make_export_cost_report_button(dashboard)
-    b5 = make_export_merged_report_button(dashboard)
     b6 = make_export_zip_button(dashboard)
-    return VBox([b1, b2, hr, b3, hr, b4, b5, hr, b6])
+    return VBox([b1, b2, hr, b3, hr, b6])
+
+def make_report_button_row(dashboard):
+    b1 = make_export_cost_report_button(dashboard)
+    b2 = make_export_merged_report_button(dashboard)
+
+    return VBox([b1, b2])
