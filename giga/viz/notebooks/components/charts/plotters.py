@@ -537,7 +537,7 @@ def make_results_tech_pie(new_connected_schools):
 
     fig.add_trace(
         go.Pie(
-            labels=new_connected_schools['technology'],
+            labels=technology_counts['technology'],
             values=technology_counts["count"],
             marker=dict(colors=technology_counts["technology"].map(GIGA_TECHNOLOGY_COLORS)),  
             textinfo="value+percent",  

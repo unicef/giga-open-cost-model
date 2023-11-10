@@ -382,14 +382,6 @@ class ResultDashboard:
         electricity_plots = widgets.VBox([
             self._map_to_output(self.electricity_map),
         ])
-        # Cost Map
-        cost_plots = widgets.VBox([
-            self._map_to_output(self.cost_map),
-        ])
-        # Infrastructure Lines Map
-        infra_lines_map = widgets.VBox([
-            self._map_to_output(self.infra_lines_map),
-        ])
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         # Technology Map
         # cost maps
@@ -402,8 +394,6 @@ class ResultDashboard:
                         section("Cellular Coverage", coverage_plots, "dark"),
                         section("Visibility P2P Infrastructure", p2p_plots, "dark"),
                         section('Electricity Availability', electricity_plots, "dark"),
-                        section('Total Costs', cost_plots, "dark"),
-                        section('Infrastructure Lines', infra_lines_map, 'dark'),
                     ]
                 )
             )
@@ -450,7 +440,17 @@ class ResultDashboard:
         return tab
     
     def cost_tab(self):
+        # Cost Map
+        cost_plots = widgets.VBox([
+            self._map_to_output(self.cost_map),
+        ])
+        # Infrastructure Lines Map
+        infra_lines_map = widgets.VBox([
+            self._map_to_output(self.infra_lines_map),
+        ])
+
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
+        
         with tab:
             display(
                 widgets.VBox(
@@ -472,7 +472,8 @@ class ResultDashboard:
                             "Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"
                         ),
                         section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
-                        
+                        section('Total Costs', cost_plots, "dark"),
+                        section('Infrastructure Lines', infra_lines_map, 'dark'),
                     ]
                 )
             )

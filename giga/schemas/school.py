@@ -199,7 +199,7 @@ class GigaSchoolTable(BaseModel):
     @staticmethod
     def from_csv(file_name: str):
         with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
-            frame = pd.read_csv(file, keep_default_na=False)
+            frame = pd.read_csv(file, keep_default_na=True)
         gst = GigaSchoolTable(schools=frame.to_dict("records"))
         gst.process_fields_all()
         return gst
