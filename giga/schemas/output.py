@@ -252,7 +252,7 @@ class OutputSpace(BaseModel):
         :return: The updated OutputSpace with the filtered schools
         """
         if self.fiber_costs != None:
-            fiber_costs = CostResultSpace(technology_results=self.fiber_costs.technology_results,cost_results=[])
+            fiber_costs = CostResultSpace(technology_results=self.fiber_costs.technology_results,cost_results=[],tech_name="fiber")
         
             for sc in self.fiber_costs.cost_results:
                 if sc.school_id in school_ids:
@@ -261,7 +261,7 @@ class OutputSpace(BaseModel):
             fiber_costs = None
 
         if self.satellite_costs != None:
-            satellite_costs = CostResultSpace(technology_results=self.satellite_costs.technology_results,cost_results=[])
+            satellite_costs = CostResultSpace(technology_results=self.satellite_costs.technology_results,cost_results=[],tech_name="satellite")
         
             for sc in self.satellite_costs.cost_results:
                 if sc.school_id in school_ids:
@@ -270,7 +270,7 @@ class OutputSpace(BaseModel):
             satellite_costs = None
 
         if self.cellular_costs != None:
-            cellular_costs = CostResultSpace(technology_results=self.cellular_costs.technology_results,cost_results=[])
+            cellular_costs = CostResultSpace(technology_results=self.cellular_costs.technology_results,cost_results=[],tech_name="cellular")
         
             for sc in self.cellular_costs.cost_results:
                 if sc.school_id in school_ids:
@@ -279,7 +279,7 @@ class OutputSpace(BaseModel):
             cellular_costs = None
 
         if self.p2p_costs != None:
-            p2p_costs = CostResultSpace(technology_results=self.p2p_costs.technology_results,cost_results=[])
+            p2p_costs = CostResultSpace(technology_results=self.p2p_costs.technology_results,cost_results=[],tech_name="p2p")
         
             for sc in self.p2p_costs.cost_results:
                 if sc.school_id in school_ids:

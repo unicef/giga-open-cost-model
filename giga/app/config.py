@@ -402,7 +402,7 @@ def get_country_center_zoom(df, max_zoom_level = 11.75):
     
     return _center, _zoom
 
-def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_dir = COSTS_DEFAULT_PATH):
+def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_DEFAULT_PATH, costs_target_dir = COSTS_DEFAULT_PATH):
 
     default = copy.deepcopy(empty_default_dict)
     
@@ -415,7 +415,7 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
 
     df_fixed = fix_schools(df)
     
-
+    costs_dir = os.path.join(workspace,costs_target_dir)
     country_dir = os.path.join(workspace,country)
     #if schools file does not exist copy it and create empty files
     if not data_store.file_exists(os.path.join(country_dir,SCHOOLS_FILE)):
@@ -465,23 +465,23 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
 
     #add costs
     ### cell
-    if schools_data_store.file_exists(os.path.join(costs_dir, CELL_CAPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, CELL_CAPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, CELL_CAPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, CELL_CAPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Setup cost": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['cellular']["capex"]["fixed_costs"] = desired_row["Setup cost"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, CELL_OPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, CELL_OPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, CELL_OPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, CELL_OPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Maintenance yearly": "float32", "Cost per Mbps/year": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['cellular']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
             default["model_defaults"]['cellular']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, CELL_CSTRS_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, CELL_CSTRS_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, CELL_CSTRS_FILE)): 
+        with data_store.open(os.path.join(costs_dir, CELL_CSTRS_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Max length": "float32", "Annual power required (KWh)": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
@@ -489,24 +489,24 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
             default["model_defaults"]['cellular']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
 
     ### p2p
-    if schools_data_store.file_exists(os.path.join(costs_dir, P2P_CAPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, P2P_CAPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, P2P_CAPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, P2P_CAPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Setup cost - school": "float32", "Setup cost - tower": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['p2p']["capex"]["fixed_costs"] = desired_row["Setup cost - school"]
             default["model_defaults"]['p2p']["capex"]["tower_fixed_costs"] = desired_row["Setup cost - tower"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, P2P_OPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, P2P_OPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, P2P_OPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, P2P_OPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Maintenance yearly": "float32", "Cost per Mbps/year": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['p2p']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
             default["model_defaults"]['p2p']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, P2P_CSTRS_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, P2P_CSTRS_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, P2P_CSTRS_FILE)): 
+        with data_store.open(os.path.join(costs_dir, P2P_CSTRS_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Max length": "float32", "Annual power required (KWh)": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
@@ -514,16 +514,16 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
             default["model_defaults"]['p2p']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
 
     ### fiber
-    if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_CAPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, FIBER_CAPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, FIBER_CAPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, FIBER_CAPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Setup cost": "float32", "Cost per km": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['fiber']["capex"]["fixed_costs"] = desired_row["Setup cost"]
             default["model_defaults"]['fiber']["capex"]["cost_per_km"] = desired_row["Cost per km"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_OPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, FIBER_OPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, FIBER_OPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, FIBER_OPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Cost per Mbps/year": "float32", "Maintenance per km": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
@@ -531,8 +531,8 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
             default["model_defaults"]['fiber']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
             default["model_defaults"]['fiber']["opex"]["cost_per_km"] = desired_row["Maintenance per km"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, FIBER_CSTRS_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, FIBER_CSTRS_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, FIBER_CSTRS_FILE)): 
+        with data_store.open(os.path.join(costs_dir, FIBER_CSTRS_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Max length": "float32", "Annual power required (KWh)": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
@@ -540,45 +540,45 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
             default["model_defaults"]['fiber']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
 
     ### satellite
-    if schools_data_store.file_exists(os.path.join(costs_dir, SAT_CAPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, SAT_CAPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, SAT_CAPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, SAT_CAPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Setup cost": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['satellite']["capex"]["fixed_costs"] = desired_row["Setup cost"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, SAT_OPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, SAT_OPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, SAT_OPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, SAT_OPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Maintenance yearly": "float32", "Cost per Mbps/year": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['satellite']["opex"]["fixed_costs"] = desired_row["Maintenance yearly"]
             default["model_defaults"]['satellite']["opex"]["annual_bandwidth_cost_per_mbps"] = desired_row["Cost per Mbps/year"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, SAT_CSTRS_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, SAT_CSTRS_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, SAT_CSTRS_FILE)): 
+        with data_store.open(os.path.join(costs_dir, SAT_CSTRS_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Annual power required (KWh)": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['satellite']["constraints"]["required_power"] = desired_row["Annual power required (KWh)"]
                 
     ### electricity
-    if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, ELECTRICITY_CAPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Solar cost (USD/Watt)": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['electricity']["capex"]["solar_cost_per_watt"] = desired_row["Solar cost (USD/Watt)"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)): 
+        with data_store.open(os.path.join(costs_dir, ELECTRICITY_OPEX_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Cost per kWh": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]
             default["model_defaults"]['electricity']["opex"]["cost_per_kwh"] = desired_row["Cost per kWh"]
 
-    if schools_data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)): 
-        with schools_data_store.open(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)) as f:
+    if data_store.file_exists(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)): 
+        with data_store.open(os.path.join(costs_dir, ELECTRICITY_CSTRS_FILE)) as f:
             dfc = pd.read_csv(f, dtype={"Power required per school (Watts)": "float32"})
         if country in dfc['Country'].values:
             desired_row = dfc[dfc['Country'] == country].iloc[0]

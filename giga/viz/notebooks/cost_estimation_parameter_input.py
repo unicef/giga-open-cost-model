@@ -411,24 +411,43 @@ class CostEstimationParameterInput:
             raise ValueError(
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
             )
-        tech_configs = [] if "technologies" not in sp else {
+        tech_configs = {} if "technologies" not in sp else {
             t["technology"]: t for t in sp["technologies"]
         }
         self.data_parameter_manager.update_parameters(config["data_parameters"])
         self.scenario_parameter_manager.update_parameters(
             sp
         )
-        self.cellular_parameter_manager.update_parameters(
-            tech_configs.get("Cellular", {})
-        )
-        self.satellite_parameter_manager.update_parameters(
-            tech_configs.get("Satellite", {})
-        )
-        self.fiber_parameter_manager.update_parameters(
-            tech_configs.get("Fiber", {})
-        )
-        self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
-        
+        if "Cellular" in tech_configs:
+            self.cellular_parameter_manager.update_parameters(
+                tech_configs.get("Cellular", {})
+            )
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').value = True
+        else:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').value = False
+
+        if "Satellite" in tech_configs:
+            self.satellite_parameter_manager.update_parameters(
+                tech_configs.get("Satellite", {})
+            )
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').value = True
+        else:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').value = False
+
+        if "Fiber" in tech_configs:
+            self.fiber_parameter_manager.update_parameters(
+                tech_configs.get("Fiber", {})
+            )
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').value = True
+        else:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').value = False
+
+        if "P2P" in tech_configs:
+            self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').value = True
+        else:
+            self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').value = False
+
         self.electricity_parameter_manager.update_parameters(
             sp["technologies"][0].get(
                 "electricity_config", {}

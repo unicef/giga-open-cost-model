@@ -47,6 +47,38 @@
         {"scenario_id": "minimum_cost_giga",   
         "technologies": [
             {"capex": 
+                {"fixed_costs": 500.0}, 
+            "opex": 
+                {"fixed_costs": 0.0, "annual_bandwidth_cost_per_mbps": 0.0}, 
+            "constraints": 
+                {"maximum_bandwithd": 150.0, "required_power": 10.0}, 
+            "technology": "Satellite", 
+            "electricity_config": 
+                {"capex": {"solar_cost_per_watt": 2.7}, 
+                "opex": {"cost_per_kwh": 0.14400000000000002}, 
+                "constraints": 
+                    {"required_power_per_school": 11000.0, 
+                    "allow_new_electricity": false
+                    }
+                }
+            },
+            {"capex": 
+                {"cost_per_km": 8900.0,"fixed_costs": 0.0, "economies_of_scale": true, "schools_as_fiber_nodes": true}, 
+            "opex": 
+                {"fixed_costs": 0.0, "annual_bandwidth_cost_per_mbps": 0.0, "cost_per_km": 0.0}, 
+            "constraints": 
+                {"maximum_connection_length": 20.0,"maximum_bandwithd": 150.0, "required_power": 10.0}, 
+            "technology": "Fiber", 
+            "electricity_config": 
+                {"capex": {"solar_cost_per_watt": 2.7}, 
+                "opex": {"cost_per_kwh": 0.14400000000000002}, 
+                "constraints": 
+                    {"required_power_per_school": 11000.0, 
+                    "allow_new_electricity": false
+                    }
+                }
+            },
+            {"capex": 
                 {"fixed_costs": 1000.0}, 
             "opex": 
                 {"fixed_costs": 0.0, "annual_bandwidth_cost_per_mbps": 0.0}, 

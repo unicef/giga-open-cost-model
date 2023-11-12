@@ -8,7 +8,7 @@ COUNTRY_DEFAULT_RELATIVE_DIR = "../../conf/countries"
 COUNTRY_DEFAULT_WORKSPACE = os.path.join(ROOT_DIR, COUNTRY_DEFAULT_RELATIVE_DIR)
 
 #repository cost path
-COSTS_DEFAULT_PATH = "source/infra/costs/"
+COSTS_DEFAULT_PATH = "costs/"
 
 #country code path
 COUNTRY_CODE_DEFAULT_PATH = "source/misc/"

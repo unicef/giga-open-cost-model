@@ -189,6 +189,8 @@ class MinimumCostScenario:
                 economies_of_scale = ["p2p"] 
             elif "Fiber" in techs:
                 economies_of_scale = ["fiber"]
+            else:
+                economies_of_scale = []
             # compute baseline costs for all the technologies
             for c in self.config.technologies:
                 cost_model = self._make_model(c)

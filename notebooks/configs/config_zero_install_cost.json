@@ -63,7 +63,7 @@
                 }
             },
             {"capex": 
-                {"cost_per_km": 8900.0,"fixed_costs": 0.0, "economies_of_scale": true, "schools_as_fiber_nodes": true}, 
+                {"cost_per_km": 0.0,"fixed_costs": 0.0, "economies_of_scale": true, "schools_as_fiber_nodes": true}, 
             "opex": 
                 {"fixed_costs": 0.0, "annual_bandwidth_cost_per_mbps": 11.3, "cost_per_km": 0.0}, 
             "constraints": 
