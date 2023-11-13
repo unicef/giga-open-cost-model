@@ -247,9 +247,7 @@ def section_cost_estimation(vals):
     \includegraphics[scale=0.3]{infra_lines_map.png} % replace with your image path
     \caption{Fiber routes}
     \label{fig:snapshot}
-    \end{figure} 
-
-    \end{document}
+    \end{figure}
     """
 
     return section_text

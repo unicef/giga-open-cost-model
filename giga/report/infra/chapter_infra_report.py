@@ -1,5 +1,8 @@
 
 def infra_report(vals, section_level = -1):
+    global image_suffix
+
+    image_suffix = ('_selected' if vals['_selected_schools'] else '')
 
     report_text = f"""
     \\{'chapter' if section_level == -1 else 'section'}{'{Infrastructure Report}' if not vals['_selected_schools'] else '{Infrastructure Report for Selected Schools}'}
@@ -9,6 +12,7 @@ def infra_report(vals, section_level = -1):
         report_text += data_assesment_section(vals, section_level+1)
     
     report_text += current_connectivity_status_section(vals, section_level+1)
+    report_text += electricity_availability_section(vals, section_level+1)
     report_text += infrastructure_availability_section(vals, section_level+1)
 
     return report_text
@@ -52,8 +56,6 @@ def data_assesment_section(vals, section_level):
 
 def current_connectivity_status_section(vals, section_level):
 
-    image_suffix = ('_selected' if vals['_selected_schools'] else '')
-
     return f"""
     \\{'sub'*section_level}section{{Current Connectivity Status}}
 
@@ -79,6 +81,23 @@ def current_connectivity_status_section(vals, section_level):
     \\newpage
     """
 
+def electricity_availability_section(vals, section_level):
+
+    return f"""
+    \\{'sub'*section_level}section{{Electricity Availability}}
+
+    In this section, we'll examine the availabilty of the electricity in {vals['country_name']}.
+
+    There are {vals['num_schools']} schools in {'in the selected region of ' if vals['_selected_schools'] else ''}{vals['country_name']} of which currently {vals['num_has_ele']} ({vals['perc_has_ele']}\%) have electricity power. {vals['num_has_no_ele']} schools, which accounts for {vals['perc_has_no_ele']}\% do not have electricity power. See below a snapshot of the electricity availability of the schools in {vals['country_name']}:
+
+    \\begin{{figure}}[h]
+        \\centering
+        \\includegraphics[scale=0.4]{{{'electricity_map' + image_suffix + '.png'}}}
+        \\caption{{Electricity availability status}}
+        \\label{{fig:electricity}}
+    \\end{{figure}}
+    """
+
 def infrastructure_availability_section(vals, section_level):
 
     section_text =  f"""
@@ -97,7 +116,6 @@ def infrastructure_availability_section(vals, section_level):
 
 
 def fiber_section(vals, section_level):
-    image_suffix = ('_selected' if vals['_selected_schools'] else '')
 
     return f"""
     \\{'sub'*section_level}section{{Fiber}}
@@ -119,10 +137,11 @@ def fiber_section(vals, section_level):
         \\caption{{Fiber node cumulative distribution}}
         \\label{{fig:fnode_cumul_distr}}
     \\end{{figure}}
+
+    \\newpage
     """
 
 def cellular_section(vals, section_level):
-    image_suffix = ('_selected' if vals['_selected_schools'] else '')
 
     return f"""
     \\{'sub'*section_level}section{{Cellular}}
@@ -163,10 +182,10 @@ def cellular_section(vals, section_level):
         \\label{{fig:coverage_cumul_distr}}
     \\end{{figure}}
 
+    \\newpage
     """
 
 def microwave_section(vals, section_level):
-    image_suffix = ('_selected' if vals['_selected_schools'] else '')
 
     return f"""
     \\{'sub'*section_level}section{{Microwave}}

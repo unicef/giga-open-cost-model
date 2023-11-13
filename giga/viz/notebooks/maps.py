@@ -14,23 +14,6 @@ from giga.viz.colors import ELECTRICITY_AVAILABILITY_COLORS
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
 
-class ResultMapConfig(BaseModel):
-
-    width: int = 850
-    height: int = 600
-    style_default: str = "carto-darkmatter"
-    style_mapbox: str = "dark"
-    title_x: float = 0.5
-    title_y: float = 0.95
-    legend_x: float = 0.05
-    legend_y: float = 0.95
-    legend_bgcolor: str = "#262624"
-    legend_width: str = 75  # px
-    legend_font_color: str = "white"
-    legend_border_color: str = "#070807"
-    legend_border_width: int = 1
-    no_cell: bool = False
-
 class ElectricityMapLayerConfig(BaseDataLayerConfig):
 
     title: str = "Electricity Availability by School"
@@ -66,7 +49,7 @@ class ResultMapLayersConfig(BaseModel):
 
 class ResultMap:
     
-    def __init__(self, stats: ResultStats, inputs: CostEstimationParameterInput, map_config: ResultMapConfig, layer_config: ResultMapLayersConfig):
+    def __init__(self, stats: ResultStats, inputs: CostEstimationParameterInput, map_config: DataMapConfig, layer_config: ResultMapLayersConfig):
         self.stats = stats
         self.inputs = inputs
         self.data_space = stats.data_space
