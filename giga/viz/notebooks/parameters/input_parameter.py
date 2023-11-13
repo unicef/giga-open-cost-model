@@ -7,6 +7,7 @@ from ipywidgets import (
     Layout,
     HBox,
     HTML,
+    SelectMultiple,
 )
 from pydantic import BaseModel, root_validator
 from IPython.display import display
@@ -218,11 +219,46 @@ class CategoricalDropdownParameter(BaseParameter):
     def unfreeze(self):
         self.parameter.disabled = False
 
+class SelectMultipleParameter(BaseParameter):
+
+    """
+    A model parameter that can be configured with a categorical dropdown widget.
+    """
+
+    options: List[str]
+    value: List[str]
+    description: str
+    selectmultiple: SelectMultiple = None
+    parameter_type: Literal["select_multiple"]
+    layout: Dict = {"width": "400px"}
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def parameter(self):
+        if self.selectmultiple is None:
+            self.selectmultiple = SelectMultiple(
+                options=self.options,
+                value=self.value,
+                disabled=False,
+                description=self.description,
+                layout=Layout(**self.layout),
+                style={"description_width": "initial"},
+            )
+        return self.selectmultiple
+
+    def freeze(self):
+        self.parameter.disabled = True
+
+    def unfreeze(self):
+        self.parameter.disabled = False
+
 
 InputParameter = Union[
     IntSliderParameter,
     FloatSliderParameter,
     BoolCheckboxParameter,
-    CategoricalDropdownParameter,
+    SelectMultipleParameter,
     CategoricalDropdownParameter,
 ]

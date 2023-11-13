@@ -10,25 +10,6 @@ from giga.viz.notebooks.parameters.input_parameter import InputParameter
 
 DEFAULT_BUDGET_MILLIONS = 1
 
-SCENARIO_BASE_PARAMETERS_OLD = [
-    {
-        "parameter_name": "scenario_type",
-        "parameter_input_name": "Cost Scenario",
-        "parameter_interactive": {
-            "parameter_type": "categorical_dropdown",
-            "value": "Lowest Cost",
-            "options": [
-                "Lowest Cost",
-                "Fiber Only",
-                "Satellite LEO Only",
-                "Cellular Only",
-                "P2P Only",
-            ],
-            "description": "Cost Scenario:",
-        },
-    },
-]
-
 SCENARIO_BASE_PARAMETERS = [
     {
         "parameter_name": "scenario_type",
@@ -47,6 +28,41 @@ SCENARIO_BASE_PARAMETERS = [
 ]
 
 SCENARIO_SHEET_PARAMETERS_OLD = [
+    {
+        "parameter_name": "fiber",
+        "parameter_input_name": "Allow fiber",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },
+    {
+        "parameter_name": "cell",
+        "parameter_input_name": "Allow cellular",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },{
+        "parameter_name": "p2p",
+        "parameter_input_name": "Allow P2P",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },
+    {
+        "parameter_name": "sat",
+        "parameter_input_name": "Allow satellite",
+        "parameter_interactive": {
+            "parameter_type": "bool_checkbox",
+            "value": True,
+            "description": "",
+        },
+    },
     {
         "parameter_name": "years_opex",
         "parameter_input_name": "OpEx Years",
@@ -95,37 +111,12 @@ SCENARIO_SHEET_PARAMETERS_OLD = [
 
 SCENARIO_SHEET_PARAMETERS = [
     {
-        "parameter_name": "fiber",
-        "parameter_input_name": "Allow fiber",
-        "parameter_interactive": {
-            "parameter_type": "bool_checkbox",
-            "value": True,
-            "description": "",
-        },
-    },
-    {
-        "parameter_name": "cell",
-        "parameter_input_name": "Allow cellular",
-        "parameter_interactive": {
-            "parameter_type": "bool_checkbox",
-            "value": True,
-            "description": "",
-        },
-    },{
-        "parameter_name": "p2p",
-        "parameter_input_name": "Allow P2P",
-        "parameter_interactive": {
-            "parameter_type": "bool_checkbox",
-            "value": True,
-            "description": "",
-        },
-    },
-    {
-        "parameter_name": "sat",
-        "parameter_input_name": "Allow satellite",
-        "parameter_interactive": {
-            "parameter_type": "bool_checkbox",
-            "value": True,
+        "parameter_name": "technologies",
+        "parameter_input_name": "Choose the allowed technologies",
+        "parameter_interactive":{
+            "parameter_type":"select_multiple",
+            "options": ["Fiber","Cellular","P2P","Satellite"],
+            "value": ["Fiber","Cellular","P2P","Satellite"],
             "description": "",
         },
     },
@@ -241,6 +232,25 @@ class ScenarioParameterManager:
             (budget_constraint, "disabled"),
             constraint_disabled_transform,
         )
+        #ordered techs
+        self.techs_ordered = []
+        self.sheet.get_interactive_parameter("technologies").observe(self.on_change_techs)
+
+
+    def on_change_techs(self,change):
+        if change['type'] == 'change' and change['name'] == 'value':
+            for elem in change['new']:
+                if elem not in self.techs_ordered:
+                    self.techs_ordered.append(elem)
+            for elem in self.techs_ordered:
+                if elem not in change['new']:
+                    self.techs_ordered.remove(elem)
+
+    def get_ordered_techs(self):
+        return self.techs_ordered
+    
+    def set_ordered_techs(self,values):
+        self.techs_ordered = values
 
     def update_parameters_old(self, config):
         self._hash["scenario_type"].value = get_scenario_type(config)
@@ -281,30 +291,20 @@ class ScenarioParameterManager:
         self.sheet.update_parameter("bandwidth_demand", config["bandwidth_demand"])
 
     def update_techs_parameters(self, config):
-
-        self.sheet.update_parameter("fiber", config["fiber"])
+        select_multiple = self.sheet.get_interactive_parameter("technologies")
+        options = []
         if config['fiber']:
-            self.sheet.get_interactive_parameter('fiber').disabled = False
-        else:
-            self.sheet.get_interactive_parameter('fiber').disabled = True
-
-        self.sheet.update_parameter("cell", config["cellular"])
+            options.append("Fiber")
         if config['cellular']:
-            self.sheet.get_interactive_parameter('cell').disabled = False
-        else:
-            self.sheet.get_interactive_parameter('cell').disabled = True
-
-        self.sheet.update_parameter("p2p", config["p2p"])
+            options.append("Cellular")
         if config['p2p']:
-            self.sheet.get_interactive_parameter('p2p').disabled = False
-        else:
-            self.sheet.get_interactive_parameter('p2p').disabled = True
-
-        self.sheet.update_parameter("sat", config["satellite"])
+            options.append("P2P")
         if config['satellite']:
-            self.sheet.get_interactive_parameter('sat').disabled = False
-        else:
-            self.sheet.get_interactive_parameter('sat').disabled = True
+            options.append("Satellite")
+
+        select_multiple.options = options
+        select_multiple.value = options
+        self.techs_ordered = options
         
 
     def input_parameters(self, show_defaults = True):

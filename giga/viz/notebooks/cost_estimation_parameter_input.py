@@ -111,6 +111,18 @@ def constraint_freeze_transform(value):
         return False
     return True
 
+def constraint_freeze_transform_fiber(selected_values):
+    return 'Fiber' not in selected_values
+
+def constraint_freeze_transform_cellular(selected_values):
+    return 'Cellular' not in selected_values
+
+def constraint_freeze_transform_p2p(selected_values):
+    return 'P2P' not in selected_values
+
+def constraint_freeze_transform_satellite(selected_values):
+    return 'Satellite' not in selected_values
+
 
 def country_name_to_key_old(country_name):
     return country_name.lower().replace(" ", "_")
@@ -217,36 +229,32 @@ class CostEstimationParameterInput:
             ],
         }
         #link techs to their parameters
-        #for p in self.scenario_parameter_manager.sheet.interactive_parameters:
-        #    if p['parameter_name'] == 'fiber':
-        p_fiber = self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber')
+        techs_selected = self.scenario_parameter_manager.sheet.get_interactive_parameter('technologies')
         for p in self.fiber_parameter_manager.sheet.interactive_parameters:
             directional_link(
-                (p_fiber, "value"),
+                (techs_selected, "value"),
                 (p.parameter,"disabled"),
-                constraint_freeze_transform,
+                constraint_freeze_transform_fiber,
             )
-        p_cell = self.scenario_parameter_manager.sheet.get_interactive_parameter('cell')
         for p in self.cellular_parameter_manager.sheet.interactive_parameters:
             directional_link(
-                (p_cell, "value"),
+                (techs_selected, "value"),
                 (p.parameter,"disabled"),
-                constraint_freeze_transform,
+                constraint_freeze_transform_cellular,
             )
-        p_p2p = self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p')
         for p in self.p2p_parameter_manager.sheet.interactive_parameters:
             directional_link(
-                (p_p2p, "value"),
+                (techs_selected, "value"),
                 (p.parameter,"disabled"),
-                constraint_freeze_transform,
+                constraint_freeze_transform_p2p,
             )
-        p_sat = self.scenario_parameter_manager.sheet.get_interactive_parameter('sat')
         for p in self.satellite_parameter_manager.sheet.interactive_parameters:
             directional_link(
-                (p_sat, "value"),
+                (techs_selected, "value"),
                 (p.parameter,"disabled"),
-                constraint_freeze_transform,
+                constraint_freeze_transform_satellite,
             )
+        ########
 
         # link country selection to default parameters for that country
         def update_country_defaults(change):
@@ -411,42 +419,43 @@ class CostEstimationParameterInput:
             raise ValueError(
                 f"Unknown scenario id: {config['scenario_parameters']['scenario_id']}"
             )
-        tech_configs = {} if "technologies" not in sp else {
-            t["technology"]: t for t in sp["technologies"]
-        }
+        
         self.data_parameter_manager.update_parameters(config["data_parameters"])
         self.scenario_parameter_manager.update_parameters(
             sp
         )
-        if "Cellular" in tech_configs:
-            self.cellular_parameter_manager.update_parameters(
-                tech_configs.get("Cellular", {})
-            )
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').value = True
-        else:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').value = False
 
-        if "Satellite" in tech_configs:
-            self.satellite_parameter_manager.update_parameters(
-                tech_configs.get("Satellite", {})
-            )
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').value = True
-        else:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').value = False
+        tech_configs_ordered = [] if "technologies" not in sp else [
+            t["technology"] for t in sp["technologies"]
+        ]
+        select_multiple = self.scenario_parameter_manager.sheet.get_interactive_parameter("technologies")
+        self.scenario_parameter_manager.set_ordered_techs(tech_configs_ordered)
 
+        tech_configs = {} if "technologies" not in sp else {
+            t["technology"]: t for t in sp["technologies"]
+        }
+
+        tech_values = []
         if "Fiber" in tech_configs:
             self.fiber_parameter_manager.update_parameters(
                 tech_configs.get("Fiber", {})
             )
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').value = True
-        else:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').value = False
-
+            tech_values.append("Fiber")
+        if "Cellular" in tech_configs:
+            self.cellular_parameter_manager.update_parameters(
+                tech_configs.get("Cellular", {})
+            )
+            tech_values.append("Cellular")
         if "P2P" in tech_configs:
             self.p2p_parameter_manager.update_parameters(tech_configs.get("P2P", {}))
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').value = True
-        else:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').value = False
+            tech_values.append("P2P")
+        if "Satellite" in tech_configs:
+            self.satellite_parameter_manager.update_parameters(
+                tech_configs.get("Satellite", {})
+            )
+            tech_values.append("Satellite")
+
+        select_multiple.value = tech_values
 
         self.electricity_parameter_manager.update_parameters(
             sp["technologies"][0].get(
@@ -515,20 +524,21 @@ class CostEstimationParameterInput:
             for m in manager_collection:
                 m.unfreeze()
 
+        select_multiple = self.scenario_parameter_manager.sheet.get_interactive_parameter("technologies")
         # some things need to remain frozen
-        p_fiber = self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').value
+        p_fiber = "Fiber" in select_multiple.value
         if not p_fiber:
             for p in self.fiber_parameter_manager.sheet.interactive_parameters:
                 p.parameter.disabled = True
-        p_cell = self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').value
+        p_cell = "Cellular" in select_multiple.value
         if not p_cell:
             for p in self.cellular_parameter_manager.sheet.interactive_parameters:
                 p.parameter.disabled = True
-        p_p2p = self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').value
+        p_p2p = "P2P" in select_multiple.value
         if not p_p2p:
             for p in self.p2p_parameter_manager.sheet.interactive_parameters:
                 p.parameter.disabled = True
-        p_sat = self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').value
+        p_sat = "Satellite" in select_multiple.value
         if not p_sat:
             for p in self.satellite_parameter_manager.sheet.interactive_parameters:
                 p.parameter.disabled = True
@@ -688,23 +698,25 @@ class CostEstimationParameterInput:
             conf = MinimumCostScenarioConf(**p)
         else: # priorities scenario
             conf = PriorityScenarioConf(**p)
+        techs_selected = self.scenario_parameter_manager.get_ordered_techs()
         techs = []
-        if self.scenario_parameter_manager.sheet.get_parameter_value('fiber'):
-            fiber_params = self.fiber_parameters()
-            fiber_params.electricity_config = self.electricity_parameters()
-            techs.append(fiber_params)
-        if self.scenario_parameter_manager.sheet.get_parameter_value('cell'):
-            cellular_params = self.cellular_parameters()
-            cellular_params.electricity_config = self.electricity_parameters()
-            techs.append(cellular_params)
-        if self.scenario_parameter_manager.sheet.get_parameter_value('p2p'):
-            p2p_params = self.p2p_parameters()
-            p2p_params.electricity_config = self.electricity_parameters()
-            techs.append(p2p_params)
-        if self.scenario_parameter_manager.sheet.get_parameter_value('sat'):
-            satellite_params = self.satellite_parameters()
-            satellite_params.electricity_config = self.electricity_parameters()
-            techs.append(satellite_params)
+        for i in range(len(techs_selected)):
+            if techs_selected[i]=='Fiber':
+                fiber_params = self.fiber_parameters()
+                fiber_params.electricity_config = self.electricity_parameters()
+                techs.append(fiber_params)
+            elif techs_selected[i]=='Cellular':
+                cellular_params = self.cellular_parameters()
+                cellular_params.electricity_config = self.electricity_parameters()
+                techs.append(cellular_params)
+            elif techs_selected[i]=='P2P':
+                p2p_params = self.p2p_parameters()
+                p2p_params.electricity_config = self.electricity_parameters()
+                techs.append(p2p_params)
+            elif techs_selected[i]=='Satellite':
+                satellite_params = self.satellite_parameters()
+                satellite_params.electricity_config = self.electricity_parameters()
+                techs.append(satellite_params)
         
         conf.technologies = techs
         conf.required_power_per_school = self.electricity_parameter_manager.sheet.get_parameter_value("required_power_per_school")
