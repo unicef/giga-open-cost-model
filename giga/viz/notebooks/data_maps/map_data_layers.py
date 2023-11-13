@@ -6,7 +6,7 @@ from typing import List, Dict
 
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.schemas.school import GigaSchoolTable
-from giga.viz.colors import GIGA_CONNECTIVITY_COLORS
+from giga.viz.colors import GIGA_CONNECTIVITY_COLORS, ELECTRICITY_AVAILABILITY_COLORS
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
@@ -46,11 +46,22 @@ class FiberMapLayerConfig(BaseDataLayerConfig):
     layer_name: str = "Fiber Node"
 
 
+class ElectricityMapLayerConfig(BaseDataLayerConfig):
+
+    title: str = "Electricity Availability by School"
+    marker_size: int = 5
+    marker_color: str = "#9f86c0"
+    marker_opacity: float = 0.95
+    layer_name: str = "Electricity Availability"
+    color_map: list = ELECTRICITY_AVAILABILITY_COLORS
+
+
 class MapLayersConfig(BaseModel):
 
     school_layer: SchoolMapLayerConfig = SchoolMapLayerConfig()
     cell_tower_layer: CellTowerMapLayerConfig = CellTowerMapLayerConfig()
-    fiber_layer = FiberMapLayerConfig = FiberMapLayerConfig()
+    fiber_layer: FiberMapLayerConfig = FiberMapLayerConfig()
+    electricity_layer: ElectricityMapLayerConfig = ElectricityMapLayerConfig()
 
 
 class MapDataLayers:
@@ -220,6 +231,32 @@ class MapDataLayers:
             name="Fiber Node",
             marker=dict(size=8, color="#b4b5b8", symbol="triangle-up"),
         )
+    
+    @property
+    def electricity_layer_mb(self):
+        if self._schools is None:
+            self._schools = self.data_space.all_schools.to_data_frame()
+        
+        layers = []
+        for electricity_availability in [True, False]:
+            ff = self._schools[self._schools["has_electricity"] == electricity_availability]
+            l = go.Scattermapbox(
+                name=('Yes' if electricity_availability else 'No'),
+                lon=ff["lon"],
+                lat=ff["lat"],
+                text=ff["name"],
+                customdata=ff["giga_id"],
+                mode="markers",
+                marker=go.scattermapbox.Marker(
+                    size=self.config.electricity_layer.marker_size,
+                    color=self.config.electricity_layer.color_map[int(electricity_availability)],
+                    opacity=self.config.electricity_layer.marker_opacity,
+                ),
+                hovertemplate="<b>Name:</b> %{text}<br><b>ID:</b> %{customdata}",
+            )
+            layers.append(l)
+        
+        return layers
 
     @property
     def layers(self):

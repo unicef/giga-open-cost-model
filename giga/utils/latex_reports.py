@@ -24,6 +24,7 @@ def get_infra_report_variables(data_space):
     schools_table = data_space.schools_to_frame()
     schools_connected = schools_table[schools_table['connected']]
     schools_unconnected = schools_table[schools_table['connected']==False]
+    ele_counts = schools_table['has_electricity'].value_counts()
     
     vals['country_name'] = country_key_to_name(data_space.config.school_data_conf.country_id)
     vals['num_schools'] = len(schools_table)
@@ -32,6 +33,8 @@ def get_infra_report_variables(data_space):
     vals['num_students'] = schools_table['num_students'].sum()
     vals['num_fnodes'] = len(data_space.fiber_coordinates)
     vals['num_cells'] = len(data_space.cell_tower_coordinates)
+    vals['num_has_ele'] = ele_counts[True]
+    vals['num_has_no_ele'] = ele_counts[False]
     vals['perc_conn_unknown'] = 100 * sum(schools_table['connectivity_status'] == 'Unknown')/vals['num_schools']
     vals['perc_conn_known'] = 100 - vals['perc_conn_unknown']
     vals['perc_conn_type_unknown'] = 100 * sum(schools_table['type_connectivity'] == 'Unknown')/vals['num_schools']
@@ -40,6 +43,8 @@ def get_infra_report_variables(data_space):
     vals['perc_ele_known'] = 100 - vals['perc_ele_unknown']
     vals['perc_conn'] = 100 * vals['num_conn']/vals['num_schools']
     vals['perc_unconn'] = 100 - vals['perc_conn']
+    vals['perc_has_ele'] = 100 * vals['num_has_ele']/vals['num_schools']
+    vals['perc_has_no_ele'] = 100 * vals['num_has_no_ele']/vals['num_schools']
 
     schools_unconnected_aux = schools_unconnected.replace([math.inf, -math.inf], float('nan'))
 

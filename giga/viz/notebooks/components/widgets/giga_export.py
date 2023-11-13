@@ -21,6 +21,7 @@ from giga.viz.notebooks.data_maps.result_maps import (
     make_cellular_distance_map_plot,
     make_cellular_coverage_map,
     make_p2p_distance_map_plot,
+    make_electricity_map,
 )
 
 from giga.viz.notebooks.components.charts.plotters import (
@@ -166,6 +167,7 @@ def get_cost_report_image_dict(dashboard):
     figs['technology_pie'] = dashboard.technology_pie # graph 4
     figs['technology_map'] = dashboard.technology_map # graph 5
     figs['infra_lines_map'] = dashboard.infra_lines_map # graph 6
+    figs['unit_cost_barplot'] = dashboard.unit_cost_bar_plot # graph 7
 
     return figs
 
@@ -228,6 +230,7 @@ def get_infra_report_image_dict(data_space, country_id, static_data_map):
     figs['p2p_dist_map' + suffix] = make_p2p_distance_map_plot(schools_unconnected,country_id) # graph 7
     figs['cum_visible_cell_dist' + suffix] = cumulative_visible_cell_tower_distance_barplot(schools_unconnected) # graph 8
     figs['cum_distribution_coverage' + suffix] = make_coverage_bar_plot(schools_unconnected['cell_coverage_type'].to_numpy()) # graph 9
+    figs['electricity_map' + suffix] = make_electricity_map(data_space)
 
     return figs
 
@@ -298,7 +301,6 @@ def generate_merged_report_zip_bytes(dashboard):
 
     selected_schools = dashboard.selected_schools
     
-    
     figs = get_infra_report_image_dict(data_space, dashboard.country_id, inputs.data_map_m)
     figs.update(
         get_cost_report_image_dict(dashboard=dashboard)
@@ -326,19 +328,15 @@ def generate_merged_report_zip_bytes(dashboard):
     #compile latex into pdf
     doc.generate_pdf(os.path.join(tmpdir, "merged_report"), clean_tex=False, clean = True)
 
-    #create zip file
-    zip_buffer = io.BytesIO()
-    with ZipFile(zip_buffer, "w") as zip_file:
-        file_path = os.path.join(tmpdir, 'merged_report.pdf')
-        arcname = os.path.basename(file_path)
-        zip_file.write(file_path, arcname)           
-    zip_buffer.seek(0)
+    pdf_file_path = os.path.join(tmpdir, 'merged_report.pdf')
+    with open(pdf_file_path, 'rb') as pdf_file:  
+        pdf_data = pdf_file.read()
 
     #remove tmp files
     shutil.rmtree(tmpdir)
 
     #return zip bytes
-    return zip_buffer.read()
+    return pdf_data
 
 
 def generate_pdf_bytes(el_list):
@@ -424,16 +422,16 @@ def make_export_cost_report_button(dashboard, title="Generate Cost Model Report"
     out = Output()
     return VBox([button, out])
 
-def make_export_merged_report_button(dashboard, title="Generate Merged Report", filename="merged_report.zip"):
+def make_export_merged_report_button(dashboard, title="Generate Merged Report", filename="merged_report.pdf"):
 
     def on_button_clicked(b):
         b.disabled = True
         out.clear_output()
         with out:
             LOGGER.info('Generating infrastructure & cost model report...')
-            zip_bytes = generate_merged_report_zip_bytes(dashboard)
+            pdf_data = generate_merged_report_zip_bytes(dashboard)
             LOGGER.info('Merged report is ready to be downloaded!')
-            display(make_payload_export("Download Report", filename, zip_bytes, "text/pdf;base64"))
+            display(make_payload_export("Download Report", filename, pdf_data, "application/pdf;base64"))
         b.disabled = False
 
     button = export_btn(on_button_clicked, description=title)

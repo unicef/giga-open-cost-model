@@ -1,8 +1,11 @@
-import os
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
+
+from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, MapLayersConfig
+from giga.viz.notebooks.data_maps.static_data_map import StaticDataMap, DataMapConfig
+from giga.app.config import get_country_center_zoom
 
 from giga.viz.colors import (
     ORDERED_COST_COLORS,
@@ -585,3 +588,15 @@ def make_cellular_coverage_map(results, country_id, new_cell_key="Cell Coverage 
         ),  # customize font size here
     }
     return fig
+
+
+def make_electricity_map(data_space):
+    config_layers = MapLayersConfig()
+    layer = MapDataLayers(data_space, config_layers)
+    center_, zoom_ = get_country_center_zoom(data_space.schools_to_frame(), max_zoom_level=12)
+    config_map = DataMapConfig()
+    electricity_map = StaticDataMap(config_map)
+    electricity_map.add_layers(layer.electricity_layer_mb)
+    m = electricity_map.get_electricity_map([center_['lat'], center_['lon']], zoom_)
+    
+    return m

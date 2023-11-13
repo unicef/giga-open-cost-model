@@ -1,6 +1,6 @@
 import ipywidgets as widgets
 import plotly.graph_objects as go
-from IPython.display import display, Javascript
+from IPython.display import display
 import plotly.express as px
 
 from giga.viz.notebooks.data_maps.result_maps import (
@@ -14,10 +14,7 @@ from giga.viz.notebooks.data_maps.result_maps import (
     make_p2p_distance_map_plot,
 )
 from giga.viz.notebooks.tables import create_summary_table
-from giga.viz.notebooks.components.charts.overview import (
-    ProjectOverview,
-    project_overview_grid,
-)
+from giga.viz.notebooks.components.charts.overview import project_overview_grid
 from giga.viz.notebooks.components.html.sections import section
 from giga.viz.notebooks.components.charts.plotters import (
     technology_distribution_bar_plot,
@@ -30,7 +27,8 @@ from giga.viz.notebooks.components.charts.plotters import (
     make_satellite_pie_breakdown,
     make_results_tech_pie
 )
-from giga.viz.notebooks.maps import ResultMapConfig, ResultMapLayersConfig, ResultMap
+from giga.viz.notebooks.data_maps.static_data_map import DataMapConfig
+from giga.viz.notebooks.maps import ResultMapLayersConfig, ResultMap
 from giga.viz.colors import GIGA_TECHNOLOGY_COLORS
 from giga.viz.plot_configs import STATIC_MAP_MODEBAR_CONFIG
 
@@ -45,14 +43,14 @@ class ResultDashboard:
     - Technology
     """
 
-    def __init__(self, results, inputs, height=650):
-        self.results = results
+    def __init__(self, stats, inputs, height=650):
+        self.results = stats
         self.inputs = inputs
         self.height = height
 
-        result_map_config = ResultMapConfig()
+        result_map_config = DataMapConfig()
         result_map_layers_config = ResultMapLayersConfig()
-        self.result_map = ResultMap(results, inputs, result_map_config, result_map_layers_config)
+        self.result_map = ResultMap(stats = stats, inputs=inputs, map_config = result_map_config, layer_config = result_map_layers_config)
 
         self.country_id = self.result_map.country
         self.selected_schools = inputs.get_selected_schools()
@@ -143,27 +141,6 @@ class ResultDashboard:
             self.results.new_connected_schools
         )
         to_show = self.results.new_connected_schools
-        # self.technology_pie = px.pie(
-        #     to_show,
-        #     names="technology",
-        #     color="technology",
-        #     color_discrete_map=GIGA_TECHNOLOGY_COLORS,
-        # ).update_traces(
-        #     textinfo="value+percent", hoverinfo="value+percent"
-        # ).update_layout(
-        #     title={
-        #         'text': "Number of Schools Connected by Tech Type",
-        #         'y': 0.95,
-        #         'x': 0.5,
-        #         'xanchor': 'center',
-        #         'yanchor': 'top',
-        #         'font': dict(
-        #             family="Arial",
-        #             size=18,
-        #             color="black"
-        #         )
-        #     }
-        # )
         self.cost_pie = px.pie(
             to_show,
             values="total_cost",
