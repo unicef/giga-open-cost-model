@@ -96,6 +96,8 @@ def electricity_availability_section(vals, section_level):
         \\caption{{Electricity availability status}}
         \\label{{fig:electricity}}
     \\end{{figure}}
+
+    \\newpage
     """
 
 def infrastructure_availability_section(vals, section_level):
@@ -168,7 +170,7 @@ def cellular_section(vals, section_level):
 
     \\begin{{figure}}[h]
         \\centering
-        \\includegraphics[scale=0.5]{{{'cell_coverage_map' + image_suffix + '.png'}}}
+        \\includegraphics[scale=0.4]{{{'cell_coverage_map' + image_suffix + '.png'}}}
         \\caption{{Cellular coverage}}
         \\label{{fig:cell_coverage}}
     \\end{{figure}}

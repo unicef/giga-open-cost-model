@@ -98,7 +98,7 @@ def section_cost_estimation(vals):
         \caption{Project costs}
         \label{fig:snapshot}
     \end{figure}
-
+    \newpage
     \subsection{CapEx and OpEx}
 
     The following table summarizes the CapEx costs:
@@ -175,6 +175,7 @@ def section_cost_estimation(vals):
     \label{tab:capex_opex_progression}
     \end{table}
 
+    \newpage
     \subsubsection{Technology cost breakdown}
     Each technology has different associated CapEx and OpEx unit costs (see appendix). Based on the technology distribution to connect the unconnected schools, it is estimated that the total fiber cost will be of \fibercosttot{} USD, accounting for \fiberpercoftech{}\% of the total technology cost (\techcosttot{} USD). Cellular is expected to account for \cellpercoftech{}\%, Microwave \ptoppercoftech{}\% and Satellite \satpercoftech{}\%. 
     In contrast, electricity (both CapEx and OpEx) consists of a total cost of \elecosttot{} USD.
@@ -237,6 +238,8 @@ def section_cost_estimation(vals):
     \label{fig:snapshot}
     \end{figure} 
 
+    \newpage
+    
     \subsubsection{Fiber "economies of scale"}
 
     Finally, it is important to show the predicted fiber connections between schools or between a school and a fiber node as it the core of the capex cost of fiber connectivity. These fiber connections should constitute the lowest number 
