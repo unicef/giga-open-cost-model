@@ -2,14 +2,15 @@ from pydantic import BaseModel
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from typing import Dict
 import os
 
 from giga.schemas.school import GigaSchoolTable
-from giga.viz.notebooks.cost_estimation_parameter_input import CostEstimationParameterInput
+from giga.viz.notebooks.cost_estimation_parameter_input import CostEstimationParameterInput, LARGE_COUNTRIES
 from giga.data.stats.result_stats import ResultStats
 from giga.viz.notebooks.data_maps.static_data_map import DataMapConfig
-from giga.viz.notebooks.data_maps.map_data_layers import BaseDataLayerConfig
-from giga.viz.colors import ELECTRICITY_AVAILABILITY_COLORS
+from giga.viz.notebooks.data_maps.map_data_layers import MapDataLayers, BaseDataLayerConfig, SchoolMapLayerConfig, MapLayersConfig
+from giga.viz.colors import ELECTRICITY_AVAILABILITY_COLORS, GIGA_TECHNOLOGY_COLORS
 
 
 MAP_BOX_ACCESS_TOKEN = os.environ.get("MAP_BOX_ACCESS_TOKEN", "")
@@ -38,14 +39,23 @@ class InfraLinesMapLayerConfig(BaseDataLayerConfig):
     marker_color: str = "#9f86c0"
     marker_opacity: float = 0.95
     layer_name: str = 'Infrastructure Lines'
-    line_color: dict = {'fiber': 'orange', 'p2p': '#1f77b4'}
+    line_color: dict = {'fiber': 'rgba(169, 39, 255, .5)', 'p2p': 'rgba(39, 255, 161, .5)'}
     line_width: float = 2
+
+class SchoolOutputMapLayerConfig(BaseDataLayerConfig):
+    marker_size: int = 5
+    marker_color: str = "#9f86c0"
+    marker_opacity: float = 0.95
+    layer_name: str = "School Output"
+    color_map: Dict[str, str] = GIGA_TECHNOLOGY_COLORS
 
 class ResultMapLayersConfig(BaseModel):
 
     electricity_layer: ElectricityMapLayerConfig = ElectricityMapLayerConfig()
     cost_layer: CostMapLayerConfig = CostMapLayerConfig()
-    infra_lines_layer = InfraLinesMapLayerConfig = InfraLinesMapLayerConfig()
+    infra_lines_layer: InfraLinesMapLayerConfig = InfraLinesMapLayerConfig()
+    school_output_layer: SchoolOutputMapLayerConfig = SchoolOutputMapLayerConfig()
+    school_layer: SchoolMapLayerConfig = SchoolMapLayerConfig()
 
 class ResultMap:
     
@@ -60,6 +70,7 @@ class ResultMap:
         self.country_center = inputs.defaults[self.country].data.country_center_tuple
         
         self._schools = None
+        self._new_connected_schools = None
         self._fig = None
     
     @property 
@@ -67,6 +78,12 @@ class ResultMap:
         if self._schools is None:
             self._schools = self.get_school_dataframe()
         return self._schools
+    
+    @property
+    def new_connected_schools(self):
+        if self._new_connected_schools is None:
+            self._new_connected_schools = self.stats.new_connected_schools
+        return self._new_connected_schools
     
     @property
     def fig(self):
@@ -111,7 +128,6 @@ class ResultMap:
 
         return fig
 
-    
 
     def get_electricity_map(self):
 
@@ -167,7 +183,7 @@ class ResultMap:
 
         fig = go.FigureWidget(self.fig)
 
-        df = self.stats.new_connected_schools
+        df = self.new_connected_schools.copy()
 
         fig.add_trace(
             go.Scattermapbox(
@@ -213,54 +229,51 @@ class ResultMap:
 
         return fig
 
+    def get_school_tech_map(self):
 
-    def get_infra_lines_map(self, data_map):
-        
-        connections_ = dict(
-            fiber = self.stats.fiber_connections,
-            p2p = self.stats.p2p_connections,
-        )
-        
-        if (len(connections_['fiber']) + len(connections_['p2p']))==0:
-            return None
+        fig = go.FigureWidget(self.fig)
 
-        fig = go.FigureWidget(data_map)
+        df = self.new_connected_schools.copy()
 
-        for tech_ in connections_.keys():
+        config_layers = MapLayersConfig()
+        data_layers = MapDataLayers(self.data_space, config_layers)
 
-            lats = []
-            lons = []
-            texts = []
+        for l in self.get_infra_lines_layers():
+            fig.add_trace(l)
 
-            for connection_ in connections_[tech_]:
+        for l in (data_layers.layers_no_cell if self.country in LARGE_COUNTRIES else data_layers.layers):
+            fig.add_trace(l)
 
-                coordinate1_id, coordinate2_id = connection_.pair_ids
-                coordinate1 = connection_.coordinate1.coordinate # lat, lon
-                coordinate2 = connection_.coordinate2.coordinate
+        for tech_ in GIGA_TECHNOLOGY_COLORS.keys():
+            ff = df[df['technology'] == tech_]
 
-                lats += [coordinate1[0], coordinate2[0], None]
-                lons += [coordinate1[1], coordinate2[1], None]
-                texts += [coordinate1_id, coordinate2_id, None]
-                
             fig.add_trace(
                 go.Scattermapbox(
-                    name = tech_.upper() + ' connection',
-                    mode='lines',
-                    lat=lats,
-                    lon=lons,
-                    text = texts,
-                    line=dict(
-                        width=self.layer_config.infra_lines_layer.line_width, 
-                        color=self.layer_config.infra_lines_layer.line_color[tech_],
+                    name = 'Connected with ' + tech_,
+                    lat = ff['lat'],
+                    lon = ff['lon'],
+                    text = ff['technology'],
+                    customdata=ff['school_id'],
+                    mode="markers",
+                    marker = go.scattermapbox.Marker(
+                        size = self.layer_config.school_output_layer.marker_size,
+                        color = GIGA_TECHNOLOGY_COLORS[tech_],
+                        opacity=self.layer_config.school_output_layer.marker_opacity,
                     ),
-                    showlegend = True,
-                    hovertemplate="<b>ID:</b> %{text}",
+                    hovertemplate="<b>ID:</b> %{customdata}<br><b>Technology:</b> %{text}",
                 )
             )
-
         
         fig.update_layout(
-            #hovermode = 'x unified',
+            showlegend=True,
+            legend=dict(
+                x=self.config.legend_x,
+                y=self.config.legend_y,
+                bgcolor=self.config.legend_bgcolor,
+                font=dict(color=self.config.legend_font_color),
+                bordercolor=self.config.legend_border_color,
+                borderwidth=self.config.legend_border_width,
+            ),
             title=dict(
                 text = self.layer_config.infra_lines_layer.title,
                 y= self.config.title_y,
@@ -272,14 +285,118 @@ class ResultMap:
                 ),
             )
         )
-    
+        
         return fig
+
+    def get_infra_lines_layers(self):
+
+        connections_ = dict(
+            fiber = self.stats.fiber_connections,
+            p2p = self.stats.p2p_connections,
+        )
+
+        layers = []
+        for tech_ in connections_.keys():
+            lats = []
+            lons = []
+            texts = []
+            
+            for connection_ in connections_[tech_]:
+
+                coordinate1_id, coordinate2_id = connection_.pair_ids
+                coordinate1 = connection_.coordinate1.coordinate # lat, lon
+                coordinate2 = connection_.coordinate2.coordinate
+
+                lats += [coordinate1[0], coordinate2[0], None]
+                lons += [coordinate1[1], coordinate2[1], None]
+                texts += [coordinate1_id, coordinate2_id, None]
+            
+            l = go.Scattermapbox(
+                name = tech_.upper() + ' connection',
+                mode='lines',
+                lat=lats,
+                lon=lons,
+                #text = texts,
+                line=dict(
+                    width=self.layer_config.infra_lines_layer.line_width, 
+                    color=self.layer_config.infra_lines_layer.line_color[tech_],
+                ),
+                showlegend = True,
+                hoverinfo = 'none'
+                #hovertemplate="<b>ID:</b> %{text}",
+            )
+
+            layers.append(l)
+        
+        return layers
+
+    # def get_infra_lines_map(self, data_map):
+        
+    #     connections_ = dict(
+    #         fiber = self.stats.fiber_connections,
+    #         p2p = self.stats.p2p_connections,
+    #     )
+        
+    #     if (len(connections_['fiber']) + len(connections_['p2p']))==0:
+    #         return None
+
+    #     fig = go.FigureWidget(data_map)
+
+    #     for tech_ in connections_.keys():
+
+    #         lats = []
+    #         lons = []
+    #         texts = []
+
+    #         for connection_ in connections_[tech_]:
+
+    #             coordinate1_id, coordinate2_id = connection_.pair_ids
+    #             coordinate1 = connection_.coordinate1.coordinate # lat, lon
+    #             coordinate2 = connection_.coordinate2.coordinate
+
+    #             lats += [coordinate1[0], coordinate2[0], None]
+    #             lons += [coordinate1[1], coordinate2[1], None]
+    #             texts += [coordinate1_id, coordinate2_id, None]
+                
+    #         fig.add_trace(
+    #             go.Scattermapbox(
+    #                 name = tech_.upper() + ' connection',
+    #                 mode='lines',
+    #                 lat=lats,
+    #                 lon=lons,
+    #                 text = texts,
+    #                 line=dict(
+    #                     width=self.layer_config.infra_lines_layer.line_width, 
+    #                     color=self.layer_config.infra_lines_layer.line_color[tech_],
+    #                 ),
+    #                 showlegend = True,
+    #                 hovertemplate="<b>ID:</b> %{text}",
+    #             )
+    #         )
+
+        
+    #     fig.update_layout(
+    #         #hovermode = 'x unified',
+    #         title=dict(
+    #             text = self.layer_config.infra_lines_layer.title,
+    #             y= self.config.title_y,
+    #             x= self.config.title_x,
+    #             xanchor= "center",
+    #             yanchor= "top",
+    #             font= dict(
+    #                 size=18, color="white", family="Verdana"
+    #             ),
+    #         )
+    #     )
+    
+    #     return fig
 
     def populate_result_maps(self):
 
         self.electricity_map = self.get_electricity_map()
         self.cost_map = self.get_cost_map()
-        self.infra_lines_map = self.get_infra_lines_map(data_map = self.inputs.selected_data_map())
+        #self.infra_lines_map = self.get_infra_lines_map(data_map = self.inputs.selected_data_map())
+        self.infra_lines_map = self.get_school_tech_map()
     
     def get_result_maps(self):
         try:
