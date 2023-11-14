@@ -325,7 +325,7 @@ def generate_merged_report_zip_bytes(dashboard):
     with open(local_logo_path, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
 
-    #compile latex into pdf
+    #compile latex into pdf two step generate needed for deployment
     doc.generate_pdf(os.path.join(tmpdir, "merged_report"), clean_tex=False, clean = False)
     doc.generate_pdf(os.path.join(tmpdir, "merged_report"), clean_tex=False, clean = True)
 

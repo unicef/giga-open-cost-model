@@ -112,7 +112,7 @@ SCENARIO_SHEET_PARAMETERS_OLD = [
 SCENARIO_SHEET_PARAMETERS = [
     {
         "parameter_name": "technologies",
-        "parameter_input_name": "Choose the allowed technologies",
+        "parameter_input_name": "Select the allowed technologies (the order will be taken into account for priority scenario)",
         "parameter_interactive":{
             "parameter_type":"select_multiple",
             "options": ["Fiber","Cellular","P2P","Satellite"],
