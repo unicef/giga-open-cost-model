@@ -108,7 +108,9 @@ def infrastructure_availability_section(vals, section_level):
     In this section, we'll examine the existing condition of infrastructure in {vals['country_name']}, focusing on its proximity to schools and the distances involved.
     """
 
-    if int(vals['num_fnodes']) > 0:
+    num_fnodes = int(vals['num_fnodes'].replace(',', ''))
+
+    if num_fnodes > 0:
         section_text += fiber_section(vals, section_level=section_level+1)
     
     section_text += cellular_section(vals, section_level=section_level+1)
