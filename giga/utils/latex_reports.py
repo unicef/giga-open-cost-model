@@ -24,23 +24,22 @@ def get_infra_report_variables(data_space):
 
     vals = {}
     vals['_selected_schools'] = data_space.selected_space
+    vals['country'] = data_space.config.school_data_conf.country_id
     
     schools_table = data_space.schools_to_frame()
     schools_connected = schools_table[schools_table['connected']]
     schools_unconnected = schools_table[schools_table['connected']==False]
     ele_counts = schools_table['has_electricity'].value_counts()
 
-    #### acks ####
-    acks_dir = os.path.join(f"workspace/reports/{data_space.config.school_data_conf.country_id}/acknowledgements.txt")#os.path.join(COUNTRY_DATA_DIR,ACKS_DEFAULT_PATH,data_space.config.school_data_conf.country_id)
-    if data_store.file_exists(acks_dir):#os.path.join(acks_dir, ACKS_FILE)): 
-        with data_store.open(acks_dir) as f:#os.path.join(acks_dir, ACKS_FILE)) as f:
-            acks = f.read()
-    else:
-        acks = ""
-    vals["acks"] = acks
-    ############
+    acks_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
+
+    try:
+        with data_store.open(acks_dir) as f:
+            vals['acks_text'] = f.read()
+    except:
+        vals['acks_text'] = ''
     
-    vals['country_name'] = country_key_to_name(data_space.config.school_data_conf.country_id)
+    vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_schools'] = len(schools_table)
     vals['num_unconn'] = len(schools_unconnected)
     vals['num_conn'] = len(schools_connected)
@@ -93,23 +92,22 @@ def get_cost_report_variables(dashboard):
     
     vals = {}
     input_config = dashboard.inputs.config
-    country = country_key_to_name(dashboard.country_id)
+    vals['country'] = dashboard.country_id
     stats = dashboard.results
     selected_schools = dashboard.selected_schools
     schools_complete_table = stats.complete_school_table
     output_table = stats.output_cost_table
     output_table_full = stats.output_cost_table_full
 
-    #### acks ####
-    acks_dir = os.path.join(COUNTRY_DATA_DIR,ACKS_DEFAULT_PATH,dashboard.country_id)
-    if data_store.file_exists(os.path.join(acks_dir, ACKS_FILE)): 
-        with data_store.open(os.path.join(acks_dir, ACKS_FILE)) as f:
-            acks = f.read()
-    else:
-        acks = ""
-    vals["acks"] = acks
-    ############
-    vals['country_name'] = country
+    acks_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
+
+    try:
+        with data_store.open(acks_dir) as f:
+            vals['acks_text'] = f.read()
+    except:
+        vals['acks_text'] = ''
+
+    vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_all_schools'] = len(schools_complete_table)
     vals['num_schools'] = len(selected_schools)
     vals['num_unconn_schools'] = len(stats.output_space.minimum_cost_result)

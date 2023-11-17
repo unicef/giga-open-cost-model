@@ -6,7 +6,7 @@ from giga.report.cost.appendix import appendix
 
 def get_report_text(vals):
     
-    latex_source = title_and_toc()
+    latex_source = title_and_toc(vals)
     latex_source += foreword()
     latex_source += introduction()
     latex_source += cost_report(vals= vals)

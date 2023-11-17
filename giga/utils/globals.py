@@ -40,7 +40,7 @@ SCHOOLS_CACHE_FILE = "school_cache.json"
 SCHOOLS_VISIBILITY_CACHE_FILE = "school_visibility_cache.json"
 
 GIGA_LOGO_FILE = "giga_logo.png"
-ACKS_FILE = "acknowledgements.txt"
+ACKS_FILE = "acknowledgments.txt"
 
 #file names of cost files
 CELL_CAPEX_FILE = "cell_capex.csv"

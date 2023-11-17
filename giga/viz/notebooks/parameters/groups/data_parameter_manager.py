@@ -14,7 +14,7 @@ BASELINE_DATA_SPACE_PARAMETERS = [
         "parameter_input_name": "Country",
         "parameter_interactive": {
             "parameter_type": "categorical_dropdown",
-            "value": "Rwanda",
+            "value": "Brazil",
             "options": get_registered_country_names(),  # load in the available countries dynamically
             "description": "Country:",
         },

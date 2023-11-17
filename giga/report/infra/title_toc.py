@@ -9,7 +9,7 @@ def title_and_toc(vals):
         \\vspace{{1cm}}
         {{\Large Finance Team, Giga\par}}
         \\vspace{{3cm}}
-        \\textit{{{vals["acks"]}}}
+        \\textit{{{vals['acks_text']}}}
         \\vfill
         {{\large \\today\par}}
     \\end{{titlepage}}
