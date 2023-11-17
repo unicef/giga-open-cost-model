@@ -1,4 +1,4 @@
-def title_and_toc():
+def title_and_toc(acks_text):
     return r"""
     \begin{titlepage}
         \centering
@@ -8,6 +8,8 @@ def title_and_toc():
         {\huge\bfseries \country{} - School Connectivity Project Planning Report\par}
         \vspace{1cm}
         {\Large Finance Team, Giga\par}
+        \vspace{3cm}
+        
         \vfill
         {\large \today\par}
     \end{titlepage}

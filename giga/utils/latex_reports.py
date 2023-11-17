@@ -12,6 +12,10 @@ from giga.viz.notebooks.parameters.groups.data_parameter_manager import country_
 from giga.report.infra.report import get_report_text as get_infra_report_text
 from giga.report.cost.report import get_report_text as get_cost_report_text
 from giga.report.merged.report import get_report_text as get_merged_report_text
+from giga.utils.globals import ACKS_DEFAULT_PATH, ACKS_FILE
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
+from giga.data.store.adls_store import COUNTRY_DATA_DIR
+import os
 
 MILLION = 1000000
 KILOMETER_TO_METER = 1000
@@ -25,6 +29,16 @@ def get_infra_report_variables(data_space):
     schools_connected = schools_table[schools_table['connected']]
     schools_unconnected = schools_table[schools_table['connected']==False]
     ele_counts = schools_table['has_electricity'].value_counts()
+
+    #### acks ####
+    acks_dir = os.path.join(f"workspace/reports/{data_space.config.school_data_conf.country_id}/acknowledgements.txt")#os.path.join(COUNTRY_DATA_DIR,ACKS_DEFAULT_PATH,data_space.config.school_data_conf.country_id)
+    if data_store.file_exists(acks_dir):#os.path.join(acks_dir, ACKS_FILE)): 
+        with data_store.open(acks_dir) as f:#os.path.join(acks_dir, ACKS_FILE)) as f:
+            acks = f.read()
+    else:
+        acks = ""
+    vals["acks"] = acks
+    ############
     
     vals['country_name'] = country_key_to_name(data_space.config.school_data_conf.country_id)
     vals['num_schools'] = len(schools_table)
@@ -86,6 +100,15 @@ def get_cost_report_variables(dashboard):
     output_table = stats.output_cost_table
     output_table_full = stats.output_cost_table_full
 
+    #### acks ####
+    acks_dir = os.path.join(COUNTRY_DATA_DIR,ACKS_DEFAULT_PATH,dashboard.country_id)
+    if data_store.file_exists(os.path.join(acks_dir, ACKS_FILE)): 
+        with data_store.open(os.path.join(acks_dir, ACKS_FILE)) as f:
+            acks = f.read()
+    else:
+        acks = ""
+    vals["acks"] = acks
+    ############
     vals['country_name'] = country
     vals['num_all_schools'] = len(schools_complete_table)
     vals['num_schools'] = len(selected_schools)

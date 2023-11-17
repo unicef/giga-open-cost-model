@@ -117,7 +117,7 @@ class PriorityScenario:
         :param progress_bar, wether or not to show the progress bar when running the scenario
         :return output space that contains costs of each technology considered as well as the minimum costs for each school
         """
-        LOGGER.info(f"Starting Minimum Cost Scenario")
+        LOGGER.info(f"Starting Priority Cost Scenario")
         self._prep()
 
         self.output_space.years_opex = self.config.years_opex

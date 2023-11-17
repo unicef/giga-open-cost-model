@@ -116,7 +116,7 @@ SCENARIO_SHEET_PARAMETERS = [
         "parameter_interactive":{
             "parameter_type":"select_multiple",
             "options": ["Fiber","Cellular","P2P","Satellite"],
-            "value": ["Fiber","Cellular","P2P","Satellite"],
+            "value": [],
             "description": "",
         },
     },
@@ -303,8 +303,8 @@ class ScenarioParameterManager:
             options.append("Satellite")
 
         select_multiple.options = options
-        select_multiple.value = options
-        self.techs_ordered = options
+        select_multiple.value = []#options
+        self.techs_ordered = []#options
         
 
     def input_parameters(self, show_defaults = True):
