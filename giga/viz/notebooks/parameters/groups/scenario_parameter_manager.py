@@ -1,6 +1,6 @@
 from copy import deepcopy
 import math
-from ipywidgets import VBox
+from ipywidgets import VBox, Textarea, Layout, HBox, Label
 from pydantic import parse_obj_as
 from traitlets import directional_link
 
@@ -234,6 +234,12 @@ class ScenarioParameterManager:
         )
         #ordered techs
         self.techs_ordered = []
+        self.chosen_techs_label = Label("Chosen Technologies (ordered):")
+        self.chosen_techs = Textarea(
+            description='',
+            disabled=True,
+            layout=Layout(height='80px')  # Adjust the height as needed
+        )
         self.sheet.get_interactive_parameter("technologies").observe(self.on_change_techs)
 
 
@@ -245,6 +251,8 @@ class ScenarioParameterManager:
             for elem in self.techs_ordered:
                 if elem not in change['new']:
                     self.techs_ordered.remove(elem)
+            selected_techs = '\n'.join(self.techs_ordered)
+            self.chosen_techs.value = selected_techs
 
     def get_ordered_techs(self):
         return self.techs_ordered
@@ -305,13 +313,15 @@ class ScenarioParameterManager:
         select_multiple.options = options
         select_multiple.value = []#options
         self.techs_ordered = []#options
+
+        self.chosen_techs.value = ""
         
 
     def input_parameters(self, show_defaults = True):
         # specaial handling for scenario type in base parameters
         base = VBox(list(self._hash.values()))
         sheet = self.sheet.input_parameters(show_defaults)
-        return VBox([base, sheet])
+        return HBox([VBox([base, sheet]),VBox([self.chosen_techs_label,self.chosen_techs])])
 
     def get_parameter_from_sheet(self, parameter_name):
         return self.sheet.get_parameter_value(parameter_name)

@@ -254,7 +254,6 @@ class SelectMultipleParameter(BaseParameter):
     def unfreeze(self):
         self.parameter.disabled = False
 
-
 InputParameter = Union[
     IntSliderParameter,
     FloatSliderParameter,
