@@ -184,7 +184,6 @@ def generate_cost_report_zip_bytes(dashboard):
     #copy giga_logo in tmpdir
     local_logo_path = os.path.join(tmpdir,'giga_logo.png')
 
-    
     #blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
     #with open(local_logo_path, "wb") as download_file:
     #    download_file.write(blob_client.download_blob().readall())
