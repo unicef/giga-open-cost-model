@@ -8,6 +8,8 @@ def title_and_toc(vals):
         {{\huge\\bfseries {vals['country_name']} - School Connectivity Infrastructure Report\par}}
         \\vspace{{1cm}}
         {{\Large Finance Team, Giga\par}}
+        \\vspace{{3cm}}
+        \\textit{{{vals['acks_text']}}}
         \\vfill
         {{\large \\today\par}}
     \\end{{titlepage}}

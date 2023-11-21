@@ -26,6 +26,8 @@ from giga.viz.notebooks.components.charts.plotters import (
 
 from giga.utils.latex_reports import generate_infra_report, generate_cost_report, generate_merged_report
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
+from giga.data.store.adls_store import ADLS_CONTAINER, COUNTRY_DATA_DIR
 from giga.data.space.model_data_space import ModelDataSpace
 from giga.viz.notebooks.data_maps.static_data_map import DataMapConfig
 from giga.viz.notebooks.maps import InfraMap, InfraMapLayersConfig
@@ -36,6 +38,7 @@ from giga.viz.notebooks.components.widgets.giga_buttons import make_button
 
 # Force kaleido to run in a single process, or it crashes Jupyter in Docker
 plotly.io.kaleido.scope.chromium_args += ("--single-process",) 
+from giga.utils.globals import *
 
 display(HTML("""
 <style>
@@ -181,10 +184,15 @@ def generate_cost_report_zip_bytes(dashboard):
     #copy giga_logo in tmpdir
     local_logo_path = os.path.join(tmpdir,'giga_logo.png')
 
-    blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    
+    #blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    #with open(local_logo_path, "wb") as download_file:
+    #    download_file.write(blob_client.download_blob().readall())
+    logo_path = os.path.join(COUNTRY_DATA_DIR,GIGA_LOGO_DEFAULT_PATH,GIGA_LOGO_FILE)
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
     with open(local_logo_path, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
-
+    
     #compile latex into pdf
     doc.generate_pdf(os.path.join(tmpdir, "costmodel_report"), clean_tex=False, clean = True)
 
@@ -267,7 +275,11 @@ def generate_infra_report_zip_bytes(inputs):
     #copy giga_logo in tmpdir
     local_logo_path = os.path.join(tmpdir,'giga_logo.png')
 
-    blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    #blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    #with open(local_logo_path, "wb") as download_file:
+    #    download_file.write(blob_client.download_blob().readall())
+    logo_path = os.path.join(COUNTRY_DATA_DIR,GIGA_LOGO_DEFAULT_PATH,GIGA_LOGO_FILE)
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
     with open(local_logo_path, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
 
@@ -317,10 +329,13 @@ def generate_merged_report_zip_bytes(dashboard):
 
     #copy giga_logo in tmpdir
     local_logo_path = os.path.join(tmpdir,'giga_logo.png')
-
-    blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    logo_path = os.path.join(COUNTRY_DATA_DIR,GIGA_LOGO_DEFAULT_PATH,GIGA_LOGO_FILE)
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
     with open(local_logo_path, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
+    #blob_client = schools_data_store.blob_service_client.get_blob_client(container="giga", blob='source/infra/reports/aux_files/giga_logo.png')
+    #with open(local_logo_path, "wb") as download_file:
+    #    download_file.write(blob_client.download_blob().readall())
 
     #compile latex into pdf two step generate needed for deployment
     doc.generate_pdf(os.path.join(tmpdir, "merged_report"), clean_tex=False, clean = False)

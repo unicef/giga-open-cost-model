@@ -7,6 +7,10 @@ from giga.viz.notebooks.parameters.groups.data_parameter_manager import country_
 from giga.report.infra.report import get_report_text as get_infra_report_text
 from giga.report.cost.report import get_report_text as get_cost_report_text
 from giga.report.merged.report import get_report_text as get_merged_report_text
+from giga.utils.globals import ACKS_DEFAULT_PATH, ACKS_FILE
+from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
+from giga.data.store.adls_store import COUNTRY_DATA_DIR
+import os
 
 MILLION = 1000000
 KILOMETER_TO_METER = 1000
@@ -15,13 +19,22 @@ def get_infra_report_variables(data_space):
 
     vals = {}
     vals['_selected_schools'] = data_space.selected_space
+    vals['country'] = data_space.config.school_data_conf.country_id
     
     schools_table = data_space.schools_to_frame()
     schools_connected = schools_table[schools_table['connected']]
     schools_unconnected = schools_table[schools_table['connected']==False]
     ele_counts = schools_table['has_electricity'].value_counts()
+
+    acks_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
+
+    try:
+        with data_store.open(acks_dir) as f:
+            vals['acks_text'] = f.read()
+    except:
+        vals['acks_text'] = ''
     
-    vals['country_name'] = country_key_to_name(data_space.config.school_data_conf.country_id)
+    vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_schools'] = len(schools_table)
     vals['num_unconn'] = len(schools_unconnected)
     vals['num_conn'] = len(schools_connected)
@@ -74,14 +87,22 @@ def get_cost_report_variables(dashboard):
     
     vals = {}
     input_config = dashboard.inputs.config
-    country = country_key_to_name(dashboard.country)
+    vals['country'] = dashboard.country
     stats = dashboard.results
     selected_schools = dashboard.selected_schools
     schools_complete_table = stats.complete_school_table
     output_table = stats.output_cost_table
     output_table_full = stats.output_cost_table_full
 
-    vals['country_name'] = country
+    acks_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
+
+    try:
+        with data_store.open(acks_dir) as f:
+            vals['acks_text'] = f.read()
+    except:
+        vals['acks_text'] = ''
+
+    vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_all_schools'] = len(schools_complete_table)
     vals['num_schools'] = len(selected_schools)
     vals['num_unconn_schools'] = len(stats.output_space.minimum_cost_result)

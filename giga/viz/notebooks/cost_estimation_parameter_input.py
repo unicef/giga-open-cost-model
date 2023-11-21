@@ -459,17 +459,6 @@ class CostEstimationParameterInput:
         if not p_sat:
             for p in self.satellite_parameter_manager.sheet.interactive_parameters:
                 p.parameter.disabled = True
-        
-        country_id = self.data_parameters().school_data_conf.country_id
-        avail_tech = self.defaults[country_id].model_defaults.available_tech
-        if not avail_tech.fiber:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('fiber').disabled = True
-        if not avail_tech.cellular:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('cell').disabled = True
-        if not avail_tech.p2p:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('p2p').disabled = True
-        if not avail_tech.satellite:
-            self.scenario_parameter_manager.sheet.get_interactive_parameter('sat').disabled = True
     
     def all_tech_config(self):
         p = self.scenario_parameter_manager.get_model_parameters()
