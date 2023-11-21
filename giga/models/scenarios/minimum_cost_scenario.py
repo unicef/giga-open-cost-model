@@ -106,8 +106,6 @@ class MinimumCostScenario:
         LOGGER.info(f"Starting Minimum Cost Scenario")
         self._prep()
 
-        self.output_space.years_opex = self.config.years_opex
-
         techs = [c.technology for c in self.config.technologies]
         
         #We deal with this now, optimize in the future

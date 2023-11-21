@@ -1,15 +1,11 @@
 import os
 import fnmatch
 import json
-from typing import List
 import pandas as pd
 import copy
 import numpy as np
 import math
 
-#from giga.utils.globals import COUNTRY_DEFAULT_WORKSPACE
-#from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
-#from giga.utils.globals import SCHOOLS_DEFAULT_PATH
 from giga.utils.globals import *
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
@@ -139,14 +135,6 @@ def get_country_code_dicts(directory=COUNTRY_CODE_DEFAULT_PATH,filename=COUNTRY_
         df = pd.read_csv(f)
     return df.set_index('Code')['Country'].to_dict(),df.set_index('Country')['Code'].to_dict()
 
-#CODE_COUNTRY_DICT, COUNTRY_CODE_DICT = get_country_code_dicts()
-
-def get_registered_countries_old(directory=COUNTRY_DEFAULT_WORKSPACE) -> None:
-    countries = []
-    for root, _, filenames in data_store.walk(directory):
-        for filename in fnmatch.filter(filenames, "*.json"):
-            countries.append(filename.split(".")[0])
-    return countries
 
 def get_registered_countries(directory=SCHOOLS_DEFAULT_PATH) -> None:
     countries = []
@@ -155,33 +143,12 @@ def get_registered_countries(directory=SCHOOLS_DEFAULT_PATH) -> None:
             countries.append(filename.split("_")[0])
     return countries
 
-
-def get_registered_country_names_old(
-    default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE, skip=SKIP_IN_DEPLOYMENT
-):
-    countries = get_registered_countries(default_parameter_dir)
-    return [c.replace("_", " ").title() for c in countries if c not in skip]
-
 def get_registered_country_names(directory=SCHOOLS_DEFAULT_PATH) -> None:
     countries = []
     for root, _, filenames in schools_data_store.walk(directory):
         for filename in fnmatch.filter(filenames, "*.csv"):
-            #countries.append(CODE_COUNTRY_DICT[filename.split("_")[0]])
             countries.append(coco.convert(filename.split("_")[0], to='name_short'))
     return countries
-
-
-def get_country_defaults_old(
-    workspace="workspace", default_parameter_dir=COUNTRY_DEFAULT_WORKSPACE
-):
-    countries = get_registered_countries(default_parameter_dir)
-    defaults = {}
-    for country in countries:
-        with data_store.open(os.path.join(default_parameter_dir, f"{country}.json")) as f:
-            default = json.load(f)
-        default["data"]["workspace"] = workspace
-        defaults[country] = default
-    return defaults
 
 def is_fiber(s, fiber_keywords = ['fiber', 'fibre', 'fibra', 'ftt', 'fttx']):
     return any(keyword in s.lower() for keyword in fiber_keywords if isinstance(s,str))
@@ -229,57 +196,6 @@ def check_avail_techs(country_dir, df_schools):
         san = df_schools["type_connectivity"].apply(is_fiber).any()
 
     return fiber,cell,p2p,san
-
-def check_avail_techs_old(country_dir,df_schools):
-    fiber = True
-    cell = True
-    p2p = True
-    schools_as_nodes = False
-
-    f = data_store.read_file(os.path.join(country_dir,FIBER_FILE))
-    if len(f)==0:
-        fiber = (df_schools["fiber_node_distance"]!=math.inf).any() #df_schools["fiber_node_distance"].notnull().any()
-        if fiber:
-            ### too much mem 
-            #with data_store.open(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) as f:
-            #    jss = json.load(f)
-            #if len(jss["lookup"])==0:
-            #    fiber = False
-            if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
-                fiber = False
-
-            # this takes way too long, removing it for now
-            #else:
-            #    schools_as_nodes = df_schools["type_connectivity"].apply(lambda x: not is_fiber(x)).any()
-    else:
-
-        with data_store.open(os.path.join(country_dir,FIBER_CACHE_FILE)) as f:
-            jsf = json.load(f)
-        if len(jsf["lookup"])==0:
-            fiber = False
-        else:
-            if data_store.file_size(os.path.join(country_dir,SCHOOLS_CACHE_FILE)) < 3:
-                fiber = False
-        # this takes way too long, removing it for now
-        #else:
-            #schools_as_nodes = df_schools["type_connectivity"].apply(is_fiber).any()
-
-    f = data_store.read_file(os.path.join(country_dir,CELL_FILE))
-    if len(f)==0:
-        cell = df_schools["coverage_type"].notnull().any()
-        p2p = False
-    else:
-        with data_store.open(os.path.join(country_dir,CELL_CACHE_FILE)) as f:
-            jsc = json.load(f)
-        if len(jsc["lookup"])==0:
-            cell = False
-
-        with data_store.open(os.path.join(country_dir,P2P_CACHE_FILE)) as f:
-            jsp = json.load(f)
-        if len(jsp["lookup"])==0:
-            p2p = False
-
-    return fiber,cell,p2p,schools_as_nodes
 
     
 def create_empty_tech_files(country_dir):
@@ -342,13 +258,12 @@ def copy_caches_to_backup(country_dir):
 # This could be a call to GigaSchoolTable at some point...    
 def fix_schools(df):
     df_new = df.copy()
-    df_new.dropna(subset=['giga_id_school'], inplace=True) #AIA has some nan giga_ids...
+    df_new.dropna(subset=['giga_id_school'], inplace=True)
 
     ####num_students####
     your_column = 'num_students'
 
     # Step 1: Replace empty values with NaN
-    #df_new[your_column].replace('', pd.NA, inplace=True)
     df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
     df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
 
@@ -369,7 +284,6 @@ def fix_schools(df):
     your_column = 'fiber_node_distance'
 
     # Step 1: Replace empty values with NaN
-    #df_new[your_column].replace('', pd.NA, inplace=True)
     df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
     df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
 
@@ -378,10 +292,6 @@ def fix_schools(df):
 
     # Step 4: Convert the column to float
     df_new[your_column] = df_new[your_column].astype(float)
-    #####################    
-
-    # Replace NaNs in 'type_connectivity' with 'Unknown'
-    #df_new['type_connectivity'].fillna('Unknown', inplace=True)
 
     return df_new
 
@@ -426,8 +336,6 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
         default["model_defaults"]["available_tech"]["fiber"] = False
         default["model_defaults"]["available_tech"]["cellular"] = df_fixed["coverage_type"].notnull().any()
         default["model_defaults"]["available_tech"]["p2p"] = False
-        #let me keep this in both places for now
-        # this takes way too long, removing it for now
         default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
         default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = False
     else:
@@ -451,13 +359,10 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
         default["model_defaults"]["available_tech"]["fiber"] = fiber
         default["model_defaults"]["available_tech"]["cellular"] = cell
         default["model_defaults"]["available_tech"]["p2p"] = p2p
-        #let me keep this in both places for now
-        # this takes way too long, removing it for now
         default["model_defaults"]["available_tech"]["schools_as_nodes"] = san
         default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = san
 
     #set default country center coordinates
-    #df_filtered = df_fixed.dropna(subset=['lat', 'lon']) #there might be nans in some lat,lon
     country_center, country_zoom = get_country_center_zoom(df_fixed, max_zoom_level=11.75)
     default["data"]["country_center"]["lat"] = country_center['lat']
     default["data"]["country_center"]["lon"] = country_center['lon']

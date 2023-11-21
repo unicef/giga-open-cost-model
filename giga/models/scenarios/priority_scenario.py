@@ -119,8 +119,6 @@ class PriorityScenario:
         """
         LOGGER.info(f"Starting Priority Cost Scenario")
         self._prep()
-
-        self.output_space.years_opex = self.config.years_opex
         
         used_ids = []
         removed_ids = []

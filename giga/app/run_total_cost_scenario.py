@@ -3,11 +3,9 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 import argparse
-import logging
 
 from giga.utils.logging import LOGGER
 from giga.app.config_client import ConfigClient
-from giga.models.components.fiber_cost_model import FiberCostModel
 from giga.schemas.output import OutputSpace
 from giga.models.scenarios.scenario_dispatcher import create_scenario
 
@@ -17,7 +15,6 @@ from giga.schemas.conf.models import (
     CellularTechnologyCostConf,
     P2PTechnologyCostConf,
     MinimumCostScenarioConf,
-    SingleTechnologyScenarioConf,
     ElectricityCostConf,
     PriorityScenarioConf,
 )
@@ -219,10 +216,8 @@ def main():
         )
 
     scenario_config.technologies = techs
-    # Initialize the output space (client for managing model results)
-    output_space = OutputSpace()
     # create scenario
-    scenario = create_scenario(scenario_config, data_space, output_space)
+    scenario = create_scenario(scenario_config, data_space)
     # run the scenario
     output_space = scenario.run()
     # write results

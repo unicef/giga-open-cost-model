@@ -5,13 +5,8 @@ import plotly.express as px
 
 from giga.viz.notebooks.data_maps.result_maps import (
     make_cost_map,
-    make_technology_map,
     make_technology_average_cost_barplot,
     make_technology_total_cost_barplot,
-    make_fiber_distance_map_plot,
-    make_cellular_distance_map_plot,
-    make_cellular_coverage_map,
-    make_p2p_distance_map_plot,
 )
 from giga.viz.notebooks.tables import create_summary_table
 from giga.viz.notebooks.components.charts.overview import project_overview_grid
@@ -24,11 +19,10 @@ from giga.viz.notebooks.components.charts.plotters import (
     make_cost_histogram,
     make_project_cost_bar_plots,
     make_unit_cost_bar_plot,
-    make_satellite_pie_breakdown,
     make_results_tech_pie
 )
+from giga.viz.notebooks.maps import ResultMap, ResultMapLayersConfig
 from giga.viz.notebooks.data_maps.static_data_map import DataMapConfig
-from giga.viz.notebooks.maps import ResultMapLayersConfig, ResultMap
 from giga.viz.colors import GIGA_TECHNOLOGY_COLORS
 from giga.viz.plot_configs import STATIC_MAP_MODEBAR_CONFIG
 
@@ -47,13 +41,14 @@ class ResultDashboard:
         self.results = stats
         self.inputs = inputs
         self.height = height
+        self.country = stats.data_space.country
 
-        result_map_config = DataMapConfig()
-        result_map_layers_config = ResultMapLayersConfig()
-        self.result_map = ResultMap(stats = stats, inputs=inputs, map_config = result_map_config, layer_config = result_map_layers_config)
+        map_config = DataMapConfig()
+        layer_config = ResultMapLayersConfig()
+        self.result_maps = ResultMap(stats = stats, map_config=map_config, layer_config=layer_config)
 
-        self.country_id = self.result_map.country
         self.selected_schools = inputs.get_selected_schools()
+        self.new_connected_schools = stats.new_connected_schools
 
     def display(self):
         tabs = widgets.Tab(
@@ -89,60 +84,45 @@ class ResultDashboard:
 
     def populate_outputs(self):
         self.overview_grid = project_overview_grid(self.results.output_project_overview)
-        self.fiber_infra_map = make_fiber_distance_map_plot(self.results.new_connected_schools,self.country_id)
+        self.electricity_map = self.result_maps.infra_map.electricity_map
+        self.cost_map = self.result_maps.cost_map
+        self.infra_lines_map = self.result_maps.infra_lines_map
+        self.fiber_infra_map = self.result_maps.fiber_dist_map
         self.fiber_distance_bar = cumulative_fiber_distance_barplot(self.results.output_cost_table)
-        self.cell_infra_map = make_cellular_distance_map_plot(self.results.new_connected_schools,self.country_id)
+        self.cell_infra_map = self.result_maps.cell_tower_dist_map
         self.cell_distance_bar = cumulative_cell_tower_distance_barplot(self.results.output_cost_table)
-        self.cell_coverage_map = make_cellular_coverage_map(self.results.new_connected_schools,self.country_id)
-        self.p2p_infra_map = make_p2p_distance_map_plot(self.results.new_connected_schools,self.country_id)
+        self.cell_coverage_map = self.result_maps.cell_coverage_map
+        self.p2p_infra_map = self.result_maps.p2p_dist_map
         self.p2p_distance_bar = cumulative_visible_cell_tower_distance_barplot(self.results.output_cost_table)
-        self.technology_map = make_technology_map(self.results.new_connected_schools)
-        self.satellite_pie_breakdown = make_satellite_pie_breakdown(self.results.new_connected_schools)
-        self.technology_pie = make_results_tech_pie(self.results.new_connected_schools)
-        self.per_school_cost_map = make_cost_map(
-            self.results.new_connected_schools,
-            cost_key="total_cost",
-            display_key="Per School Cost (USD)",
-            title="Average Cost Per School",
-        )
+        self.technology_map = self.result_maps.technology_map
+        self.technology_pie = make_results_tech_pie(self.new_connected_schools)
+
         self.per_student_cost_map = make_cost_map(
-            self.results.new_connected_schools,
+            self.new_connected_schools,
             cost_key="total_cost_per_student",
             display_key="Per Student Cost (USD)",
             title="Average Cost Per Student",
         )
-        self.total_cost_map = make_cost_map(
-            self.results.new_connected_schools,
-            cost_key="total_cost",
-            display_key="Total Cost (USD)",
-            title = "Total Cost Map"
-        )
         self.total_cost_histogram = make_cost_histogram(
-            self.results.new_connected_schools, cost_key="total_cost"
-        )
-        self.cost_per_student_map = make_cost_map(
-            self.results.new_connected_schools,
-            cost_key="total_cost_per_student",
-            display_key="Per Student Cost (USD)",
-            title="Per Student Cost"
+            self.new_connected_schools, cost_key="total_cost"
         )
         try:
             self.cost_per_student_histogram = make_cost_histogram(
-                self.results.new_connected_schools,
+                self.new_connected_schools,
                 cost_key="total_cost_per_student"
             )
         except:
             self.cost_per_student_histogram = None
         self.project_cost_barplot = make_project_cost_bar_plots(self.results)
         self.average_cost_barplot = make_technology_average_cost_barplot(
-            self.results.new_connected_schools
+            self.new_connected_schools
         )
         self.total_cost_barplot = make_technology_total_cost_barplot(
-            self.results.new_connected_schools
+            self.new_connected_schools
         )
-        to_show = self.results.new_connected_schools
+        #to_show = self.new_connected_schools
         self.cost_pie = px.pie(
-            to_show,
+            self.new_connected_schools,
             values="total_cost",
             names="technology",
             color="technology",
@@ -167,7 +147,7 @@ class ResultDashboard:
             self.results.output_space, self.results.data_space
         )
         self.unit_cost_bar_plot = make_unit_cost_bar_plot(self.results)
-        self.tech_pie = px.pie(to_show, names="technology").update_layout(
+        self.tech_pie = px.pie(self.new_connected_schools, names="technology").update_layout(
             title={
                 'text': "Fraction of Schools Connected by Technology",
                 'y': 0.95,
@@ -181,7 +161,7 @@ class ResultDashboard:
                 )
             }
         )
-        self.tech_cost_pie = px.pie(to_show, values="total_cost", names="technology").update_layout(
+        self.tech_cost_pie = px.pie(self.new_connected_schools, values="total_cost", names="technology").update_layout(
             title={
                 'text': "Total Cost by Technology",
                 'y': 0.95,
@@ -224,11 +204,6 @@ class ResultDashboard:
             }
         )
 
-        self.result_map.populate_result_maps()
-        self.electricity_map = self.result_map.electricity_map
-        self.cost_map = self.result_map.cost_map
-        self.infra_lines_map = self.result_map.infra_lines_map
-
     def get_visual_plots(self):
         # These plots will be included in downloaded reports.
         return [
@@ -241,12 +216,8 @@ class ResultDashboard:
             self.p2p_infra_map,
             self.p2p_distance_bar,
             self.technology_map,
-            self.satellite_pie_breakdown,
-            self.per_school_cost_map,
             self.per_student_cost_map,
-            self.total_cost_map,
             self.total_cost_histogram,
-            self.cost_per_student_map,
             self.cost_per_student_histogram,
             self.project_cost_barplot,
             self.average_cost_barplot,
@@ -258,11 +229,11 @@ class ResultDashboard:
             self.tech_pie,
             self.tech_cost_pie,
             self.feasibility_pie,
-            self.tech_distrib_plot
+            self.tech_distrib_plot,
+            self.electricity_map,
+            self.infra_lines_map,
+            self.cost_map
         ]
-    
-    def get_all_plots(self):
-        return self.get_visual_plots() + self.result_map.get_result_maps()
 
     def _update_title_font(self, fig):
         fig.update_layout(
@@ -300,40 +271,6 @@ class ResultDashboard:
                 )
             )
         return tab
-
-    def infrastructure_tab_old(self):
-        # Fiber Infra
-        fiber_plots = widgets.VBox([
-            self._map_to_output(self.fiber_infra_map),
-            self._figure_to_output(self.fiber_distance_bar)
-        ])
-        # Cell Infra
-        cell_plots = widgets.VBox([
-            self._map_to_output(self.cell_infra_map),
-            self._map_to_output(self.cell_distance_bar)
-        ])
-        # Cell Coverage
-        coverage_plots = widgets.VBox([
-            self._map_to_output(self.cell_coverage_map)
-        ])
-        tab = widgets.Output(layout=widgets.Layout(width="100%"))
-        # Technology Map
-        # cost maps
-        with tab:
-            display(
-                widgets.VBox(
-                    [
-                        section("Fiber Infrastructure", fiber_plots, "dark"),
-                        section("Cellular Infrastructure", cell_plots, "dark"),
-                        section("Cellular Coverage", coverage_plots, "dark"),
-                        section("Technology Modalities", self._map_to_output(self.technology_map), "dark"),
-                        section("Satellite Only Modality", self._figure_to_output(self.satellite_pie_breakdown), "dark"),
-                        section("Average Cost Per School", self._map_to_output(self.per_school_cost_map), "dark"),
-                        section("Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"),
-                    ]
-                )
-            )
-        return tab
     
     def infrastructure_tab(self):
         # Fiber Infra
@@ -360,8 +297,6 @@ class ResultDashboard:
             self._map_to_output(self.electricity_map),
         ])
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
-        # Technology Map
-        # cost maps
         with tab:
             display(
                 widgets.VBox(
@@ -375,56 +310,8 @@ class ResultDashboard:
                 )
             )
         return tab
-
-    def maps_tab(self):
-        tab = widgets.Output(layout=widgets.Layout(width="100%"))
-        with tab:
-            display(
-                widgets.VBox(
-                    [
-                        section(
-                            "Average Cost Per School", widgets.VBox([self.total_cost_map]), "dark"
-                        ).add_class("center"),
-                        section(
-                            "Average Cost Per Student", widgets.VBox([self.cost_per_student_map]), "dark"
-                        ).add_class("center"),
-                    ]
-                )
-            )
-        return tab
-
-    def cost_tab_old(self):
-        tab = widgets.Output(layout=widgets.Layout(width="100%"))
-        with tab:
-            display(
-                widgets.VBox(
-                    [
-                        section("Project Costs", self._figure_to_output(self.project_cost_barplot)),
-                        section(
-                            "Average per School Technology Cost", self._figure_to_output(self.average_cost_barplot)
-                        ),
-                        section("Total Technology Costs", self._figure_to_output(self.total_cost_barplot)),
-                        section(
-                            "Number of Schools Connected by Tech Type", self._figure_to_output(self.technology_pie)
-                        ),
-                        section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
-                        section(
-                            "Total Costs by CapEx, OpEx, and Electricity", self.summary_table
-                        ),
-                    ]
-                )
-            )
-        return tab
     
     def cost_tab(self):
-        # Cost Map
-        #cost_plots = widgets.VBox([
-        #    self._map_to_output(self.cost_map),
-        #])
-        # Infrastructure Lines Map
-        infra_lines_map = widgets.VBox([
-            self._map_to_output(self.infra_lines_map),
-        ])
 
         tab = widgets.Output(layout=widgets.Layout(width="100%"))
         
@@ -444,13 +331,12 @@ class ResultDashboard:
                             "Number of Schools Connected by Tech Type", self._figure_to_output(self.technology_pie)
                         ),
                         section("Technology Modalities", self._map_to_output(self.technology_map), "dark"),
-                        section("Average Cost Per School", self._map_to_output(self.per_school_cost_map), "dark"),
+                        section("Average Cost Per School", self._map_to_output(self.cost_map), "dark"),
                         section(
                             "Average Cost Per Student", self._map_to_output(self.per_student_cost_map), "dark"
                         ),
                         section("Total CapEx and OpEx by Tech Type", self._figure_to_output(self.cost_pie)),
-                        #section('Total Costs', cost_plots, "dark"),
-                        section('Infrastructure Lines', infra_lines_map, 'dark'),
+                        section('Infrastructure Lines', self._map_to_output(self.infra_lines_map), 'dark'),
                     ]
                 )
             )
@@ -481,20 +367,3 @@ class ResultDashboard:
                 )
             )
         return tab
-    
-    def display_result_maps_output(self, map_output):
-
-        #output = widgets.Output(widgets.Layout(width = '100%'))
-
-        map_list = [section('Electricity Map', self._map_to_output(self.electricity_map)), section('Cost Map', self._map_to_output(self.cost_map)),]
-
-        if not self.infra_lines_map is None:
-            map_list += [section('Infrastructure Lines Map', self._map_to_output(self.infra_lines_map))]
-
-        with map_output:
-            display(
-                widgets.VBox(map_list)
-            )
-
-        #return map_output
-

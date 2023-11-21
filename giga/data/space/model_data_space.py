@@ -19,6 +19,7 @@ class ModelDataSpace:
 
     def __init__(self, config: DataSpaceConf):
         self.config = config
+        self.country = config.school_data_conf.country_id
         self._schools = None
         self._all_schools = None
         self._fiber_schools = None

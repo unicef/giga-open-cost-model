@@ -16,14 +16,6 @@ import pickle
 from zipfile import ZipFile
 from PIL import Image
 
-from giga.viz.notebooks.data_maps.result_maps import (
-    make_fiber_distance_map_plot,
-    make_cellular_distance_map_plot,
-    make_cellular_coverage_map,
-    make_p2p_distance_map_plot,
-    make_electricity_map,
-)
-
 from giga.viz.notebooks.components.charts.plotters import (
     cumulative_fiber_distance_barplot,
     cumulative_cell_tower_distance_barplot,
@@ -37,6 +29,8 @@ from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 from giga.data.store.adls_store import ADLS_CONTAINER, COUNTRY_DATA_DIR
 from giga.data.space.model_data_space import ModelDataSpace
+from giga.viz.notebooks.data_maps.static_data_map import DataMapConfig
+from giga.viz.notebooks.maps import InfraMap, InfraMapLayersConfig
 from giga.utils.logging import LOGGER
 
 from giga.utils.progress_bar import progress_bar as pb
@@ -107,8 +101,9 @@ def make_payload_export(title, filename, data, data_format):
     return out
 
 
-def make_export_cost_button(df, title="Export Costs", filename="costs.csv"):
-    return make_payload_export(title, filename, df.to_csv().encode(), "text/csv;base64")
+def make_export_cost_button(stats, title="Export Costs", filename="costs.csv"):
+    results_table = stats.output_cost_table_full
+    return make_payload_export(title, filename, results_table.to_csv().encode(), "text/csv;base64")
 
 
 def make_export_config_button(inputs, title="Export Configuration", filename="config.json"):
@@ -165,7 +160,7 @@ def get_cost_report_image_dict(dashboard):
     figs = {}
     figs['project_cost_barplot'] = dashboard.project_cost_barplot # graph 0
     figs['average_cost_barplot'] = dashboard.average_cost_barplot # graph 1
-    figs['per_school_cost_map'] = dashboard.per_school_cost_map # graph 2
+    figs['per_school_cost_map'] = dashboard.cost_map # graph 2
     figs['per_student_cost_map'] = dashboard.per_student_cost_map # graph 3
     figs['technology_pie'] = dashboard.technology_pie # graph 4
     figs['technology_map'] = dashboard.technology_map # graph 5
@@ -218,27 +213,31 @@ def generate_cost_report_zip_bytes(dashboard):
     #return zip bytes
     return zip_buffer.read()
 
-def get_infra_report_image_dict(data_space, country_id, static_data_map):
+def get_infra_report_image_dict(data_space, static_data_map):
+
+    layer_config = InfraMapLayersConfig()
+    map_config = DataMapConfig()
+    maps_ = InfraMap(data_space, map_config, layer_config)
 
     #complete school data
-    schools_complete_table = data_space.schools_to_frame()
+    schools_complete_table = maps_.all_schools
     schools_connected = schools_complete_table[schools_complete_table['connected']]
-    schools_unconnected = schools_complete_table[schools_complete_table['connected']==False]
+    schools_unconnected = maps_.schools
 
     suffix = ('_selected' if data_space.selected_space else '')
 
     figs = {}
     figs['static_data_map' + suffix] = static_data_map
     figs['schools_conn_pie' + suffix] = make_tech_pie_chart(schools_connected) # graph 1
-    figs['fiber_dist_map' + suffix] = make_fiber_distance_map_plot(schools_unconnected,country_id) # graph 2
+    figs['fiber_dist_map' + suffix] = maps_.fiber_dist_map
     figs['cum_fiber_dist' + suffix] = cumulative_fiber_distance_barplot(schools_unconnected) # graph 3
-    figs['cell_dist_map' + suffix] = make_cellular_distance_map_plot(schools_unconnected,country_id) # graph 4
+    figs['cell_dist_map' + suffix] = maps_.cell_tower_dist_map
     figs['cum_cell_dist' + suffix] = cumulative_cell_tower_distance_barplot(schools_unconnected) # graph 5
-    figs['cell_coverage_map' + suffix] = make_cellular_coverage_map(schools_unconnected,country_id) # graph 6
-    figs['p2p_dist_map' + suffix] = make_p2p_distance_map_plot(schools_unconnected,country_id) # graph 7
+    figs['cell_coverage_map' + suffix] = maps_.cell_coverage_map
+    figs['p2p_dist_map' + suffix] = maps_.p2p_dist_map
     figs['cum_visible_cell_dist' + suffix] = cumulative_visible_cell_tower_distance_barplot(schools_unconnected) # graph 8
     figs['cum_distribution_coverage' + suffix] = make_coverage_bar_plot(schools_unconnected['cell_coverage_type'].to_numpy()) # graph 9
-    figs['electricity_map' + suffix] = make_electricity_map(data_space)
+    figs['electricity_map' + suffix] = maps_.electricity_map
 
     return figs
 
@@ -259,13 +258,11 @@ def write_images_from_dict(tmpdir, figs: dict):
             plotly.io.write_image(el.to_dict(), image_path, format='png')
 
 
-
 def generate_infra_report_zip_bytes(inputs):
 
     data_space = ModelDataSpace(inputs.data_parameters())
-    country_id = data_space.config.school_data_conf.country_id
 
-    figs = get_infra_report_image_dict(data_space, country_id, inputs.data_map_m)
+    figs = get_infra_report_image_dict(data_space, inputs.data_map_m)
 
     # Create a scratch temp file
     tmpdir = tempfile.mkdtemp()
@@ -313,14 +310,14 @@ def generate_merged_report_zip_bytes(dashboard):
 
     selected_schools = dashboard.selected_schools
     
-    figs = get_infra_report_image_dict(data_space, dashboard.country_id, inputs.data_map_m)
+    figs = get_infra_report_image_dict(data_space, inputs.data_map_m)
     figs.update(
         get_cost_report_image_dict(dashboard=dashboard)
     )
 
     if len(dashboard.results.complete_school_table) != len(selected_schools):
         data_space_selected = data_space.filter_schools(selected_schools)
-        selected_figs = get_infra_report_image_dict(data_space_selected, dashboard.country_id, inputs.selected_data_map()) # static data map to be updated
+        selected_figs = get_infra_report_image_dict(data_space_selected, inputs.selected_data_map()) # static data map to be updated
         figs.update(selected_figs)
 
     # Create a temp dir
@@ -398,7 +395,7 @@ def make_export_report_button(dashboard, title="Generate Report", filename="repo
     def on_button_clicked(b):
         out.clear_output()
         with out:
-            pdf_bytes = generate_pdf_bytes(dashboard.get_all_plots())
+            pdf_bytes = generate_pdf_bytes(dashboard.get_visual_plots())
             display(make_payload_export("Download Report", filename, pdf_bytes, "text/pdf;base64"))
 
     button = export_btn(on_button_clicked, description=title)
@@ -460,7 +457,7 @@ def make_export_zip_button(dashboard, title="Download Graph .zip", filename="gra
         b.disabled = True
         out.clear_output()
         with out:
-            el_list = [dashboard.inputs.data_map_m] + dashboard.get_all_plots()
+            el_list = [dashboard.inputs.data_map_m] + dashboard.get_visual_plots()
             zip_buffer = io.BytesIO()
             with ZipFile(zip_buffer, "w") as zip_file:
                 i = 0
@@ -503,10 +500,10 @@ def make_export_model_package(dashboard, title="Results Package", filename="resu
     out = Output()
     return VBox([button, out])
 
-def make_export_button_row(dashboard, table):
+def make_export_button_row(dashboard):
     hr = pw.HTML('<hr/>')
     b1 = make_export_config_button(dashboard.inputs)
-    b2 = make_export_cost_button(table)
+    b2 = make_export_cost_button(dashboard.results)
     b3 = make_export_model_package(dashboard)
     b6 = make_export_zip_button(dashboard)
     return VBox([b1, b2, hr, b3, hr, b6])
