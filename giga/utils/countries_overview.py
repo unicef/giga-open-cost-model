@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
+import math
 import os
 
 from giga.app.config import get_registered_countries
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
+from giga.utils.globals import *
 
 def get_countries_overview_table():
     country_stats = dict()
@@ -41,7 +43,7 @@ def get_countries_overview_table():
     return pd.DataFrame(country_stats).T
 
 def save_countries_overview_table(table: pd.DataFrame, path: str):
-    suffix_ = file_path.split('.')[-1]
+    suffix_ = path.split('.')[-1]
     if suffix_ == 'xlsx':
         table.to_excel(path, sheet_name = 'Countries Overview', index = True, index_label = 'Country', engine = 'openpyxl')
     elif suffix_ == 'csv':

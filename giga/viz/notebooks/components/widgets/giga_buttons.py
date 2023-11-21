@@ -78,11 +78,17 @@ def create_event_button(callback, title="Click Me"):
 
 
 def make_run_again_button(inputs, outputs, run_model_button, infra_report_button):
+    global data_space, data_space_selected, output_space, dashboard
+    
     def update_to_runnable(event):
         inputs.unfreeze()
         for o in outputs:
             o.clear_output()
         run_model_button.disabled = False
         infra_report_button.disabled = False
+        del(data_space)
+        del(data_space_selected)
+        del(output_space)
+        del(dashboard)
 
     return create_event_button(update_to_runnable, title="Run Model Again")

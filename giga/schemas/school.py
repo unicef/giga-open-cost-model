@@ -20,11 +20,12 @@ class ConnectivityType(Enum):
     Other = "Other"
 
 CONNECTIVITY_KEYWORDS = {
-    ConnectivityType.Unknown: ['unknown'],
-    ConnectivityType.Fiber: ['fiber', 'fibre', 'fibra', 'ftt', 'fttx'],
+    ConnectivityType.Fiber: ['fiber', 'fibre', 'fibra', 'ftt', 'fttx', 'hdsl'],
     ConnectivityType.Cellular: ['cell', 'cellular', 'celular', '2g', '3g', '4g', '5g', 'lte', 'gsm', 'umts', 'cdma', 'mobile', 'nr'],
-    ConnectivityType.Satellite: ['satellite', 'satelite'],
     ConnectivityType.P2P: ['p2p', 'radio', 'microwave'],
+    ConnectivityType.Satellite: ['satellite', 'satelite'],
+    ConnectivityType.Other: ['adsl'],
+    ConnectivityType.Unknown: ['unknown', 'null', 'nan'],
 }
 
 class CoverageType(Enum):
@@ -36,12 +37,12 @@ class CoverageType(Enum):
     _5G = "5G"
 
 COVERAGE_KEYWORDS = {
-    CoverageType.Unknown: ['unknown'],
-    CoverageType._None: ['no coverage', 'none'],
-    CoverageType._2G: ['2g', 'gsm'],
-    CoverageType._3G: ['3g', 'cdma', 'umts'],
+    CoverageType._5G: ['5g', 'nr'],
     CoverageType._4G: ['4g', 'lte'],
-    CoverageType._5G: ['5g', 'nr']
+    CoverageType._3G: ['3g', 'cdma', 'umts'],
+    CoverageType._2G: ['2g', 'gsm'],
+    CoverageType._None: ['no coverage', 'none'],
+    CoverageType.Unknown: ['unknown'],
 }
 
 class SchoolZone(str, Enum):
@@ -57,8 +58,6 @@ class GigaSchool(BaseModel):
 
     school_id: str
     name: str
-    #country: str
-    #country_id: int
     lat: float
     lon: float
     admin1: str
@@ -81,6 +80,11 @@ class GigaSchool(BaseModel):
     fiber_node_distance: float = math.inf
     power_required_watts: float = DEFAULT_POWER_REQUIRED_PER_SCHOOL
     nearest_LTE_distance: float = math.inf
+
+    def __init__(self, **data):  
+        if pd.isnull(data.get('type_connectivity')):  
+            data['type_connectivity'] = ''
+        super().__init__(**data)
 
     class Config:
         use_enum_values = True

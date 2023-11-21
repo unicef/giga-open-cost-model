@@ -301,12 +301,12 @@ class OutputSpace(BaseModel):
 
         return new_space
 
-    def full_results_table(self, n_years: int, attribution="both", school_ids = None):
+    def full_results_table(self, attribution="both", school_ids = None):
         if self.minimum_cost_result:
             results = self.minimum_cost_result
         else:
             results = self.technology_outputs[0].cost_results
-        return results_to_complete_table(results, n_years, attribution, school_ids)
+        return results_to_complete_table(results, self.years_opex, attribution, school_ids)
 
     def get_technology_cost_by_school(self, school_id: str, technology: str):
         assert (
@@ -358,10 +358,6 @@ class OutputSpace(BaseModel):
                 if costs['cellular'].feasible:
                     min_costs[school_id] = costs['cellular']
                     continue
-            #if 'p2p' in costs:
-            #    if costs['p2p'].feasible:
-            #        min_costs[school_id] = costs['p2p']
-            #        continue
             if 'satellite' in costs:
                 if costs['satellite'].feasible:
                     min_costs[school_id] = costs['satellite']
