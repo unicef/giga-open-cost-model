@@ -12,6 +12,8 @@ COSTS_DEFAULT_PATH = "costs/"
 
 GIGA_LOGO_DEFAULT_PATH = "/data/reports/common/"
 
+ACKS_LOGO_DEFAULT_PATH = 'reports/'
+
 ACKS_DEFAULT_PATH = "reports/"
 
 #country code path
@@ -40,6 +42,7 @@ SCHOOLS_CACHE_FILE = "school_cache.json"
 SCHOOLS_VISIBILITY_CACHE_FILE = "school_visibility_cache.json"
 
 GIGA_LOGO_FILE = "giga_logo.png"
+ACKS_LOGO_FILE = 'title_acks_logo.png'
 ACKS_FILE = "acknowledgments.txt"
 
 #file names of cost files

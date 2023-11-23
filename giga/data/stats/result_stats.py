@@ -56,7 +56,7 @@ class ResultStats:
     def output_cost_table_full(self):
         if self._output_cost_table_full is None:
             self._output_cost_table_full = self.data_space.school_outputs_to_frame(
-                self.output_space.full_results_table(self.config.years_opex)
+                self.output_space.full_results_table()
             )
             self._output_cost_table_full["total_cost_per_student"] = (
                 self._output_cost_table_full["total_cost"]

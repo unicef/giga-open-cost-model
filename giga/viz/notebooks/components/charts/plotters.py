@@ -4,10 +4,8 @@ from plotly.subplots import make_subplots
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 import numpy as np
-import math
 
 from giga.viz.colors import (
-    COST_COLORS_PAIR,
     COST_COLORS_TRIPLET,
     ORDERED_CUMULATIVE_DISTANCE_COLORS,
     SATELLITE_BREAKDOWN_COLORS,
@@ -372,49 +370,6 @@ def make_unit_cost_bar_plot(stats):
     )
     return fig
 
-
-def make_satellite_pie_breakdown(to_show):
-    # Create a new column to classify technologies as "Satellite" or "Other"
-    to_show["tech_class"] = to_show["technology"].apply(
-        lambda x: "Satellite" if x == "Satellite" else "Other"
-    )
-    # Get the count for each class
-    grouped = to_show["tech_class"].value_counts().reset_index()
-    grouped.columns = ["tech_class", "total"]
-    # Calculate the percentage for each class
-    grouped["percentage"] = (grouped["total"] / grouped["total"].sum()) * 100
-
-    # Create a pie chart
-    # Create a Pie chart using plotly.graph_objects.Pie  
-    fig = go.Figure(  
-        go.Pie(  
-            labels=grouped["tech_class"],  
-            values=grouped["total"],  
-            text=grouped["tech_class"],  
-            insidetextorientation='radial',  # Adjust text orientation  
-            textposition='inside',  # Position text inside the pie slices  
-            marker=dict(colors=list(SATELLITE_BREAKDOWN_COLORS.values())),
-            #color_discrete_map=SATELLITE_BREAKDOWN_COLORS,
-            textinfo="value+percent",  # Display labels, values, and percentages  
-            hoverinfo="value+percent",  # Display hover information  
-        )  
-    ) 
-    # Show the total counts and percentages on the plot
-    #fig.update_traces(textinfo="label+value+percent", hoverinfo="label+value+percent")
-    # Add title to the plot
-    fig.update_layout(
-        title={
-            "text": "<b>Satellite Only Viable Modality</b>",
-            "y": 0.95,
-            "x": 0.5,
-            "xanchor": "center",
-            "yanchor": "top",
-            "font": dict(size=24, color="black", family="Arial"),
-        },
-        showlegend=False,
-        margin=dict(t=100),
-    )  # Adjust top margin to fit title)
-    return fig
 
 def make_tech_pie_chart(df):
     # Calculate value counts and percentages
