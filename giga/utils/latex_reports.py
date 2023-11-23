@@ -7,7 +7,7 @@ from giga.viz.notebooks.parameters.groups.data_parameter_manager import country_
 from giga.report.infra.report import get_report_text as get_infra_report_text
 from giga.report.cost.report import get_report_text as get_cost_report_text
 from giga.report.merged.report import get_report_text as get_merged_report_text
-from giga.utils.globals import ACKS_DEFAULT_PATH, ACKS_FILE
+from giga.utils.globals import ACKS_DEFAULT_PATH, ACKS_FILE, ACKS_LOGO_FILE, ACKS_LOGO_DEFAULT_PATH
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 from giga.data.store.adls_store import COUNTRY_DATA_DIR
 import os
@@ -33,6 +33,10 @@ def get_infra_report_variables(data_space):
             vals['acks_text'] = f.read()
     except:
         vals['acks_text'] = ''
+    
+    acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH,vals['country'], ACKS_LOGO_FILE)
+    if data_store.file_exists(acks_logo_path):
+        vals['acks_logo'] = True
     
     vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_schools'] = len(schools_table)
@@ -101,6 +105,10 @@ def get_cost_report_variables(dashboard):
             vals['acks_text'] = f.read()
     except:
         vals['acks_text'] = ''
+    
+    acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH,vals['country'], ACKS_LOGO_FILE)
+    if data_store.file_exists(acks_logo_path):
+        vals['acks_logo'] = True
 
     vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_all_schools'] = len(schools_complete_table)
