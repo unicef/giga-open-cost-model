@@ -25,7 +25,6 @@ from giga.viz.notebooks.components.charts.plotters import (
 )
 
 from giga.utils.latex_reports import generate_infra_report, generate_cost_report, generate_merged_report
-from giga.data.store.stores import SCHOOLS_DATA_STORE as schools_data_store
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
 from giga.data.store.adls_store import ADLS_CONTAINER, COUNTRY_DATA_DIR
 from giga.data.space.model_data_space import ModelDataSpace
@@ -182,21 +181,26 @@ def generate_cost_report_zip_bytes(dashboard):
     doc = generate_cost_report(dashboard = dashboard)
 
     #copy giga_logo in tmpdir
-    local_logo_path = os.path.join(tmpdir,'giga_logo.png')
+    local_logo_path = os.path.join(tmpdir,TITLE_LOGO_FILE)
 
-    logo_path = os.path.join(COUNTRY_DATA_DIR,GIGA_LOGO_DEFAULT_PATH,GIGA_LOGO_FILE)
-    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
-    with open(local_logo_path, "wb") as download_file:
-        download_file.write(blob_client.download_blob().readall())
+    logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,TITLE_LOGO_FILE)
+    try:
+        blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
+        with open(local_logo_path, "wb") as download_file:
+            download_file.write(blob_client.download_blob().readall())
+    except:
+        pass
 
     # copy title acknowledgements logo to tmpdir if file exists
-    local_acks_logo_path = os.path.join(tmpdir, 'title_acks_logo.png')
+    local_acks_logo_path = os.path.join(tmpdir, ACKS_LOGO_FILE)
 
     acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH, dashboard.country, ACKS_LOGO_FILE)
-    if data_store.file_exists(acks_logo_path):
+    try:
         blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=acks_logo_path)
         with open(local_acks_logo_path, "wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
+    except:
+        pass
     
     #compile latex into pdf
     doc.generate_pdf(os.path.join(tmpdir, "costmodel_report"), clean_tex=False, clean = True)
@@ -278,21 +282,26 @@ def generate_infra_report_zip_bytes(inputs):
     doc = generate_infra_report(data_space)
 
     #copy giga_logo in tmpdir
-    local_logo_path = os.path.join(tmpdir,'giga_logo.png')
+    local_logo_path = os.path.join(tmpdir,TITLE_LOGO_FILE)
 
-    logo_path = os.path.join(COUNTRY_DATA_DIR,GIGA_LOGO_DEFAULT_PATH,GIGA_LOGO_FILE)
-    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
-    with open(local_logo_path, "wb") as download_file:
-        download_file.write(blob_client.download_blob().readall())
+    logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,TITLE_LOGO_FILE)
+    try:
+        blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
+        with open(local_logo_path, "wb") as download_file:
+            download_file.write(blob_client.download_blob().readall())
+    except:
+        pass
 
     # copy title acknowledgements logo to tmpdir if file exists
-    local_acks_logo_path = os.path.join(tmpdir, 'title_acks_logo.png')
+    local_acks_logo_path = os.path.join(tmpdir, ACKS_LOGO_FILE)
 
     acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH, data_space.country, ACKS_LOGO_FILE)
-    if data_store.file_exists(acks_logo_path):
+    try:
         blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=acks_logo_path)
         with open(local_acks_logo_path, "wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
+    except:
+        pass
 
     #compile latex into pdf
     doc.generate_pdf(os.path.join(tmpdir, "infra_report"), clean_tex=False, clean = True)
@@ -339,20 +348,26 @@ def generate_merged_report_zip_bytes(dashboard):
     doc = generate_merged_report(dashboard=dashboard)
 
     #copy giga_logo in tmpdir
-    local_logo_path = os.path.join(tmpdir,'giga_logo.png')
-    logo_path = os.path.join(COUNTRY_DATA_DIR,GIGA_LOGO_DEFAULT_PATH,GIGA_LOGO_FILE)
-    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
-    with open(local_logo_path, "wb") as download_file:
-        download_file.write(blob_client.download_blob().readall())
+    local_logo_path = os.path.join(tmpdir,TITLE_LOGO_FILE)
+
+    logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,TITLE_LOGO_FILE)
+    try:
+        blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=logo_path)
+        with open(local_logo_path, "wb") as download_file:
+            download_file.write(blob_client.download_blob().readall())
+    except:
+        pass
 
     # copy title acknowledgements logo to tmpdir if file exists
-    local_acks_logo_path = os.path.join(tmpdir, 'title_acks_logo.png')
+    local_acks_logo_path = os.path.join(tmpdir, ACKS_LOGO_FILE)
 
     acks_logo_path = os.path.join(COUNTRY_DATA_DIR, ACKS_LOGO_DEFAULT_PATH, dashboard.country, ACKS_LOGO_FILE)
-    if data_store.file_exists(acks_logo_path):
+    try:
         blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=acks_logo_path)
         with open(local_acks_logo_path, "wb") as download_file:
             download_file.write(blob_client.download_blob().readall())
+    except:
+        pass
 
     #compile latex into pdf two step generate needed for deployment
     doc.generate_pdf(os.path.join(tmpdir, "merged_report"), clean_tex=False, clean = False)

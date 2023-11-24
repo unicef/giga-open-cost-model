@@ -18,7 +18,7 @@ def cost_report_for_merged(vals, vals_infra):
     """
 
     chapter_text += section_scenario(vals)
-    if vals['num_schools'] != vals['num_all_schools']:
+    if vals['num_all_unconn_schools'] != vals_infra['num_unconn']:
         chapter_text += infra_report(vals = vals_infra, section_level=0)
     chapter_text += section_cost_estimation(vals)
 
@@ -82,7 +82,7 @@ def section_cost_estimation(vals):
     additional_text = ' (where another  \\numoverbudget{{}} schools could have been connected with additional budget).' if vals['num_schools_over_budget'] !='0' else '. '
     
     section_text = f"""
-    \\section{{Cost estimation results overview}}
+    \\section{{Estimated School Connectivity Costs}}
 
     In this section, estimated costs of connecting schools will be shown based on the data inputs provided to the School Costing Tool. This includes an analysis of the initial CapEx investments required and an estimate of the operational costs of school connectivity.
 
@@ -90,6 +90,7 @@ def section_cost_estimation(vals):
     """
 
     section_text += r"""
+    \subsection{Total Project Costs Estimate}
     The total cost of connecting these schools is \totalcost{}M USD, \totalcapexcost{}M USD consisting of CapEx cost and \totalopexcost{}M USD consisting of OpEx over a period of \opexyears{} years. See the figure below:
 
     \begin{figure}[h]
@@ -176,7 +177,7 @@ def section_cost_estimation(vals):
     \end{table}
 
     \newpage
-    \subsubsection{Technology cost breakdown}
+    \subsubsection{Cost Estimates by Technology}
     Each technology has different associated CapEx and OpEx unit costs (see appendix). Based on the technology distribution to connect the unconnected schools, it is estimated that the total fiber cost will be of \fibercosttot{} USD, accounting for \fiberpercoftech{}\% of the total technology cost (\techcosttot{} USD). Cellular is expected to account for \cellpercoftech{}\%, Microwave \ptoppercoftech{}\% and Satellite \satpercoftech{}\%. 
     In contrast, electricity (both CapEx and OpEx) consists of a total cost of \elecosttot{} USD.
 
@@ -218,8 +219,6 @@ def section_cost_estimation(vals):
     \label{fig:both_figures}
     \end{figure}
 
-    \subsection{Technology breakdown}
-
     Based on the chosen scenario and options, the algorithm of the Costing Tool, yields the following technology breakdown: \fiberpercschools{}\% are connected with fiber, \cellpercschools{}\% are connected with cellular, \ptoppercschools{}\% are connected with microwave and \satpercschools{}\% are connected with satellite. The following pie chart shows the technology breakdown both in terms of percentages and total school numbers:
 
     \begin{figure}[h]
@@ -240,15 +239,15 @@ def section_cost_estimation(vals):
 
     \newpage
     
-    \subsubsection{Fiber "economies of scale"}
+    \subsubsection{Fiber \& P2P "economies of scale"}
 
-    Finally, it is important to show the predicted fiber connections between schools or between a school and a fiber node as it the core of the capex cost of fiber connectivity. These fiber connections should constitute the lowest number 
-    of kilometres possible so that the fiber CapEx cost remains as low as possible. In the following map we show all \fiberkms{} kilometer(s) of fiber runs for the chosen scenario:
+    Finally, it is important to show the predicted fiber \& P2P connections between schools or between a school and a fiber node or visible cell tower as it the core of the capex cost of fiber \& P2P connectivity. For fiber, connections should constitute the lowest number 
+    of kilometres possible so that the fiber CapEx cost remains as low as possible. In the following map we show all \fiberkms{} kilometer(s) of fiber runs and P2P connections for the chosen scenario:
 
     \begin{figure}[h]
     \centering
     \includegraphics[scale=0.3]{infra_lines_map.png} % replace with your image path
-    \caption{Fiber routes}
+    \caption{Fiber and P2P routes}
     \label{fig:snapshot}
     \end{figure}
     """

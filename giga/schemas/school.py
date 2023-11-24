@@ -56,27 +56,27 @@ class SchoolZone(str, Enum):
 class GigaSchool(BaseModel):
     """Definition of a single school"""
 
-    school_id: str
+    school_id: str = ''
     name: str
     lat: float
     lon: float
-    admin1: str
-    admin2: str
-    admin3: str
-    admin4: str
-    education_level: str
+    admin1: str = ''
+    admin2: str = ''
+    admin3: str = ''
+    admin4: str = ''
+    education_level: str = ''
     giga_id: str = Field(..., alias="giga_id_school")
-    school_zone: str =  Field(..., alias="school_region") #SchoolZone = Field(..., alias="school_region")
+    school_zone: str =  Field('Unknown', alias="school_region") #SchoolZone = Field(..., alias="school_region")
     connected: bool = False
-    connectivity: str
-    type_connectivity: str
-    electricity: str
-    connectivity_status: str = Field( "Unknown")  # 'Good', 'Moderate', 'No connection', 'Unknown'
+    connectivity: str = 'No'
+    type_connectivity: str = 'Unknown'
+    electricity: str = 'No'
+    connectivity_status: str = Field("Unknown")  # 'Good', 'Moderate', 'No connection', 'Unknown'
     has_electricity: bool = False
     bandwidth_demand: float = 20.0  # Mbps
     has_fiber: bool = False  # True if the school is connected to a fiber network
     num_students: int = None
-    cell_coverage_type: str = Field(..., alias="coverage_type")
+    cell_coverage_type: str = Field('Unknown', alias="coverage_type")
     fiber_node_distance: float = math.inf
     power_required_watts: float = DEFAULT_POWER_REQUIRED_PER_SCHOOL
     nearest_LTE_distance: float = math.inf
@@ -193,12 +193,6 @@ class GigaSchoolTable(BaseModel):
     """A table or collection of schools"""
 
     schools: List[GigaSchool] = Field(..., min_items=1)
-
-    @staticmethod
-    def from_csv_old(file_name: str):
-        with COUNTRY_DATA_STORE.open(file_name, 'r') as file:
-            frame = pd.read_csv(file, keep_default_na=False)
-        return GigaSchoolTable(schools=frame.to_dict("records"))
     
     @staticmethod
     def from_csv(file_name: str):

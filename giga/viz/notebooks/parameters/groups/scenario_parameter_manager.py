@@ -16,10 +16,10 @@ SCENARIO_BASE_PARAMETERS = [
         "parameter_input_name": "Cost Scenario",
         "parameter_interactive": {
             "parameter_type": "categorical_dropdown",
-            "value": "Lowest Cost - Actual",
+            "value": "Lowest Cost - Heuristic G",
             "options": [
-                "Lowest Cost - Actual",
-                "Lowest Cost - Giga",
+                "Lowest Cost - Heuristic G",
+                "Lowest Cost - Heuristic A",
                 "Priorities",
             ],
             "description": "Cost Scenario:",
@@ -192,9 +192,9 @@ def get_scenario_type_old(config):
         raise ValueError(f"Unknown scenario_id: {config['scenario_id']}")
 
 def get_scenario_type(config):
-    if config["scenario_id"] == "minimum_cost_actual":
+    if config["scenario_id"] == "minimum_cost_a":
         return "Lowest Cost - Actual"
-    elif config["scenario_id"] == "minimum_cost_giga":
+    elif config["scenario_id"] == "minimum_cost_g":
         return "Lowest Cost - Giga"
     elif config["scenario_id"] == "priority_cost":
         return "Priorities"

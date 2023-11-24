@@ -99,6 +99,7 @@ class ResultDashboard:
 
         self.per_student_cost_map = make_cost_map(
             self.new_connected_schools,
+            self.country,
             cost_key="total_cost_per_student",
             display_key="Per Student Cost (USD)",
             title="Average Cost Per Student",
