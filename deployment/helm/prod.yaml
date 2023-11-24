@@ -30,18 +30,9 @@ hub:
   config:
     Authenticator:
       admin_users:
-        - karina
-        - ivan
-        - priya
-        - maria
-        - paul
-        - brian
-        - shilpa
-        - naroa
-        - chris
         - guest
     DummyAuthenticator:
-      password: passgbas
+      password: 123
     JupyterHub:
       authenticator_class: dummy
   service:
@@ -100,7 +91,7 @@ hub:
   extraVolumes: []
   extraVolumeMounts: []
   image:
-    name: uniappsoigiga.azurecr.io/k8s-hub-cds
+    name: image
     tag: "2.0.0"
     pullPolicy:
     pullSecrets: []
@@ -403,7 +394,6 @@ singleuser:
           name: azure-secrets
           key: adls-connection-string
     OBJSTORE_GCS_CREDS: ""
-    GIGA_AUTH_TOKEN: ""
   lifecycleHooks: {}
   initContainers: []
   extraContainers: []
@@ -426,7 +416,7 @@ singleuser:
       storageAccessModes: [ReadWriteOnce]
   image:
     # Actual config: single user image for notebook containers
-    name: uniappsoigiga.azurecr.io/cost-model-dev
+    name: image
     tag: "0.3.12"
     pullPolicy: Always
     pullSecrets: []

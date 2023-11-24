@@ -10,14 +10,15 @@ This document provides an overview of the Giga model notebooks and provides deta
 
 **Jump to section:**
 * [Cost estimation notebook](#cost-estimation)
-* [Results drilldown notebook](#results-drilldown)
 * [Driver notebooks](#driver-notebooks)
 * [Model details](#model-details)
 
 > Also see the following additional documentation:
 > 
-> * [Model Details](docs/models.md)
-> * [Model Data Management](docs/data.md)
+> * [Model Notebooks](notebooks/docs/main.ipynb)
+> * [Model Details](notebooks/docs/models.ipynb)
+> * [Model Data Management](notebooks/docs/data.ipynb)
+> * [Model Library Architecture](docs/arch.md)
 > * [Developer documentation](docs/dev.md)
 
 The notebooks are used for two primary purposes:
@@ -43,62 +44,8 @@ If you would like to upload a configuration from a local machine, use the `Impor
 
 Once you have finalized or updated the configuration above, click **Run Model** to generate new results and display summary tables that show aggregated cost statistics across the schools of interest. 
 
-The final section below show electricity availability and costs. For additional visualizations, download your results and see the [drilldown notebook](notebooks/results-drilldown.ipynb).
+The final section below show electricity availability and costs.
 Click **Download Results** to save model results locally on your computer.
-
-### Scenarios
-
-The following scenarios are available in the model:
-
-- `Lowest Cost`: determines the lowest cost of connectivity for the schools in question by selecting across the available and feasible technologies
-- `Fiber Only`: computes the total cost of connecting all the unconnected schools with fiber technology
-- `Satellite Only`: computes the total cost of connecting all the unconnected schools with satellite technology
-- `Cellular Only`: computes the total cost of connecting all the unconnected schools with cellular technology
-- `P2P Only`: computes the total cost of connecting all the unconnected schools with P2P technology
-
-### Parameters
-
-The following parameters can be configured in the model:
-
-* **Scenario**
-    * `Cost Scenario` determines which scenario to estimate costs for; either `Minimum Cost` which finds the cheapest technology can be selected, or an individual technology can be selected which will find the costs for just that technology
-    * `OpEx Years` determines the number of years that will be considered in the total cost estimates, where total cost is CapEx + OpEx * `OpEx Years`
-    * `Bandwidth Demand (Mbps)` determines the expected demand at each school being considered
-    * `Use Budget Constraint` flag that allows users to specif a budget, when set will run a constrained optimization on lowest cost or single technology scenarios
-    * `Project Budget (Millions USD)` sets the maximum budget for the connectivity project being analyzed, this budget is for the NPV of the project
-* **Fiber Model**
-    * `Annual cost per Mbps (USD)`: the annual cost of connectivity per Mbps in US Dollars
-    * `Cost Per km (USD)` is the average cost of laying fiber lines per km in US Dollars
-    * `Maintenance Cost per km (USD)` is the expected annual maintenace cost of new fiber lines in US Dollars
-    * `Maximum Connection Length (km)` is the maximum length of an individual fiber connection, if a single fiber connection exceeds this length, it will not be considered feasible
-    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
-    * `Economies of Scale` indicates if an economies of scale approach should be used when estimating the needed length of fiber lines
-* **Satellite Model**
-    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
-    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
-    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
-    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
-* **Cellular Model**
-    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) at the school site
-    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
-    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the  equipment at the school site
-    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
-    * `Maximum Cell Tower Range (km)` is the maximum distance from a cell tower that a school can receive internet service
-* **P2P Model**
-    * `Installation Cost (USD)` is the cost of intalling only the technology equipment (no electricity) both at the school site and at the selected cellular tower
-    * `Annual cost per Mbps (USD)`is the annual cost of connectivity per Mbps in US Dollars
-    * `Annual Maintenance Cost (USD)` is the annual cost of maintaining the equipment at the school site and at the selected cellular tower
-    * `Annual Power Required (kWh)` is the annual power in kWh needed to operate the equipment
-    * `Maximum  Range (km)` is the maximum distance from a cell tower that a school can receive internet service
-* **Electricity Model**
-    * `Cost per kWh (USD)` is the expected average cost of electricity for the schools considered in US Dollars
-    * `Solar Total Cost (USD/Watt)` is the average cost of installing solar panels at schools in USD/Watt
-
----
-
-## Results Drilldown
-
-The [results drilldown notebook](notebooks/results-drilldown.ipynb) allows you to upload the result of a previous model run and visualize/down-select results.
 
 ## Country Updates
 
@@ -108,7 +55,7 @@ The [update country notebook](notebooks/dev/update-objstore.ipynb) allows you to
 
 ## Driver Notebooks
 
-In addition to the [cost estimation](notebooks/cost-scenario.ipynb), [model validation](notebooks/model-validation.ipynb), and [results drilldown](notebooks/results-drilldown.ipynb) notebooks, the following "driver" notebooks can also be accessed:
+In addition to the [cost estimation](notebooks/cost-scenario.ipynb), and [model validation](notebooks/model-validation.ipynb) the following "driver" notebooks can also be accessed:
 
 * [Model Components](notebooks/drivers/component-drivers.ipynb): demonstrates how key model components can be initialized and run
 * [Fiber Model](notebooks/drivers/fiber-model.ipynb): demonstrates how to initialize and run the key nodes in the fiber model
@@ -119,7 +66,7 @@ In addition to the [cost estimation](notebooks/cost-scenario.ipynb), [model vali
 ## Model Details
 
 Each of the connectivity models is briefly described below.
-For more details please see [here](docs/models.md).
+For more details please see [here](notebooks/docs/models.ipynb).
 The cost models are the following:
 
 * **Fiber Model**: asses the costs of connectivity using fiber. Can optionally consider economies of scale, which allows schools that already connected with fiber during modeling to be used as fiber nodes. CapEx considers infrastructure costs of laying fiber, modem/terminal installation costs at school and solar installation if needed. OpEx considers maintenance of fiber infrastructure, maintenance of equipment at school, costs of internet at the school, and electricity costs.

@@ -20,10 +20,7 @@ The python library in this repository is organized into the following key catego
 4. Utilities: helpers for connecting to APIs, visualizing outputs, and constructing inspect able and interactive interfaces
 5. App: the application runner for configuring and starting the modeling application
 
-## Setup
-
-Note: this repositroy uses git lfs for some of the larger files.
-Please install [git lfs](https://git-lfs.com/), and then run `git lfs pull` to fetch copies of the larger files locally.
+## Local Development
 Use [poetry](https://python-poetry.org/) to create a local development environment.
 Poetry is a tool for dependency management in Python.
 You can use the helper `dev` CLI to build the environment locally:
@@ -54,22 +51,82 @@ You can format local code using the following commands:
 ```
 
 
-## Deployment
+## Production Deployment
+The production deployment is set up to use Jupyter Hub on Kubernetes. Ideally, one would use a managed Kubernetes service
+like Azure Kubernetes Service, AWS Elastic Kubernetes Service or Google Kubernetes Engine.
 
-To build the model container and re-deploy the notebook cluster simply run:
+These are the steps to build the model container and deploy the application to a cluster:
+1. Login into your docker container registry. For example `docker login`
+2. Build the docker image. We will assume our organization name in the registry is `gigacostmodel`. Run this to build the image `docker build . -t gigacostmodel/cost-model:0.3.12`
+3. Push the image to the docker registry by running `docker push gigacostmodel/cost-model:0.3.12`
+4. **Note** If you are building the application for the first time, you will want to also build a new jupyterhub image that allows creation of standalone dashboards. This will build an updated jupyterhub image that contains the dashboarding dependencies. Note that this image name is also referenced in the helm values file under `hub.image`. We build this image by running `docker build -f Dockerfile.hub -t gigacostmodel/k8s-hub-cds:2.0.0`
+5. Push the docker image to the container registry `docker push gigacostmodel/k8s-hub-cds:2.0.0`
+6. Update the `deployment/helm/prod.yaml` to reference these images. In particular update `singleuser.image` to `gigacostmodel/cost-model:0.3.12` and  `hub.image` to use `gigacostmodel/k8s-hub-cds:2.0.0`
+7. (Optional) Create the secret for the `MAP_BOX_ACCESS_TOKEN` token that will be used to display the maps. `kubectl create secret generic mapbox-secrets --from-literal=mapbox-token={MAPBOX_TOKEN}`
+8. (Optional) Create the secret to access data from the cloud provider. For example a connection string for Azure Data Lake Storage (ADLS) or Google Cloud Credentials. Here is an example for ADLS `kubectl create secret generic azure-secrets --from-literal=adls-connection-string={ADLS_CONNECTION_STRING}`
+9. Add the jupyterhub helm chart `helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/` followed by `helm repo update`.
+10. Use helm to deploy the jupyter hub application using `helm upgrade --install --values deployment/helm/prod.yaml --version 2.0.0 --timeout 20m`
+11. Port forward to the container to make sure you can access it by running `kubectl port-forward svc/proxy-public 8899:80` and then opening `localhost:8899` in your browser.
+12. Alternatively, set up Ingres to the cluster. The entrypoint is the `proxy-public` service on port `80`
 
-```bash
-./stack up
+To build the model container and re-deploy the notebook cluster the run steps 2 to 10.
+
+
+## Data
+There are two options for the data storage used in the application; either local data storage on the device or using a cloud provider like Google Cloud Storage or Azure Blob Storage/Azure Data Lake Storage
+### Local Data Storage
+To use local data storage, create a folder named `workspace` in the root of thhe project. In here, add two folders, `conf and `data`
+1. `conf` contains the configurations for each country in a folder named `countries`
+2. `data` contains the school data for each country in a country-specific folder.
+
+Look at the `workspace` folder for an example of how to set up this data
+
+### Cloud Data Storage
+Using a cloud provider for data storage is similar to the local data use case. In this case we store the data in a bucket or container from
+a cloud service provider's object store for example Google Cloud Storage, Azure Blob Storage or Amazon S3. To use this, create a dedicated bucket or container
+and give it a name for example `cost-model` in here, create the same folders as defined under `Local Data Storage` above in the same structure. Take a
+look at the `workspace` folder to understand how to structure the data. 
+
+### Selecting the Data Store
+Depending on if you're using Local or Cloud data storage, one will have to define the type of data store to use. This is specified in the `giga/data/store/stores.py`
+file. Data store implementations exist for the Local Data Store, Google Cloud Storage (GCS) Data store and Azure Data Lake Storage (ADLS) data store. To create an implementation
+for another data store for example `Amazon S3` or `minio`, extend the `DataStore` class defined in `giga/data/store/data_store.py`. The ADLS, GCS and local storage options in the
+`giga/data/store` folder provide examples of how to extend this class for a different data store.
+
+The data store in use as defined in the ``giga/data/store/stores.py` class , this looks like this by default:
+```python
+from .data_store import DataStore
+from .local_fs_store import LocalFS
+
+# Global Data Store instances. 
+LOCAL_FS_STORE: DataStore = LocalFS()
+
+# Configure which storage to use for country data here.
+COUNTRY_DATA_STORE: DataStore = LOCAL_FS_STORE
+
+# Storage for schools and costs for now
+SCHOOLS_DATA_STORE: DataStore = LOCAL_FS_STORE
 ```
 
-To stop the cluster and clear resources run:
+To use Azure Data Lake Storage (ADLS) change it to this
+```python
+from .data_store import DataStore
+from .adls_store import ADLSDataStore
 
-```bash
-./stack down
+# Global Data Store instances. 
+LOCAL_FS_STORE: DataStore = LocalFS()
+GCS_BUCKET_STORE: DataStore = None  # GCSDataStore()
+ADLS_CONTAINER_STORE: DataStore = ADLSDataStore()
+
+# Configure which storage to use for country data here.
+COUNTRY_DATA_STORE: DataStore = ADLS_CONTAINER_STORE  # LOCAL_FS_STORE  #  GCS_BUCKET_STORE
+
+# Storage for schools and costs for now
+SCHOOLS_DATA_STORE: DataStore = ADLSDataStore(container="giga")
 ```
 
-Please note, you will need to have authenticated with GCP CLI and have k8s context referencing the right GKE cluster. 
-For more details on this see below. 
+The process is similar for other data stores.
+
 
 ### Cluster Details
 
@@ -85,7 +142,7 @@ The following configurations are managed with a custom configuration:
 ### Resource Requirements
 
 The model application is typically memory constrained rather than CPU constrained.
-The recommended minimum memory for a single model pod in k8s is 3 GB with a limit 5 GB.
+The recommended minimum memory for a single model pod in k8s is 3 GB with a limit of 10 GB.
 The current configuration is set to reflect this as follows (from deployment/help/prod.yaml):
 
 ```
@@ -95,7 +152,7 @@ singleuser:
     limit:
     guarantee:
   memory:
-    limit: 5G
+    limit: 10G
     guarantee: 3G
 ```
 
@@ -103,18 +160,6 @@ Do note that no cpu limit is not set above.
 Additionally, the somewhat large memory guarantee is needed to run models for all schools in large countries (like Brazil).
 If the school data is broken down into smaller sub-regions for those larger countries, it's likely possible to make the memory guarantee significantly smaller.
 
-### Deployment Workflow
-
-Please note that the workflow is currently manually managed with the CLI explained below.
-The full deployment workflow looks as follows, which can all be managed with the `stack` CLI: 
-1. Authenticate with GCP by running `./stack auth`. This will also configure the credentials for the GKE cluster to which jupyterhub is deployed
-2. Create a Docker image for the models, you can use the CLI in the root dir: `./stack create-image`
-3. Push the image to Actual's docker registry: `./stack push-image`
-4. Update or launch a new instance of the cluster with `./stack launch` 
-
-> **Note** In order to authenticate with external services, [environment secrets](#environment-secrets) must be injected during deployment.
-
-> **Note** If you are building the application for the first time, you will want to also build a new jupyterhub image that allows creation of standalone dashboards. To do this you can simply run `./stack create-hub-image` followed by `./stack push-hub-image `. This will build and push an updated jupyterhub image that contains the dashboarding dependencies. The image name is referenced in the `stack` CLI as `IMAGE_NAME_HUB` and `HUB_VERSION`. Do note that this image name is also referenced in the helm values file under `hub.image`.
 
 ### Updating the Cluster + Local Testing
 
@@ -130,7 +175,7 @@ environment secrets that are not checked in with the application code.
 ---
 `MAP_BOX_ACCESS_TOKEN` | MapBox API access token string | Used to display detailed country maps during school selection and results visualization.
 `OBJSTORE_GCS_CREDS` | JSON service account credentials | Used to connect to Google Cloud APIs, primarily object store
-`GIGA_AUTH_TOKEN` | Bearer token to Giga Connect API | Used to fetch updated
+`ADLS_CONNECTION_STRING` | Connection string for ADLS access | Used to connect to Azure Data Lake Storage to get data
 ---
 
 When deploying the application, you can use deployment secrets to inject these environment
@@ -168,17 +213,6 @@ hub:
     JupyterHub:
       authenticator_class: auth0
 ```
-
-### GCP and Auth0 Configurations
-
-Configuring the deployment is done in two places, the `stack` CLI and the deployment manifest of helm values.
-Most of the GCP specific deployment parameters are defined in the stack CLI, the ones of interest are the following:
-
-* The container registry, which is where all the built docker containers are pushed to and pulled from, see [here](stack#L6)
-* The cluster name, which points to the k8s cluster running the deployment, see [here](stack#L12)
-* The auth configuration is managed entirely inside of our deployment manifest, see [here](deployment/helm/prod.yaml#L31)
-
-Migrating to a different cloud provider or a different auth system would require updating these parameters.
 
 ### Managing Voila Dashboards
 
@@ -263,23 +297,6 @@ For local development, the `./dev` CLI can be used with the following sub-comman
   lint					Runs a flake8 lint check against PEP 8
   format				Modifies non PEP 8 compliant code to be style compliant
   clean-notebook <notebook-path> 	Removes rendered html from jupyter notebooks
-```
-
-For managing deployments, the `./stack` CLI can be used with the following sub-commands:
-
-```
-  up 						Rebuild the modeling environment and deploys the notebook stack to a k8s cluster
-  down 						Tears down the notebook stack
-  install 					Install minikube, helm, etc.
-  auth 						Authenticate with GCP
-  create-image 					Builds docker image for off-platform models
-  push-image 					Pushes model docker image to a remote registry
-  create-hub-image 				Builds docker image for base jupyterhub service
-  push-hub-image 				Push jupyterhub docker image to a remote registry
-  start-container <workspace-dir> 		Launches a Docker container and mounts a workspace directory to it
-  launch  					Launches jupyterhub on a kubernetes cluster using helm
-  stop  					Stops the jupyterhub deployment
-  reset-password  <user-email> 			Sends a password reset email for notebook user
 ```
 
 For running the models and relevant data pipelines, the `./run` CLI can be used with the following sub-commands:

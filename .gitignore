@@ -187,19 +187,4 @@ requirements.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-notebooks/workspace
-notebooks/sample_workspace
-# Ignore the entire parameter_workspace directory
-notebooks/parameter_workspace/*
-# Do not ignore the TM_WORLD_BORDERS-0.3 directory
-!notebooks/parameter_workspace/TM_WORLD_BORDERS-0.3/
 .gcs_creds.json
-
-#ignore test notebook
-notebooks/cost-scenario-test.ipynb
-notebooks/cost-scenario-test-dep.ipynb
-notebooks/results-drilldown-dep-ipynb
-notebooks/results-drilldown-test.ipynb
-notebooks/dev/update-objstore-test.ipynb
-notebooks/dev/update-objstore-test-dep.ipynb
-notebooks/dev/update-objstore-old.ipynb

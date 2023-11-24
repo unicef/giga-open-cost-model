@@ -12,5 +12,5 @@ ADLS_CONTAINER_STORE: DataStore = ADLSDataStore()
 # Configure which storage to use for country data here.
 COUNTRY_DATA_STORE: DataStore = ADLS_CONTAINER_STORE  # LOCAL_FS_STORE  #  GCS_BUCKET_STORE
 
-# Storge for schools and costs for now
+# Storage for schools and costs for now
 SCHOOLS_DATA_STORE: DataStore = ADLSDataStore(container="giga")
