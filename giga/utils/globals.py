@@ -10,9 +10,9 @@ COUNTRY_DEFAULT_WORKSPACE = os.path.join(ROOT_DIR, COUNTRY_DEFAULT_RELATIVE_DIR)
 #repository cost path
 COSTS_DEFAULT_PATH = "costs/"
 
-GIGA_LOGO_DEFAULT_PATH = "/data/reports/common/"
+TITLE_LOGO_DEFAULT_PATH = "/data/reports/common/"
 
-ACKS_LOGO_DEFAULT_PATH = 'reports/'
+ACKS_LOGO_DEFAULT_PATH = '/data/reports/'
 
 ACKS_DEFAULT_PATH = "reports/"
 
@@ -41,7 +41,7 @@ P2P_CACHE_FILE = "p2p_cache.json"
 SCHOOLS_CACHE_FILE = "school_cache.json"
 SCHOOLS_VISIBILITY_CACHE_FILE = "school_visibility_cache.json"
 
-GIGA_LOGO_FILE = "giga_logo.png"
+TITLE_LOGO_FILE = "title_logo.png"
 ACKS_LOGO_FILE = 'title_acks_logo.png'
 ACKS_FILE = "acknowledgments.txt"
 

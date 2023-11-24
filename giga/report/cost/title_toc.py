@@ -1,19 +1,26 @@
+from giga.utils.globals import ACKS_LOGO_FILE, TITLE_LOGO_FILE
+
 def title_and_toc(vals):
 
+    if 'title_logo' in vals:
+        title_logo_text = f'''
+            \\includegraphics[scale=0.15]{{{TITLE_LOGO_FILE}}}'''
+    else:
+        title_logo_text = ''
+
     if 'acks_logo' in vals:
-        acks_logo_text = '''
+        acks_logo_text = f'''
             \\vspace{{1cm}}
-            \\includegraphics[scale=0.15]{{title_acks_logo.png}}'''
+            \\includegraphics[scale=0.15]{{{ACKS_LOGO_FILE}}}'''
     else:
         acks_logo_text = ''
 
     return f"""
     \\begin{{titlepage}}
-        \\centering
-        \\includegraphics[scale=0.15]{{giga_logo.png}} % Add your logo or comment this line
+        \\centering{title_logo_text}
         \\vspace{{1cm}}
         
-        {{\huge\\bfseries {vals['country_name']} - School Connectivity Project Planning Report\par}}
+        {{\huge\\bfseries Giga School Connectivity Infrastructure Report - {vals['country_name']}\par}}
         \\vspace{{1cm}}
         {{\Large Finance Team, Giga\par}}
         \\vspace{{3cm}}

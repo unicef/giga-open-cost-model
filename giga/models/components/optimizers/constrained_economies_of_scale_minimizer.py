@@ -112,7 +112,7 @@ class ConstrainedEconomiesOfScaleMinimizer:
                 school IDs that are optimal with economies of scale,
                 remaining budget
         """
-        if scenario_id=="minimum_cost_actual":
+        if scenario_id=="minimum_cost_a":
             pruner = CostTreePruner(
                 self.config.years_opex,
                 baseline_cost_lookup,

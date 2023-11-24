@@ -494,11 +494,11 @@ class CostEstimationParameterInput:
 
     def scenario_parameters(self, sheet_name="scenario"):
         p = self.scenario_parameter_manager.get_model_parameters()
-        if p["scenario_type"] == "Lowest Cost - Actual":
-            p["scenario_id"] = "minimum_cost_actual"
+        if p["scenario_type"] == "Lowest Cost - Heuristic A":
+            p["scenario_id"] = "minimum_cost_a"
             conf = MinimumCostScenarioConf(**p)
-        elif p["scenario_type"] == "Lowest Cost - Giga":
-            p["scenario_id"] = "minimum_cost_giga"
+        elif p["scenario_type"] == "Lowest Cost - Heuristic G":
+            p["scenario_id"] = "minimum_cost_g"
             conf = MinimumCostScenarioConf(**p)
         else: # priorities scenario
             conf = PriorityScenarioConf(**p)
@@ -556,24 +556,6 @@ class CostEstimationParameterInput:
                     lambda x: x["parameter_interactive"], UPLOADED_DATA_SPACE_PARAMETERS
                 )
             )
-        )
-
-    def _process_uploaded_data_parameters(self, s):
-        country_id = s["country_name"].value
-        config = ConfigClient.from_registered_country(
-            country_id.lower(), self.workspace
-        )
-        school_dataset = config.school_file
-        content = s["fiber_map_upload"].value[0].content
-        return DataSpaceConf(
-            school_data_conf={
-                "country_id": country_id,
-                "data": {"file_path": school_dataset, "table_type": "school"},
-            },
-            fiber_map_conf={
-                "map_type": "fiber-nodes",
-                "data": {"uploaded_content": content, "table_type": "coordinate-map"},
-            },
         )
 
     def _make_map_layer(self, country):

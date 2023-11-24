@@ -7,8 +7,9 @@ from giga.viz.notebooks.parameters.groups.data_parameter_manager import country_
 from giga.report.infra.report import get_report_text as get_infra_report_text
 from giga.report.cost.report import get_report_text as get_cost_report_text
 from giga.report.merged.report import get_report_text as get_merged_report_text
-from giga.utils.globals import ACKS_DEFAULT_PATH, ACKS_FILE, ACKS_LOGO_FILE, ACKS_LOGO_DEFAULT_PATH
+from giga.utils.globals import ACKS_DEFAULT_PATH, ACKS_FILE, ACKS_LOGO_FILE, ACKS_LOGO_DEFAULT_PATH, TITLE_LOGO_DEFAULT_PATH, TITLE_LOGO_FILE
 from giga.data.store.stores import COUNTRY_DATA_STORE as data_store
+from giga.data.store.adls_store import ADLS_CONTAINER
 from giga.data.store.adls_store import COUNTRY_DATA_DIR
 import os
 
@@ -20,23 +21,29 @@ def get_infra_report_variables(data_space):
     vals = {}
     vals['_selected_schools'] = data_space.selected_space
     vals['country'] = data_space.config.school_data_conf.country_id
-    
-    schools_table = data_space.schools_to_frame()
-    schools_connected = schools_table[schools_table['connected']]
-    schools_unconnected = schools_table[schools_table['connected']==False]
-    ele_counts = schools_table['has_electricity'].value_counts()
 
-    acks_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
+    title_logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,vals['country'], TITLE_LOGO_FILE)
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=title_logo_path)
+    if blob_client.exists():
+        vals['title_logo'] = True
 
+    acks_text_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
     try:
-        with data_store.open(acks_dir) as f:
+        with data_store.open(acks_text_dir) as f:
             vals['acks_text'] = f.read()
     except:
         vals['acks_text'] = ''
     
     acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH,vals['country'], ACKS_LOGO_FILE)
-    if data_store.file_exists(acks_logo_path):
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=acks_logo_path)
+    if blob_client.exists():
         vals['acks_logo'] = True
+    
+    schools_table = data_space.schools_to_frame()
+    schools_connected = schools_table[schools_table['connected']]
+    schools_unconnected = schools_table[schools_table['connected']==False]
+    ele_counts = schools_table['has_electricity'].value_counts()
+    cov_counts = schools_table['cell_coverage_type'].value_counts()
     
     vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_schools'] = len(schools_table)
@@ -45,8 +52,12 @@ def get_infra_report_variables(data_space):
     vals['num_students'] = schools_table['num_students'].sum()
     vals['num_fnodes'] = len(data_space.fiber_coordinates)
     vals['num_cells'] = len(data_space.cell_tower_coordinates)
-    vals['num_has_ele'] = ele_counts[True]
-    vals['num_has_no_ele'] = ele_counts[False]
+    vals['num_has_ele'] = ele_counts[True] if True in ele_counts else 0
+    vals['num_has_no_ele'] = ele_counts[False] if False in ele_counts else 0
+    vals['num_4g'] = cov_counts['4G'] if '4G' in cov_counts else 0
+    vals['num_3g'] = cov_counts['3G'] if '3G' in cov_counts else 0
+    vals['perc_4g'] = 100 * vals['num_4g'] / vals['num_schools']
+    vals['perc_3g'] = 100 * vals['num_3g'] / vals['num_schools']
     vals['perc_conn_unknown'] = 100 * sum(schools_table['connectivity_status'] == 'Unknown')/vals['num_schools']
     vals['perc_conn_known'] = 100 - vals['perc_conn_unknown']
     vals['perc_conn_type_unknown'] = 100 * sum(schools_table['type_connectivity'] == 'Unknown')/vals['num_schools']
@@ -92,27 +103,34 @@ def get_cost_report_variables(dashboard):
     vals = {}
     input_config = dashboard.inputs.config
     vals['country'] = dashboard.country
+
+    title_logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,vals['country'], TITLE_LOGO_FILE)
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=title_logo_path)
+    if blob_client.exists():
+        vals['title_logo'] = True
+    
+    acks_text_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
+    try:
+        with data_store.open(acks_text_dir) as f:
+            vals['acks_text'] = f.read()
+    except:
+        vals['acks_text'] = ''
+    
+    acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH,vals['country'], ACKS_LOGO_FILE)
+    blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=acks_logo_path)
+    if blob_client.exists():
+        vals['acks_logo'] = True
+    
     stats = dashboard.results
     selected_schools = dashboard.selected_schools
     schools_complete_table = stats.complete_school_table
     output_table = stats.output_cost_table
     output_table_full = stats.output_cost_table_full
 
-    acks_dir = os.path.join(COUNTRY_DATA_DIR, ACKS_DEFAULT_PATH, vals['country'], ACKS_FILE)
-
-    try:
-        with data_store.open(acks_dir) as f:
-            vals['acks_text'] = f.read()
-    except:
-        vals['acks_text'] = ''
-    
-    acks_logo_path = os.path.join(COUNTRY_DATA_DIR,ACKS_LOGO_DEFAULT_PATH,vals['country'], ACKS_LOGO_FILE)
-    if data_store.file_exists(acks_logo_path):
-        vals['acks_logo'] = True
-
     vals['country_name'] = country_key_to_name(vals['country'])
     vals['num_all_schools'] = len(schools_complete_table)
     vals['num_schools'] = len(selected_schools)
+    vals['num_all_unconn_schools'] = len(schools_complete_table[schools_complete_table['connected'] == False])
     vals['num_unconn_schools'] = len(stats.output_space.minimum_cost_result)
     vals['budget_cstr'] = input_config['scenario_parameters']['cost_minimizer_config']['budget_constraint']
     vals['max_fiber_conn'] = 0
@@ -319,6 +337,7 @@ def generate_merged_report(dashboard):
 
 def append_cost_report_vals(doc, vals):
     
+    doc.preamble.append(Command(NoEscape(r"newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}")))
     doc.preamble.append(Command(NoEscape(r"newcommand{{\country}}{{{}}}".format(vals['country_name']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\totalnumschools}}{{${}$}}'.format(vals['num_schools']))))
     doc.preamble.append(Command(NoEscape(r'newcommand{{\totalnumunconn}}{{${}$}}'.format(vals['num_unconn_schools']))))

@@ -18,6 +18,7 @@ COST_COLORS_PAIR = ["#AFD3E2", "#146C94"]
 
 # for technology maps
 GIGA_TECHNOLOGY_COLORS = {
+    "Other": '#2d4c53',
     "Cellular": "#46c66d",
     "Satellite": "#f94b4b",
     "P2P": "#ff9f40",

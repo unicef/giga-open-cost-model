@@ -31,8 +31,11 @@ CUSTOM_TEMPLATE = custom_template = {
 
 
 def make_cost_map(
-    results, cost_key="total_cost", display_key="Total Cost (USD)", title="Cost Map"
-):
+    results, country, cost_key="total_cost", display_key="Total Cost (USD)", title="Cost Map"):
+    if country == 'BRA':
+        zoom = 3
+    else:
+        zoom = 7
     df = results.rename(columns={cost_key: display_key})
     df["size"] = np.ones(len(df))
     style = "carto-darkmatter"
@@ -43,7 +46,7 @@ def make_cost_map(
         color=display_key,
         color_continuous_scale=px.colors.diverging.RdYlGn[::-1][2:],
         size="size",
-        zoom=7,
+        zoom=zoom,
         size_max=4,
         opacity=0.90,
         mapbox_style=style,

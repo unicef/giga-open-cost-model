@@ -189,7 +189,7 @@ class MinimumCostScenarioConf(BaseModel):
     necessary to connect schools with the cheapest technology when available
     """
 
-    scenario_id: Literal["minimum_cost_actual", "minimum_cost_giga"]
+    scenario_id: Literal["minimum_cost_a", "minimum_cost_g"]
     technologies: List[TechnologyConfiguration] = None
     years_opex: int = 5  # the number of opex years to consider in the estimate
     opex_responsible: Literal[

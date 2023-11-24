@@ -253,16 +253,16 @@ class ModelDataSpace:
                 "has_fiber": c.has_fiber,
                 "cell_coverage_type": c.cell_coverage_type,
                 "bandwidth_demand": c.bandwidth_demand,
-                "nearest_fiber": self.fiber_cache.connected_cache.get_distance(
+                'nearest_fiber': c.fiber_node_distance 
+                if c.fiber_node_distance != math.inf
+                else self.fiber_cache.connected_cache.get_distance(
                     c.giga_id
-                )
-                if self.fiber_cache.connected_cache is not None
-                else c.fiber_node_distance,
-                "nearest_cell_tower": self.cellular_cache.connected_cache.get_distance(
+                ),
+                'nearest_cell_tower': c.nearest_LTE_distance 
+                if c.nearest_LTE_distance != math.inf
+                else self.cellular_cache.connected_cache.get_distance(
                     c.giga_id
-                )
-                if self.cellular_cache.connected_cache is not None
-                else c.nearest_LTE_distance,
+                ),
                 "nearest_visible_cell_tower": self.p2p_cache.connected_cache.get_distance(
                     c.giga_id
                 )
@@ -304,16 +304,16 @@ class ModelDataSpace:
                 "electricity": c.electricity,
                 "connectivity_status": c.connectivity_status,
                 "bandwidth_demand": c.bandwidth_demand,
-                "nearest_fiber": self.fiber_cache.connected_cache.get_distance(
+                'nearest_fiber': c.fiber_node_distance 
+                if c.fiber_node_distance != math.inf
+                else self.fiber_cache.connected_cache.get_distance(
                     c.giga_id
-                )
-                if self.fiber_cache.connected_cache is not None
-                else c.fiber_node_distance,
-                "nearest_cell_tower": self.cellular_cache.connected_cache.get_distance(
+                ),
+                'nearest_cell_tower': c.nearest_LTE_distance 
+                if c.nearest_LTE_distance != math.inf
+                else self.cellular_cache.connected_cache.get_distance(
                     c.giga_id
-                )
-                if self.cellular_cache.connected_cache is not None
-                else c.nearest_LTE_distance,
+                ),
                 "nearest_visible_cell_tower": self.p2p_cache.connected_cache.get_distance(
                     c.giga_id
                 )

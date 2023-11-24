@@ -1,4 +1,6 @@
 
+import math
+
 def infra_report(vals, section_level = -1):
     global image_suffix
 
@@ -12,7 +14,7 @@ def infra_report(vals, section_level = -1):
         report_text += data_assesment_section(vals, section_level+1)
     
     report_text += current_connectivity_status_section(vals, section_level+1)
-    report_text += electricity_availability_section(vals, section_level+1)
+    report_text += electricity_availability_section(vals, section_level+2)
     report_text += infrastructure_availability_section(vals, section_level+1)
 
     return report_text
@@ -20,19 +22,28 @@ def infra_report(vals, section_level = -1):
 
 def data_assesment_section(vals, section_level):
 
-    return f"""
-    \\{'sub'*section_level}section{{Data Assesment}}"
+    num_fnodes = int(vals['num_fnodes'].replace(',', ''))
+    num_cells = int(vals['num_cells'].replace(',', ''))
 
-    Before analyzing the current state of the infrastructure as it relates to school connectivity, it is important to study the quality of the data available to Giga. Broadly, the data at Giga's disposal to produce this report can be summarized as follows:
+    fiber_node_text = vals['num_fnodes'] if num_fnodes>0 else 'No data'
+    cell_text = vals['num_cells'] if num_cells>0 else 'No data'
+
+    return f"""
+    \\{'sub'*section_level}section{{Data Assesment \& Data Quality}}"
+
+    The School Connectivity Cost Model has based its estimates, in part, on the existing, available infrastructure. Before analyzing the current state of the infrastructure 
+    as it relates to school connectivity, it is important to also note the quality of data available to Giga. Broadly, the data at Giga's disposal to produce the cost estimates 
+    is summarized in following data records:
 
     \\begin{{itemize}}
-        \\item A total of {vals['num_schools']} schools.
-        \\item For a total of {vals['num_students']} students.
-        \\item {vals['num_fnodes']} fiber nodes.
-        \\item {vals['num_cells']} cell towers.
+        \\item Number of schools: {vals['num_schools']} schools.
+        \\item Number of students: {vals['num_students']} students.
+        \\item Fiber node data: {fiber_node_text}
+        \\item Cell tower data: {cell_text}
     \\end{{itemize}}
 
-    We also need to make sure of what is the level of completeness of the data at hand, particularly with the most relevant attributes of the schools, that are connectivity (access and type) and access to electricity. In general, when any of these "Yes" or "No" attributes is unknown, we consider it the same as a "No".
+    The status of data completeness also needs to be considered, particularly for following attributes most relevant to schools, namely (1) data on the extent of connectivity;
+    (2) the type of connectivity and (3) access to electricity. In general, when any of these "Yes" or "No" attributes is unknown, we consider it the same as a "No".
     \\\\
 
     % Sample Table
@@ -57,9 +68,13 @@ def data_assesment_section(vals, section_level):
 def current_connectivity_status_section(vals, section_level):
 
     return f"""
-    \\{'sub'*section_level}section{{Current Connectivity Status}}
+    \\{'sub'*section_level}section{{Current School Connectivity Status}}
 
-    There are {vals['num_schools']} schools in {'in the selected region of ' if vals['_selected_schools'] else ''}{vals['country_name']} of which currently {vals['num_conn']} ({vals['perc_conn']}\%) are connected to the internet. {vals['num_unconn']} schools, which accounts for {vals['perc_unconn']}\%, remain unconnected to the internet. See below a snapshot of the connectivity status of the schools in {vals['country_name']}:
+    \\{'sub'*(section_level+1)}section{{Number of Unconnected Schools}}
+
+    There are {vals['num_schools']} schools in {'in the selected region of ' if vals['_selected_schools'] else ''}{vals['country_name']} of which currently {vals['num_conn']} 
+    ({vals['perc_conn']}\%) are connected to the internet. {vals['num_unconn']} schools, which accounts for {vals['perc_unconn']}\%, remain unconnected to the internet. 
+    Below is a geographical representation of the connectivity status of schools in {vals['country_name']}:
 
     \\begin{{figure}}[h]
         \\centering
@@ -68,7 +83,9 @@ def current_connectivity_status_section(vals, section_level):
         \\label{{fig:snapshot}}
     \\end{{figure}}
 
-    Moreover, the technology breakdown of the {vals['num_conn']} already connected schools is depicted in the following chart:
+    \\{'sub'*(section_level+1)}section{{Technology Distribution Across Connected Schools}}
+
+    The technology breakdown of the {vals['num_conn']} already connected schools is depicted in the following chart:
     \\\\
 
     \\begin{{figure}}[h]
@@ -86,9 +103,9 @@ def electricity_availability_section(vals, section_level):
     return f"""
     \\{'sub'*section_level}section{{Electricity Availability}}
 
-    In this section, we'll examine the availabilty of the electricity in {vals['country_name']}.
-
-    There are {vals['num_schools']} schools in {'in the selected region of ' if vals['_selected_schools'] else ''}{vals['country_name']} of which currently {vals['num_has_ele']} ({vals['perc_has_ele']}\%) have electricity power. {vals['num_has_no_ele']} schools, which accounts for {vals['perc_has_no_ele']}\% do not have electricity power. See below a snapshot of the electricity availability of the schools in {vals['country_name']}:
+    In terms of the availability of electricity, {vals['perc_has_ele']}\% ({vals['num_has_ele']}) of all schools ({vals['num_schools']}) {'in the selected region of ' if vals['_selected_schools'] else ''}{vals['country_name']} have access to electricity. 
+    {vals['num_has_no_ele']} schools, which accounts for {vals['perc_has_no_ele']}\% do not have access to electricity. Below is a geographical representation of electricity 
+    available at schools in {'the selected region of ' if vals['_selected_schools'] else ''}{vals['country_name']}:
 
     \\begin{{figure}}[h]
         \\centering
@@ -105,26 +122,35 @@ def infrastructure_availability_section(vals, section_level):
     section_text =  f"""
     \\{'sub'*section_level}section{{Infrastructure Availability}}
 
-    In this section, we'll examine the existing condition of infrastructure in {vals['country_name']}, focusing on its proximity to schools and the distances involved.
+    In this section, we'll examine the existing condition of infrastructure in {vals['country_name']}, highlighting  infrastructure located in proximity to schools and detailing school distances to relevant infrastructure points.
     """
 
-    num_fnodes = int(vals['num_fnodes'].replace(',', ''))
+    num_fnodes = int(vals['num_fnodes'].replace(',', '')) #or distance to fiber node information.
 
-    if num_fnodes > 0:
+    if num_fnodes > 0 or vals['avg_fnode_dist'] != math.inf:
         section_text += fiber_section(vals, section_level=section_level+1)
     
-    section_text += cellular_section(vals, section_level=section_level+1)
-    section_text += microwave_section(vals, section_level=section_level+1)
+    num_cells = int(vals['num_cells'].replace(',', ''))
+
+    if num_cells > 0 or vals['avg_cell_dist'] != math.inf:
+        section_text += cellular_section(vals, section_level=section_level+1)
+    
+    if vals['avg_p2p_dist'] != math.inf:
+        section_text += microwave_section(vals, section_level=section_level+1)
 
     return section_text
 
 
 def fiber_section(vals, section_level):
 
+    num_fnodes = int(vals['num_fnodes'].replace(',', ''))
+
+    first_sentence = f"There are {vals['num_fnodes']} fiber nodes in {vals['country_name']}. " if num_fnodes > 0 else ""
+
     return f"""
     \\{'sub'*section_level}section{{Fiber}}
 
-    As we have already mentioned, there are {vals['num_fnodes']} fiber nodes in {vals['country_name']}. The average distance from school to fiber node is {vals['avg_fnode_dist']} kms. The map below shows all unconnected schools colored according to their distance to the closest fiber node:
+    {first_sentence}The average distance from school to fiber node is {vals['avg_fnode_dist']} kms. The map below shows all unconnected schools colored according to their distance to the closest fiber node:
 
     \\begin{{figure}}[h]
         \\centering
@@ -147,10 +173,16 @@ def fiber_section(vals, section_level):
 
 def cellular_section(vals, section_level):
 
+    num_cells = int(vals['num_cells'].replace(',', ''))
+    
+    first_sentence = f"There are {vals['num_cells']} cell towers in {vals['country_name']}. " if num_cells > 0 else ""
+
     return f"""
     \\{'sub'*section_level}section{{Cellular}}
 
-    As we have already mentioned, there are {vals['num_cells']} cell towers in {vals['country_name']}. The average distance from school to a cell tower is {vals['avg_cell_dist']} kms. The map below shows all unconnected schools colored according to their distance to the closest cell tower:
+    \\{'sub'*(section_level+1)}section{{Number of Unconnected Schools within 3 kms of a Cell Tower}}
+
+    {first_sentence}The average distance from school to a cell tower is {vals['avg_cell_dist']} kms. The map below shows all unconnected schools colored according to their distance to the closest cell tower:
 
     \\begin{{figure}}[h]
         \\centering
@@ -159,7 +191,7 @@ def cellular_section(vals, section_level):
         \\label{{fig:cell_dists}}
     \\end{{figure}}
 
-    The following graph shows the cumulative distribution of school to cell tower distances. Note that {vals['perc_cell_dist']} \% of schools are within $3$ kms of a cell tower:
+    The following graph shows the cumulative distribution of schools accross distances to cell towers. {vals['perc_cell_dist']} \% of schools are within $3$ kms of a cell tower:
     \\\\
     \\begin{{figure}}[h]
         \\centering
@@ -167,9 +199,12 @@ def cellular_section(vals, section_level):
         \\caption{{Cell tower cumulative distribution}}
         \\label{{fig:cell_cumul_distr}}
     \\end{{figure}}
+    
     \\newpage
-    It is also worth exploring the distribution of cellular coverage at the schools by type of cellular technology:
-
+    
+    \\{'sub'*(section_level+1)}section{{Number of Unconnected Schools by Coverage Area (3G, 4G and 5G)}}
+    
+    In terms of distribution of cellular technology coverage accross schools, {vals['perc_3g']}\% are covered by 3G and {vals['perc_4g']}\% by 4G.
     \\begin{{figure}}[h]
         \\centering
         \\includegraphics[scale=0.4]{{{'cell_coverage_map' + image_suffix + '.png'}}}
@@ -177,7 +212,7 @@ def cellular_section(vals, section_level):
         \\label{{fig:cell_coverage}}
     \\end{{figure}}
 
-    The following graph shows the cumulative distribution of mobile coverage at school locations:
+    The following graph shows the cumulative distribution of schools covered by cellular technology type:
 
     \\begin{{figure}}[h]
         \\centering
@@ -194,7 +229,10 @@ def microwave_section(vals, section_level):
     return f"""
     \\{'sub'*section_level}section{{Microwave}}
 
-    In order to establish a Microwave Peer-to-peer (P2P) connection, there needs to be line of sight between the school and a cell tower. The average distance from school to a visible cell tower is {vals['avg_p2p_dist']} kms. The map below shows all unconnected schools colored according to their distance to the closest visible cell tower:
+    \\{'sub'*(section_level+1)}section{{Number of Unconnected Schools within visibility range (P2P/microwave)}}
+
+    To establish a Microwave Peer-to-peer (P2P) connection, there needs to be a line of sight between the school and a cell tower. The average distance from school to 
+    a visible cell tower is {vals['avg_p2p_dist']} kms. The map below shows all unconnected schools colored according to their distance to the closest visible cell tower:
 
     \\begin{{figure}}[h]
         \\centering
@@ -203,10 +241,10 @@ def microwave_section(vals, section_level):
         \\label{{fig:p2p_dists}}
     \\end{{figure}}
 
-    The following graph shows the cumulative distribution of school to visible cell tower distances. Note that {vals['perc_p2p_dist']} \% of schools are within $3$ kms of a cell tower:
+    The following graph shows the cumulative distribution of schools to visible cell tower distances. {vals['perc_p2p_dist']}\% of schools are within $3$ kms of a cell tower:
     \\\\
     \\begin{{figure}}[h]
-        \\centering
+        \\centering 
         \\includegraphics[scale=0.35]{{{'cum_visible_cell_dist' + image_suffix + '.png'}}}
         \\caption{{Visible cell tower cumulative distribution}}
         \\label{{fig:ptop_cumul_distr}}

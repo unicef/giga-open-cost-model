@@ -167,7 +167,7 @@ def check_avail_techs(country_dir, df_schools):
             if len(jsf["lookup"])>0:
                 fiber = True
         else:
-            fiber = (df_schools["fiber_node_distance"]!=math.inf).any()
+            fiber = (df_schools["fiber_node_distance"]!=math.inf).any() if 'fiber_node_distance' in df_schools else False
     
     # check cell & p2p availability
     cell = False
@@ -187,13 +187,13 @@ def check_avail_techs(country_dir, df_schools):
             if data_store.file_size(os.path.join(country_dir,SCHOOLS_VISIBILITY_CACHE_FILE)) >= 3:
                 p2p = True
     else:
-        cell = df_schools["coverage_type"].notnull().any()
+        cell = df_schools["coverage_type"].notnull().any() if 'coverage_type' in df_schools else False
 
     # check schools as nodes availability
     if not fiber:
         san= False
     else:
-        san = df_schools["type_connectivity"].apply(is_fiber).any()
+        san = df_schools["type_connectivity"].apply(is_fiber).any() if 'type_connectivity' in df_schools else False
 
     return fiber,cell,p2p,san
 
@@ -264,34 +264,36 @@ def fix_schools(df):
     your_column = 'num_students'
 
     # Step 1: Replace empty values with NaN
-    df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
-    df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
+    if your_column in df_new:
+        df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
+        df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')
 
-    if df[your_column].notna().any():
-        # Step 2: Calculate the average of the non-empty values
-        average = int(df_new[your_column].dropna().mean())
+        if df[your_column].notna().any():
+            # Step 2: Calculate the average of the non-empty values
+            average = int(df_new[your_column].dropna().mean())
 
-        # Step 3: Replace NaN values with average (if not all values are empty) or with DEFAULT_VALUE
-        df_new[your_column].fillna(average, inplace=True)
-    else:
-        df_new[your_column].fillna(DEFAULT_NUM_STUDENTS, inplace=True)
+            # Step 3: Replace NaN values with average (if not all values are empty) or with DEFAULT_VALUE
+            df_new[your_column].fillna(average, inplace=True)
+        else:
+            df_new[your_column].fillna(DEFAULT_NUM_STUDENTS, inplace=True)
 
-    # Step 4: Convert the column to integers
-    df_new[your_column] = df_new[your_column].astype(int)
+        # Step 4: Convert the column to integers
+        df_new[your_column] = df_new[your_column].astype(int)
     #####################
 
     ####fiber_node_distance####
     your_column = 'fiber_node_distance'
 
-    # Step 1: Replace empty values with NaN
-    df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
-    df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
+    if your_column in df_new:
+        # Step 1: Replace empty values with NaN
+        df_new[your_column].replace(r'^\s*$', pd.NA, regex=True, inplace=True)
+        df_new[your_column] = pd.to_numeric(df_new[your_column], errors='coerce')   
 
-    #fill na with inf
-    df_new[your_column].fillna(math.inf, inplace=True)
+        #fill na with inf
+        df_new[your_column].fillna(math.inf, inplace=True)
 
-    # Step 4: Convert the column to float
-    df_new[your_column] = df_new[your_column].astype(float)
+        # Step 4: Convert the column to float
+        df_new[your_column] = df_new[your_column].astype(float)
 
     return df_new
 
@@ -333,11 +335,11 @@ def get_country_default(country, workspace = 'workspace', schools_dir = SCHOOLS_
         create_empty_tech_files(country_dir)
         create_empty_caches(country_dir)
         #in this case, only sat is available and maybe cell
-        default["model_defaults"]["available_tech"]["fiber"] = False
-        default["model_defaults"]["available_tech"]["cellular"] = df_fixed["coverage_type"].notnull().any()
+        default["model_defaults"]["available_tech"]["fiber"] = df_fixed["fiber_node_distance"].notnull().any() if 'fiber_node_distance' in df_fixed else False
+        default["model_defaults"]["available_tech"]["cellular"] = df_fixed["coverage_type"].notnull().any() if 'coverage_type' in df_fixed else False
         default["model_defaults"]["available_tech"]["p2p"] = False
         default["model_defaults"]["available_tech"]["schools_as_nodes"] = False
-        default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = False
+        default["model_defaults"]["fiber"]["capex"]["schools_as_fiber_nodes"] = df_fixed["type_connectivity"].apply(is_fiber).any() if 'type_connectivity' in df_fixed else False
     else:
         with data_store.open(os.path.join(country_dir,SCHOOLS_FILE)) as f:
             df2 = pd.read_csv(f, dtype={"lat": "float32", "lon": "float32"})
