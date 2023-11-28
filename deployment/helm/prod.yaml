@@ -91,7 +91,7 @@ hub:
   extraVolumes: []
   extraVolumeMounts: []
   image:
-    name: image
+    name: jupyterhub-image # replace this with the jupyterhub image name from your image repository
     tag: "2.0.0"
     pullPolicy:
     pullSecrets: []
@@ -388,11 +388,6 @@ singleuser:
         secretKeyRef:
           name: mapbox-secrets
           key: mapbox-token
-    ADLS_CONNECTION_STRING:
-      valueFrom:
-        secretKeyRef:
-          name: azure-secrets
-          key: adls-connection-string
     OBJSTORE_GCS_CREDS: ""
   lifecycleHooks: {}
   initContainers: []
@@ -415,8 +410,7 @@ singleuser:
       volumeNameTemplate: volume-{username}{servername}
       storageAccessModes: [ReadWriteOnce]
   image:
-    # Actual config: single user image for notebook containers
-    name: image
+    name: single-user image # replace with the single-user image from your image repository
     tag: "0.3.12"
     pullPolicy: Always
     pullSecrets: []

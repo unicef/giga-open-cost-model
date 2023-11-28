@@ -6,11 +6,11 @@ from .local_fs_store import LocalFS
 
 # Global Data Store instances. 
 LOCAL_FS_STORE: DataStore = LocalFS()
-GCS_BUCKET_STORE: DataStore = None  # GCSDataStore()
-ADLS_CONTAINER_STORE: DataStore = ADLSDataStore()
+GCS_BUCKET_STORE: DataStore = None
+ADLS_CONTAINER_STORE: DataStore = None
 
 # Configure which storage to use for country data here.
-COUNTRY_DATA_STORE: DataStore = ADLS_CONTAINER_STORE  # LOCAL_FS_STORE  #  GCS_BUCKET_STORE
+COUNTRY_DATA_STORE: DataStore = LOCAL_FS_STORE
 
 # Storage for schools and costs for now
-SCHOOLS_DATA_STORE: DataStore = ADLSDataStore(container="giga")
+SCHOOLS_DATA_STORE: DataStore = LOCAL_FS_STORE
