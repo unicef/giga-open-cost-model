@@ -22,7 +22,7 @@ def get_infra_report_variables(data_space):
     vals['_selected_schools'] = data_space.selected_space
     vals['country'] = data_space.config.school_data_conf.country_id
 
-    title_logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,vals['country'], TITLE_LOGO_FILE)
+    title_logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,TITLE_LOGO_FILE)
     blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=title_logo_path)
     if blob_client.exists():
         vals['title_logo'] = True
@@ -104,7 +104,7 @@ def get_cost_report_variables(dashboard):
     input_config = dashboard.inputs.config
     vals['country'] = dashboard.country
 
-    title_logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,vals['country'], TITLE_LOGO_FILE)
+    title_logo_path = os.path.join(COUNTRY_DATA_DIR,TITLE_LOGO_DEFAULT_PATH,TITLE_LOGO_FILE)
     blob_client = data_store.blob_service_client.get_blob_client(container=ADLS_CONTAINER,blob=title_logo_path)
     if blob_client.exists():
         vals['title_logo'] = True
