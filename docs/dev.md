@@ -75,25 +75,19 @@ To build the model container and re-deploy the notebook cluster the run steps 2 
 ## Data
 There are two options for the data storage used in the application; either local data storage on the device or using a cloud provider like Google Cloud Storage or Azure Blob Storage/Azure Data Lake Storage
 ### Local Data Storage
-To use local data storage, create a folder named `workspace` in the root of thhe project. In here, add two folders, `conf and `data`
+To use local data storage, create a folder named `workspace` in the root of the project. In here, add two folders, `conf` and `data`
 1. `conf` contains the configurations for each country in a folder named `countries`
 2. `data` contains the school data for each country in a country-specific folder.
 
-Look at the `workspace` folder for an example of how to set up this data
+Look at the `workspace` folder for an example of how to set up this data.
 
 ### Cloud Data Storage
-Using a cloud provider for data storage is similar to the local data use case. In this case we store the data in a bucket or container from
-a cloud service provider's object store for example Google Cloud Storage, Azure Blob Storage or Amazon S3. To use this, create a dedicated bucket or container
-and give it a name for example `cost-model` in here, create the same folders as defined under `Local Data Storage` above in the same structure. Take a
-look at the `workspace` folder to understand how to structure the data. 
+Using a cloud provider for data storage is similar to the local data use case. In this case we store the data in a bucket or a container from a cloud service provider's object store for example Google Cloud Storage, Azure Blob Storage or Amazon S3. To use this, create a dedicated bucket or container and give it a name for example `cost-model` in here, create the same folders as defined under `Local Data Storage` above in the same structure. Take a look at the `workspace` folder to understand how to structure the data. 
 
 ### Selecting the Data Store
-Depending on if you're using Local or Cloud data storage, one will have to define the type of data store to use. This is specified in the `giga/data/store/stores.py`
-file. Data store implementations exist for the Local Data Store, Google Cloud Storage (GCS) Data store and Azure Data Lake Storage (ADLS) data store. To create an implementation
-for another data store for example `Amazon S3` or `minio`, extend the `DataStore` class defined in `giga/data/store/data_store.py`. The ADLS, GCS and local storage options in the
-`giga/data/store` folder provide examples of how to extend this class for a different data store.
+Depending on if you're using Local or Cloud data storage, one will have to define the type of data store to use. This is specified in the `giga/data/store/stores.py` file. Data store implementations exist for the Local Data Store, Google Cloud Storage (GCS) Data store and Azure Data Lake Storage (ADLS) data store. To create an implementation for another data store for example `Amazon S3` or `minio`, extend the `DataStore` class defined in `giga/data/store/data_store.py`. The ADLS, GCS and local storage options in the `giga/data/store` folder provide examples of how to extend this class for a different data store.
 
-The data store in use as defined in the ``giga/data/store/stores.py` class , this looks like this by default:
+The data store in use as defined in the `giga/data/store/stores.py` class, which looks like this by default:
 ```python
 from .data_store import DataStore
 from .local_fs_store import LocalFS
@@ -108,7 +102,7 @@ COUNTRY_DATA_STORE: DataStore = LOCAL_FS_STORE
 SCHOOLS_DATA_STORE: DataStore = LOCAL_FS_STORE
 ```
 
-To use Azure Data Lake Storage (ADLS) change it to this
+To use Azure Data Lake Storage (ADLS) change it to this:
 ```python
 from .data_store import DataStore
 from .adls_store import ADLSDataStore
@@ -156,7 +150,7 @@ singleuser:
     guarantee: 3G
 ```
 
-Do note that no cpu limit is not set above.
+Do note that no cpu limit is set above.
 Additionally, the somewhat large memory guarantee is needed to run models for all schools in large countries (like Brazil).
 If the school data is broken down into smaller sub-regions for those larger countries, it's likely possible to make the memory guarantee significantly smaller.
 
@@ -192,7 +186,7 @@ You can configure the application cluster to use a number of different authentic
 
 You can read more about configuring each of these [here](https://z2jh.jupyter.org/en/stable/administrator/authentication.html).
 
-To configure an authenticator you will need to update the helm values in deployment/help/prod.yaml under
+To configure an authenticator you will need to update the helm values in deployment/help/prod.yaml:
 
 ```
 hub:
@@ -219,7 +213,7 @@ hub:
 Once the application is deployed you can create a standalone voila dashboard on a stand-alone url.
 Currently, dashboard can not be shared between different accounts.
 One way to have demo-able and sharable dashboards is to create a guest credential, create a dashboard for the application user associated with that credential, and sharing that credential and url with the user who needs access to the dashboard.
-The standalone dashboard can support multi-tenantcy (e.g. multiple accounts logged in at the same time).
+The standalone dashboard can support multi-tenancy (e.g. multiple accounts logged in at the same time).
 However, the dashboard is running in a single pod that is constrained by the deployed resources associated with a single-user pod.
 
 To create a dashboard follow the steps below:
